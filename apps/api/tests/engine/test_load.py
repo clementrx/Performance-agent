@@ -64,3 +64,16 @@ def test_negative_daily_loads_rejected(bad):
         weekly_loads([100.0, bad])
     with pytest.raises(ValueError, match="negative"):
         acute_chronic_ratio([bad] * 28)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), -float("inf")])
+def test_non_finite_daily_loads_rejected(bad):
+    with pytest.raises(ValueError, match="finite"):
+        weekly_loads([100.0, bad])
+    with pytest.raises(ValueError, match="finite"):
+        acute_chronic_ratio([bad] * 28)
+
+
+def test_acwr_returns_a_plain_float():
+    result = acute_chronic_ratio([100.0] * 28)
+    assert type(result) is float
