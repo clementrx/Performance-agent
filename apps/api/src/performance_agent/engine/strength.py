@@ -9,6 +9,9 @@ MAX_PERCENTAGE = 1.3  # supra-maximal work (eccentrics, partials) tops out aroun
 
 
 def _validate_load_and_reps(load_kg: float, reps: int) -> None:
+    if isinstance(reps, bool) or not isinstance(reps, int):
+        msg = f"reps must be a whole number, got {reps!r}"
+        raise ValueError(msg)
     if load_kg <= 0:
         msg = f"load_kg must be positive, got {load_kg}"
         raise ValueError(msg)
