@@ -25,6 +25,14 @@ def test_volume_ramps_within_a_building_block():
     assert volumes[0] < volumes[-1]
 
 
+def test_building_week_factors_are_anchored():
+    waves = build_weekly_waves(total_weeks=8, deload_every=4, taper_weeks=1)
+    assert waves[2].volume_factor == pytest.approx(1.10)
+    assert waves[2].intensity_factor == pytest.approx(1.05)
+    assert waves[3].volume_factor == pytest.approx(0.6)
+    assert waves[3].intensity_factor == pytest.approx(0.9)
+
+
 def test_taper_cuts_volume_but_keeps_intensity():
     waves = build_weekly_waves(total_weeks=8, deload_every=4, taper_weeks=1)
     taper = waves[-1]

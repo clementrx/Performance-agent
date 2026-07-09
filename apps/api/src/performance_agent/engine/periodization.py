@@ -10,6 +10,7 @@ MIN_DELOAD_EVERY = 2
 DEFAULT_VOLUME_RAMP = 0.05
 DEFAULT_INTENSITY_RAMP = 0.025
 DELOAD_INTENSITY = 0.9
+DELOAD_VOLUME = 0.6
 TAPER_VOLUME = 0.5
 TAPER_INTENSITY = 1.0
 
@@ -51,15 +52,15 @@ def build_weekly_waves(
     *,
     deload_every: int = 4,
     taper_weeks: int = 1,
-    volume_ramp: float = DEFAULT_VOLUME_RAMP,
-    deload_volume: float = 0.6,
 ) -> list[WeekLoad]:
     """Generate week-by-week load multipliers for a training block.
 
-    Building weeks ramp volume by ``volume_ramp`` and intensity by 2.5% per
-    week within each mesocycle; every ``deload_every``-th building week drops
-    to ``deload_volume`` volume at 90% intensity; the final ``taper_weeks``
-    weeks halve volume while holding intensity.
+    Building weeks ramp volume by 5% and intensity by 2.5% per week within
+    each mesocycle; every ``deload_every``-th building week drops to 60%
+    volume at 90% intensity; the final ``taper_weeks`` weeks hold intensity
+    at baseline (1.0) while halving volume (the preceding building weeks sit
+    above 1.0). Baseline escalation across mesocycles is intentionally out of
+    scope for v1 (the ramp resets after each deload).
     """
     _validate(total_weeks, deload_every, taper_weeks)
 
@@ -74,11 +75,11 @@ def build_weekly_waves(
         week_in_block += 1
         if week_in_block == deload_every:
             waves.append(
-                WeekLoad(week, deload_volume, DELOAD_INTENSITY, is_deload=True, is_taper=False)
+                WeekLoad(week, DELOAD_VOLUME, DELOAD_INTENSITY, is_deload=True, is_taper=False)
             )
             week_in_block = 0
             continue
-        volume = 1.0 + volume_ramp * (week_in_block - 1)
+        volume = 1.0 + DEFAULT_VOLUME_RAMP * (week_in_block - 1)
         intensity = 1.0 + DEFAULT_INTENSITY_RAMP * (week_in_block - 1)
         waves.append(WeekLoad(week, volume, intensity, is_deload=False, is_taper=False))
     return waves
