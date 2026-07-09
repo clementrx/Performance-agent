@@ -1,7 +1,7 @@
 # PerformanceAgent — Technical Architecture Blueprint
 
 **Date:** 2026-07-10
-**Status:** Draft for review
+**Status:** Approved (2026-07-10)
 **Scope:** Complete technical design for an open-source, AI-powered, evidence-based
 physical preparation platform (digital strength & conditioning assistant).
 
@@ -547,10 +547,10 @@ federation-grade reporting.
 | LLM judge drift in evals | Deterministic checks first; judge rubrics versioned; golden outputs pinned |
 | Liability (injury claims) | Disclaimers, red-flag protocol, conservative defaults, no medical claims — reviewed in CONTRIBUTING |
 
-Open questions for the maintainer (non-blocking for MVP start):
+Decisions confirmed by the maintainer (2026-07-10):
 
-1. License confirmed as **Apache-2.0**? (Recommended over MIT for patent grant; AGPL would
-   deter commercial adoption but protect against closed forks.)
-2. Which two MVP verticals? (Recommended: running + barbell strength — best evidence
-   density and clearest engine models.)
-3. Default hosted demo instance (costs money, great for adoption) — later decision.
+1. License: **Apache-2.0**.
+2. MVP verticals: **running (5K–marathon) + barbell strength**.
+
+Remaining open question: default hosted demo instance (costs money, great for adoption) —
+deferred, later decision.
