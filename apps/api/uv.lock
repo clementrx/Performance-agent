@@ -86,10 +86,10 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "hypothesis", specifier = ">=6.156.4" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "ruff", specifier = ">=0.15.21" },
-    { name = "ty", specifier = ">=0.0.57" },
+    { name = "hypothesis", specifier = "==6.156.4" },
+    { name = "pytest", specifier = "==9.1.1" },
+    { name = "ruff", specifier = "==0.15.21" },
+    { name = "ty", specifier = "==0.0.57" },
 ]
 
 [[package]]
