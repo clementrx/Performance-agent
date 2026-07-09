@@ -52,7 +52,49 @@ def test_result_exposes_the_rates_behind_the_probability():
     assert result.ratio == pytest.approx(0.909, abs=0.01)
 
 
-def test_more_time_never_lowers_probability():
+def test_result_exposes_total_improvement_needed():
+    result = endurance_feasibility(
+        current_time_s=3300,
+        target_time_s=2100,
+        weeks=12,
+        training_age=TrainingAge.BEGINNER,
+    )
+    assert result.improvement_needed == pytest.approx(0.3636, abs=0.001)
+
+
+def test_ratio_of_exactly_one_is_a_coin_flip():
+    # beginner: 1%/wk achievable; 10% improvement over 10 weeks = exactly 1%/wk required
+    result = endurance_feasibility(
+        current_time_s=1000.0,
+        target_time_s=900.0,
+        weeks=10,
+        training_age=TrainingAge.BEGINNER,
+    )
+    assert result.ratio == pytest.approx(1.0)
+    assert result.probability == pytest.approx(0.5)
+
+
+def test_lower_training_age_means_higher_probability_for_same_goal():
+    probabilities = [
+        endurance_feasibility(
+            current_time_s=2820, target_time_s=2700, weeks=16, training_age=age
+        ).probability
+        for age in (TrainingAge.BEGINNER, TrainingAge.INTERMEDIATE, TrainingAge.ADVANCED)
+    ]
+    assert probabilities[0] > probabilities[1] > probabilities[2]
+
+
+def test_target_equal_to_current_is_high_but_hedged():
+    result = endurance_feasibility(
+        current_time_s=2700,
+        target_time_s=2700,
+        weeks=8,
+        training_age=TrainingAge.INTERMEDIATE,
+    )
+    assert 0.9 < result.probability < 1.0
+
+
+def test_more_time_raises_probability_for_improvement_goals():
     p_short = endurance_feasibility(
         current_time_s=3300,
         target_time_s=2820,

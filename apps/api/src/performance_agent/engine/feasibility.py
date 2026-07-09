@@ -5,7 +5,9 @@ linearly over the available weeks and compared against sustainable weekly
 improvement rates by training age. The required/achievable ratio maps to a
 probability through a logistic curve centred at ratio 1.0. This is a coarse,
 honest prior — not a guarantee — and downstream agents must present it with
-its drivers (the two rates), never as a bare number.
+its drivers (the two rates), never as a bare number. The model assumes a
+constant achievable rate over arbitrary horizons and models no asymptotic
+performance limit, so long-horizon and already-met verdicts are optimistic.
 """
 
 import math
@@ -22,7 +24,7 @@ class TrainingAge(StrEnum):
 
 
 # Sustainable weekly improvement in endurance performance (fraction of current
-# time), by training age. Conservative mid-points from coaching literature.
+# time), by training age. Team-chosen priors, not yet validated against data.
 ACHIEVABLE_WEEKLY_RATE: dict[TrainingAge, float] = {
     TrainingAge.BEGINNER: 0.010,
     TrainingAge.INTERMEDIATE: 0.005,
@@ -39,6 +41,7 @@ MAX_LOGISTIC_EXPONENT = 30.0
 class FeasibilityResult:
     """Feasibility verdict with the rates that produced it (for explainability)."""
 
+    improvement_needed: float
     required_weekly_rate: float
     achievable_weekly_rate: float
     ratio: float
@@ -87,6 +90,7 @@ def endurance_feasibility(
     exponent = max(min(exponent, MAX_LOGISTIC_EXPONENT), -MAX_LOGISTIC_EXPONENT)
     probability = 1 / (1 + math.exp(exponent))
     return FeasibilityResult(
+        improvement_needed=improvement_needed,
         required_weekly_rate=required_weekly_rate,
         achievable_weekly_rate=achievable_weekly_rate,
         ratio=ratio,
