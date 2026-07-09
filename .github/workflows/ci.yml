@@ -27,11 +27,4 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run ty check
-      # TODO(task-4): remove exit-5 tolerance once first tests land
-      - name: pytest (exit 5 = empty suite tolerated until first tests land)
-        run: |
-          set +e
-          uv run pytest
-          code=$?
-          set -e
-          if [ "$code" -ne 0 ] && [ "$code" -ne 5 ]; then exit "$code"; fi
+      - run: uv run pytest
