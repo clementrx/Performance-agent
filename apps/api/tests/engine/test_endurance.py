@@ -16,7 +16,7 @@ def test_riegel_same_distance_returns_same_time():
 
 def test_riegel_shorter_distance_predicts_faster_time():
     predicted = riegel_predict(known_distance_m=10000, known_time_s=2700, target_distance_m=5000)
-    assert predicted < 1350
+    assert 1290 < predicted < 1350
 
 
 @pytest.mark.parametrize(
@@ -26,6 +26,32 @@ def test_riegel_shorter_distance_predicts_faster_time():
 def test_riegel_validates_inputs(known_d, known_t, target_d):
     with pytest.raises(ValueError, match="positive"):
         riegel_predict(known_distance_m=known_d, known_time_s=known_t, target_distance_m=target_d)
+
+
+@pytest.mark.parametrize("distance_m", [1499, 42196])
+def test_riegel_rejects_distances_outside_validity_band(distance_m):
+    with pytest.raises(ValueError, match="distance"):
+        riegel_predict(known_distance_m=5000, known_time_s=1200, target_distance_m=distance_m)
+    with pytest.raises(ValueError, match="distance"):
+        riegel_predict(known_distance_m=distance_m, known_time_s=1200, target_distance_m=10000)
+
+
+@pytest.mark.parametrize("exponent", [0, -1, 1.31])
+def test_riegel_rejects_out_of_band_exponent(exponent):
+    with pytest.raises(ValueError, match="exponent"):
+        riegel_predict(
+            known_distance_m=5000,
+            known_time_s=1200,
+            target_distance_m=10000,
+            exponent=exponent,
+        )
+
+
+def test_riegel_custom_exponent_is_used():
+    # exponent 1.0 = pure proportional scaling
+    assert riegel_predict(
+        known_distance_m=5000, known_time_s=1200, target_distance_m=10000, exponent=1.0
+    ) == pytest.approx(2400.0)
 
 
 def test_pace_s_per_km():
