@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# Node (used from Plan 6)
+node_modules/
+.next/
+
+# Environment & editors
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
