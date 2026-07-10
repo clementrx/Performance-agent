@@ -45,10 +45,29 @@ async def test_out_of_band_distance_is_rejected_with_the_band(client):
         "predict_race_time",
         {"known_distance_m": 5000, "known_time_s": 1200, "target_distance_m": 100},
     )
-    assert "distance" in error_text(result)
+    text = error_text(result)
+    assert "1500" in text
+    assert "42195" in text
 
 
 @pytest.mark.anyio
 async def test_negative_load_is_rejected(client):
     result = await client.call_tool("compute_weekly_loads", {"daily_loads": [100.0, -5.0]})
     assert "negative" in error_text(result)
+
+
+@pytest.mark.anyio
+async def test_out_of_range_rpe_is_rejected(client):
+    result = await client.call_tool("compute_session_load", {"rpe": 11, "duration_min": 30})
+    text = error_text(result)
+    assert "rpe" in text
+    assert "10" in text
+
+
+@pytest.mark.anyio
+async def test_taper_longer_than_block_is_rejected(client):
+    result = await client.call_tool(
+        "build_periodization_waves",
+        {"total_weeks": 8, "deload_every": 4, "taper_weeks": 8},
+    )
+    assert "taper_weeks" in error_text(result)
