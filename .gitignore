@@ -11,6 +11,9 @@ dist/
 node_modules/
 .next/
 
+# Athlete data (never commit — see docs/installing.md)
+athlete/
+
 # Environment & editors
 .env
 .env.*

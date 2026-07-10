@@ -62,6 +62,23 @@ command = "uv"
 args = ["--directory", "/path/to/performance-agent", "run", "performance-agent"]
 ```
 
+## Where your data lives
+
+The coach stores your profile, goals, programs, and logs in a plain-file directory:
+
+1. `PERFORMANCE_AGENT_HOME` env var, if set — **recommended**;
+2. else `./athlete/` relative to the server's working directory — note that with the
+   `uv --directory` commands above, that working directory is the performance-agent
+   clone itself, so prefer the env var;
+3. else `~/.performance-agent/`.
+
+Set the env var in the server config, e.g. for Claude Code:
+
+    claude mcp add performance-agent --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uv --directory /path/to/performance-agent run performance-agent
+
+(`.mcp.json`, Gemini `settings.json` and Codex `config.toml` all accept an `env` map on
+the server entry.)
+
 ## Verify
 
 Some CLIs only pick up new servers on restart — reload the session first.
