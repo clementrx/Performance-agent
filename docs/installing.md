@@ -11,16 +11,11 @@ PyPI release, install from a local clone.
 - [`typst`](https://typst.app) — only needed for PDF reports (`brew install typst`);
   everything else works without it.
 
-```bash
-git clone https://github.com/clementrx/Performance-agent
-cd performance-agent && uv sync
-```
-
 
 ## Claude Code
 
 ```bash
-claude mcp add performance-agent -- uv --directory /path/to/performance-agent run performance-agent
+claude mcp add performance-agent -- uvx performance-agent
 ```
 
 Or in your project's `.mcp.json`:
@@ -29,8 +24,8 @@ Or in your project's `.mcp.json`:
 {
   "mcpServers": {
     "performance-agent": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/performance-agent", "run", "performance-agent"]
+      "command": "uvx",
+      "args": ["performance-agent"]
     }
   }
 }
@@ -44,8 +39,8 @@ In `~/.gemini/settings.json`:
 {
   "mcpServers": {
     "performance-agent": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/performance-agent", "run", "performance-agent"]
+      "command": "uvx",
+      "args": ["performance-agent"]
     }
   }
 }
@@ -59,8 +54,8 @@ In `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.performance-agent]
-command = "uv"
-args = ["--directory", "/path/to/performance-agent", "run", "performance-agent"]
+command = "uvx"
+args = ["performance-agent"]
 ```
 
 ## Installing the coaching skills (Claude Code)
@@ -70,7 +65,8 @@ your personal skills directory:
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R /path/to/performance-agent/skills/* ~/.claude/skills/
+git clone --depth 1 https://github.com/clementrx/Performance-agent
+cp -R Performance-agent/skills/* ~/.claude/skills/
 ```
 
 Per-project alternative: copy them into `.claude/skills/` inside the project where
@@ -90,14 +86,14 @@ ritual.
 The coach stores your profile, goals, programs, and logs in a plain-file directory:
 
 1. `PERFORMANCE_AGENT_HOME` env var, if set — **recommended**;
-2. else `./athlete/` relative to the server's working directory — note that with the
-   `uv --directory` commands above, that working directory is the performance-agent
-   clone itself, so prefer the env var;
+2. else `./athlete/` relative to the server's working directory — with the `uvx`
+   commands above that directory depends on where your agent CLI spawns the server,
+   so prefer the env var;
 3. else `~/.performance-agent/`.
 
 Set the env var in the server config, e.g. for Claude Code:
 
-    claude mcp add performance-agent --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uv --directory /path/to/performance-agent run performance-agent
+    claude mcp add performance-agent --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
 
 (`.mcp.json`, Gemini `settings.json` and Codex `config.toml` all accept an `env` map on
 the server entry.)
@@ -112,6 +108,3 @@ search_evidence, …).
 
 Also verify the coaching skills (see the section above): ask what the
 performance-coach skill's session ritual is.
-
-Once published to PyPI (roadmap Plan 07), the `command`/`args` simplify to
-`uvx` / `["performance-agent"]`.
