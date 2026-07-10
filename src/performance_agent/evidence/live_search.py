@@ -7,11 +7,12 @@ through in evidence/verify.py before shipping.
 """
 
 import re
+import time
 from dataclasses import dataclass
 from urllib.parse import quote
 
 from performance_agent.evidence.schemas import StudyType
-from performance_agent.evidence.verify import fetch_json
+from performance_agent.evidence.verify import fetch_json, resolve_reference
 
 PUBMED_ESEARCH_URL = (
     "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
@@ -22,6 +23,7 @@ PUBMED_ESUMMARY_URL = (
 )
 
 _SEARCH_LIMIT = 5
+_POLITE_DELAY_S = 0.5
 
 PUBMED_TYPE_MAP: dict[str, StudyType] = {
     "Randomized Controlled Trial": StudyType.RCT,
@@ -197,3 +199,66 @@ def search_semantic_scholar(term: str, language: str) -> list[LiveCandidate]:
     items = payload.get("data", [])
     candidates = [_semantic_scholar_candidate(item, language) for item in items]
     return [c for c in candidates if c is not None]
+
+
+_SOURCES = (
+    ("pubmed", search_pubmed),
+    ("crossref", search_crossref),
+    ("semantic_scholar", search_semantic_scholar),
+)
+
+
+def _locator_key(candidate: LiveCandidate) -> str | None:
+    if candidate.doi:
+        return f"doi:{candidate.doi.casefold()}"
+    if candidate.pmid:
+        return f"pmid:{candidate.pmid}"
+    return None
+
+
+def _dedup(candidates: list[LiveCandidate]) -> list[LiveCandidate]:
+    seen: set[str] = set()
+    deduped = []
+    for candidate in candidates:
+        key = _locator_key(candidate)
+        if key is None or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(candidate)
+    return deduped
+
+
+def _verify_candidates(candidates: list[LiveCandidate]) -> list[LiveCandidate]:
+    return [c for c in candidates if resolve_reference(c.doi, c.pmid).ok]
+
+
+@dataclass(frozen=True)
+class LiveSearchOutcome:
+    """Verified candidates from a multilingual live search, plus what failed."""
+
+    candidates: list[LiveCandidate]
+    failed_sources: list[str]
+
+
+def run_live_search(language_terms: dict[str, str]) -> LiveSearchOutcome:
+    """Fan out language/term pairs across PubMed, Crossref and Semantic Scholar.
+
+    One source/language failing does not blank out the others; failures are
+    reported by name in the outcome instead of raising. Every surviving candidate
+    has been independently re-verified (its DOI/PMID resolves) before being
+    returned — the same guarantee the packaged corpus gets from
+    evidence/verify.py before shipping.
+    """
+    raw: list[LiveCandidate] = []
+    failed: list[str] = []
+    first_call = True
+    for language, term in language_terms.items():
+        for source_name, search_fn in _SOURCES:
+            if not first_call:
+                time.sleep(_POLITE_DELAY_S)
+            first_call = False
+            try:
+                raw.extend(search_fn(term, language))
+            except (OSError, ValueError):
+                failed.append(f"{source_name}:{language}")
+    return LiveSearchOutcome(candidates=_verify_candidates(_dedup(raw)), failed_sources=failed)
