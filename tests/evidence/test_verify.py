@@ -47,3 +47,42 @@ def test_entry_without_locator_cannot_exist():
     # schema guarantees doi or pmid; verify_entry may assume it
     entry = _entry()
     assert entry.doi or entry.pmid
+
+
+def test_fetch_json_returns_none_on_non_json_body(monkeypatch):
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return b"<html>error</html>"
+
+    monkeypatch.setattr(
+        verify_module.urllib.request, "urlopen", lambda *_args, **_kwargs: _FakeResponse()
+    )
+    result = verify_entry(_entry())
+    assert not result.ok
+
+
+def test_disjoint_title_reports_mismatch(monkeypatch):
+    payload = {"message": {"title": ["A completely unrelated paper about something else"]}}
+    monkeypatch.setattr(verify_module, "_fetch_json", lambda _url: payload)
+    result = verify_entry(_entry())
+    assert not result.ok
+    assert "TITLE MISMATCH" in result.detail
+
+
+def test_subtitle_split_title_matches(monkeypatch):
+    payload = {
+        "message": {
+            "title": ["Effects of Tapering on Performance"],
+            "subtitle": ["A Meta-Analysis"],
+        }
+    }
+    monkeypatch.setattr(verify_module, "_fetch_json", lambda _url: payload)
+    entry = _entry(title="Effects of Tapering on Performance: A Meta-Analysis")
+    result = verify_entry(entry)
+    assert result.ok
