@@ -1,11 +1,12 @@
 # PerformanceAgent seed corpus.
 #
-# Every entry here has been verified against Crossref (live query, one DOI at a
-# time) by a maintainer per performance_agent/evidence/verify.py. Titles,
-# authors, years, journals, and DOIs are copied verbatim from the Crossref API
-# response for the given DOI; conclusions are the maintainer's own
-# conservative summary of the registry metadata (title, and abstract where
-# Crossref provided one). Do not add entries from memory — see
+# Every entry here has been verified against a live registry (Crossref by DOI,
+# or PubMed by PMID) by a maintainer per performance_agent/evidence/verify.py.
+# Titles, authors, years, journals, and DOIs/PMIDs are copied verbatim from the
+# registry response for the given locator. Conclusions are the maintainer's own
+# conservative summary, faithful to the registry abstract where one was
+# available (Crossref, or PubMed efetch) — no figure appears here that is not in
+# that abstract. Do not add entries from memory — see
 # docs/superpowers/plans/2026-07-10-plan-04-evidence-corpus.md Task 5.
 
 - id: strength-training-running-economy-meta-2024
@@ -17,10 +18,12 @@
   population: Middle- and long-distance runners
   conclusions: >
     A systematic review with meta-analysis found that high-load, plyometric, and combined
-    strength training improved running economy in middle- and long-distance runners versus
-    control conditions, while submaximal-load and isometric strength training showed no
-    consistent improvement.
-  evidence_level: strong
+    strength training may improve running economy in middle- and long-distance runners
+    versus control conditions, while submaximal-load and isometric strength training were
+    less effective.
+  # grading rationale: meta-analysis, but the authors' own GRADE certainty was moderate
+  # (and low for combined methods), so graded moderate rather than at the meta-analysis ceiling.
+  evidence_level: moderate
   doi: 10.1007/s40279-023-01978-y
   verified: true
 
@@ -32,9 +35,11 @@
   study_type: systematic_review
   population: Middle- and long-distance runners
   conclusions: >
-    A systematic review examined how strength training affects physiological determinants
-    of middle- and long-distance running performance, such as running economy and
-    neuromuscular function.
+    A systematic review of 24 studies reported good evidence that strength training improves
+    running economy, time-trial, and sprint performance in middle- and long-distance runners,
+    though the effect was not consistent across all studies.
+  # grading rationale: systematic review, but the abstract flags inconsistent findings and
+  # modest study quality (PEDro 4-6); graded moderate, below the systematic-review ceiling.
   evidence_level: moderate
   doi: 10.1007/s40279-017-0835-7
   verified: true
@@ -46,8 +51,11 @@
   journal: Medicine & Science in Sports & Exercise
   study_type: meta_analysis
   conclusions: >
-    A meta-analysis quantified the effect of tapering interventions on athletic performance
-    outcomes across the sports-science literature.
+    A meta-analysis of 27 studies found that tapering improved competitive performance, with
+    a roughly two-week taper that exponentially reduces training volume by 41-60% (holding
+    intensity and frequency constant) reported as the most effective strategy.
+  # grading rationale: meta-analysis with significant but small-to-moderate pooled effect
+  # sizes (0.33-0.72); graded moderate conservatively.
   evidence_level: moderate
   doi: 10.1249/mss.0b013e31806010e0
   verified: true
@@ -59,8 +67,10 @@
   journal: Journal of Strength and Conditioning Research
   study_type: cross_sectional
   conclusions: >
-    This study introduced and evaluated a session-RPE method for monitoring exercise
-    training load, proposing it as a practical approach to quantifying training stress.
+    This study introduced and evaluated a session-RPE method for monitoring exercise training
+    load, proposing it as a practical approach to quantifying training stress.
+  # grading rationale: single methodological/validation study of a monitoring tool; limited by
+  # its cross-sectional design.
   evidence_level: limited
   doi: 10.1519/00124278-200102000-00019
   verified: true
@@ -74,6 +84,8 @@
   conclusions: >
     A systematic review and meta-analysis examined the dose-response relationship between
     weekly resistance-training volume and increases in muscle mass.
+  # grading rationale: meta-analysis, but no registry abstract was available to assess the
+  # consistency or magnitude of the finding; graded moderate conservatively and kept non-directional.
   evidence_level: moderate
   doi: 10.1080/02640414.2016.1210197
   verified: true
@@ -85,8 +97,12 @@
   journal: Sports Medicine
   study_type: meta_analysis
   conclusions: >
-    A systematic review and meta-analysis examined the effect of resistance-training
-    frequency on gains in muscular strength.
+    A systematic review and meta-analysis of 22 studies found that higher resistance-training
+    frequencies were associated with greater muscular strength gains, but this effect appeared
+    to be driven primarily by training volume, with no significant frequency effect once volume
+    was equated.
+  # grading rationale: meta-analysis, but the abstract notes the effect is confounded by volume
+  # and most included studies used untrained participants; graded moderate.
   evidence_level: moderate
   doi: 10.1007/s40279-018-0872-x
   verified: true
@@ -101,8 +117,9 @@
   conclusions: >
     In a two-season prospective cohort of 53 elite rugby league players, very-high
     acute:chronic workload ratios were associated with the greatest injury risk, while
-    chronic workload alone did not consistently predict injury; as a single-cohort,
-    single-sport study, findings may not generalize to other athlete populations.
+    chronic workload alone did not consistently predict injury.
+  # grading rationale: single-sport, single-cohort observational study; graded limited, below
+  # the cohort ceiling, because findings may not generalize to other athlete populations.
   evidence_level: limited
   doi: 10.1136/bjsports-2015-094817
   verified: true
@@ -113,10 +130,13 @@
   year: 2015
   journal: Sports Medicine
   study_type: meta_analysis
+  population: Healthy young to middle-aged adults
   conclusions: >
-    A systematic review and meta-analysis of controlled trials evaluated the effectiveness
-    of high-intensity interval training versus continuous endurance training for improving
-    VO2max.
+    A meta-analysis of 28 controlled trials found that both high-intensity interval training
+    and continuous endurance training produced large improvements in VO2max in healthy young
+    to middle-aged adults, with somewhat greater gains following interval training.
+  # grading rationale: meta-analysis, but the between-modality advantage for interval training
+  # was only a "possibly small" effect under magnitude-based inference; graded moderate.
   evidence_level: moderate
   doi: 10.1007/s40279-015-0365-0
   verified: true
@@ -133,6 +153,25 @@
     significant improvements in vertical jump height across squat jump, countermovement
     jump, countermovement jump with arm swing, and drop jump tests, with the largest mean
     effect for the countermovement jump (about 8.7%).
+  # grading rationale: meta-analysis of 26 controlled trials with consistent, statistically
+  # significant pooled effects across all four jump types and no author-flagged certainty
+  # concerns; graded strong.
   evidence_level: strong
   doi: 10.1136/bjsm.2007.035113
+  verified: true
+
+- id: resistance-training-progression-acsm-position-stand-2002
+  title: "American College of Sports Medicine position stand. Progression models in resistance training for healthy adults."
+  authors: [Kraemer WJ, Adams K, Cafarelli E, Dudley GA, Dooly C, Feigenbaum MS, Fleck SJ, Franklin B, Fry AC, Hoffman JR, Newton RU, Potteiger J, Stone MH, Ratamess NA, Triplett-McBride T]
+  year: 2002
+  journal: Medicine and Science in Sports and Exercise
+  study_type: consensus
+  population: Healthy adults
+  conclusions: >
+    An American College of Sports Medicine position stand presenting consensus recommendations
+    on progression models for resistance training in healthy adults.
+  # grading rationale: formal multi-author ACSM position stand (consensus document); graded at
+  # the consensus ceiling of moderate.
+  evidence_level: moderate
+  pmid: "11828249"
   verified: true
