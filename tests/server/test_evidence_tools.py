@@ -2,6 +2,18 @@
 
 import pytest
 
+import performance_agent.server.evidence_tools as evidence_tools_module
+from performance_agent.evidence.live_search import LiveCandidate, LiveSearchOutcome
+from performance_agent.evidence.schemas import StudyType
+
+
+@pytest.fixture(autouse=True)
+def athlete_home(monkeypatch, tmp_path):
+    monkeypatch.setenv("PERFORMANCE_AGENT_HOME", str(tmp_path))
+    evidence_tools_module._index.cache_clear()
+    yield tmp_path
+    evidence_tools_module._index.cache_clear()
+
 
 @pytest.mark.anyio
 async def test_search_evidence_returns_graded_hits(client):
@@ -79,3 +91,46 @@ async def test_evidence_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}
     assert {"search_evidence", "get_citation", "check_citations"} <= names
+
+
+@pytest.mark.anyio
+async def test_search_evidence_live_returns_verified_candidates(client, monkeypatch):
+    def fake_run_live_search(_language_terms):
+        return LiveSearchOutcome(
+            candidates=[
+                LiveCandidate(
+                    title="Javelin throw training review",
+                    authors=["Doe J"],
+                    year=2021,
+                    journal="J Sports Sci",
+                    abstract=None,
+                    doi="10.1000/javelin-review",
+                    pmid=None,
+                    suggested_study_type=StudyType.SYSTEMATIC_REVIEW,
+                    source="pubmed",
+                    found_via_language="en",
+                )
+            ],
+            failed_sources=["crossref:de"],
+        )
+
+    monkeypatch.setattr(evidence_tools_module, "run_live_search", fake_run_live_search)
+
+    result = await client.call_tool(
+        "search_evidence_live", {"language_terms": {"en": "javelin throw training"}}
+    )
+
+    assert not result.isError
+    body = result.structuredContent
+    assert len(body["candidates"]) == 1
+    candidate = body["candidates"][0]
+    assert candidate["doi"] == "10.1000/javelin-review"
+    assert candidate["suggested_study_type"] == "systematic_review"
+    assert body["failed_sources"] == ["crossref:de"]
+
+
+@pytest.mark.anyio
+async def test_search_evidence_live_is_listed(client):
+    listed = await client.list_tools()
+    names = {tool.name for tool in listed.tools}
+    assert "search_evidence_live" in names
