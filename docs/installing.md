@@ -108,5 +108,8 @@ Some CLIs only pick up new servers on restart — reload the session first.
 Ask your agent: *"List the performance-agent tools."* You should see 22 tools (9
 engine + 10 memory + 3 evidence: assess_endurance_goal, read_athlete, search_evidence, …).
 
+Also verify the coaching skills (see the section above): ask what the
+performance-coach skill's session ritual is.
+
 Once published to PyPI (roadmap Plan 07), the `command`/`args` simplify to
 `uvx` / `["performance-agent"]`.

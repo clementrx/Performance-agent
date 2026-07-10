@@ -828,3 +828,82 @@ adjustments forced by the structure tests, final counts.
   skill match tools that exist as of Plan 04 (verified against the 22-tool list).
 - **Known uncertainty:** the `mcp._mcp_server` handle in T5 (conftest reuse
   instruction provided).
+
+## As-Built Deviations
+
+- **T1 (1942162, 1987fe2):** the entry skill lives at `skills/performance-coach/`, not
+  the plan's original `skills/coach/` — the directory name must equal the
+  frontmatter `name`, and the frontmatter name is `performance-coach` throughout, so
+  `skills/coach/` was stale from the first commit; 1987fe2 corrected the plan text to
+  match. `tests/skills/conftest.py` never used the plan's shown
+  `from tests.skills.conftest import discover_skills` import inside `test_structure.py`
+  — that dotted self-import is unimportable as a package-relative reference from
+  within the package's own conftest consumers, so the tests used the `skills` session
+  fixture from the start instead. `search_evidence` was declared (and used) in the
+  coach skill's `tools:` list only after review — the plan's Step 3 block omitted it.
+  1987fe2 also fixed a RED FLAG precedence gap (safety must override ritual/routing
+  for a brand-new athlete with no profile yet), a locale default-before-onboarding
+  gap, and split routing into "at session start" vs "after a skill hands back" so the
+  rules don't read as mutually exclusive.
+- **T2 (45672c8, 40864fa):** both onboarding and assessment skills gained explicit
+  `read_athlete` mentions (structural consistency with the other skills' opening
+  step). The plan's own test/body text disagreed on wording ("drivers" vs the
+  original prose) — fixed to "drivers" consistently. 40864fa closed: assessment's
+  crash path (`assess_endurance_goal` errors without a whole-number deadline — ask
+  for one first), the counter-proposal write must be schema-grounded (never
+  `upsert_goal` the infeasible original goal as-is), a strength-goal stop-gate
+  (don't proceed to generation on an out-of-range strength ask without naming it),
+  explicit `30% to <70%` band boundary wording, and onboarding decline-handling
+  (note unknown, don't re-ask) plus immediate `write_profile` on an active-injury
+  flag rather than waiting for the batched write.
+- **T3 (cd19222, 8494c8d):** the generation skill gained `read_athlete`/
+  `get_citation` mentions and a `log_session` declaration for consistency with the
+  other skills' tool-mention conventions. 8494c8d closed a CRITICAL fabrication gap:
+  only RACE pace is tool-computable (`predict_race_time`/`compute_pace`, enforced
+  1500 m–marathon); easy/threshold/interval paces must be labeled "coaching judgment
+  (derived from race pace)", never presented as tool-computed. It also fixed a
+  program-version collision: versioning is GLOBAL across the athlete directory, so
+  any existing program anywhere makes the next save v2+ (requires a reason) — only a
+  truly first-ever program is v1. Added: wave-to-baseline multiplier wiring (a wave
+  not applied to the numbers is decoration) and a missing-benchmark fallback
+  (open with a benchmark/test week rather than guessing a number).
+- **T4 (e0a1846, ff80f11, 4bd5ddb):** six tool-mention additions across the two
+  skills for the same body/frontmatter consistency reason as T2/T3, plus a genuine
+  plan-block bug: `compute_session_load` was used in the adaptation skill's body but
+  never declared in its `tools:` frontmatter (ff80f11). 4bd5ddb closed: the ACWR
+  series must be built date-indexed (today from `get_time_context` back 28+ days,
+  one value per calendar day, summing same-day sessions, zero for empty/incomplete
+  days, array ends on today) — `compute_acwr` is date-blind and a misaligned array
+  silently returns a wrong-but-plausible number; an overdue-deadline guard (negative
+  `days_remaining` must route to goal-assessment before calling
+  `assess_endurance_goal`, which errors on non-positive weeks); `write_profile`
+  wired into the check-in's pain-flag path (whole-document replace, matching
+  onboarding's persistence rule); and a null-`program_version` guard in check-in's
+  "all green" branch (route to program-generation instead of previewing a program
+  that doesn't exist).
+- **T5 (1a1dad2):** rewrote the plan's fixture pattern — the plan's test blocks
+  imported `discover_skills` via `from tests.skills.conftest import discover_skills`
+  inside `test_tool_references.py`/`test_no_fabricated_refs.py`; as in T1, that
+  dotted import is not how the existing `conftest.py` exposes discovery (it's a
+  pytest fixture, not an importable function call site meant to be re-imported), so
+  both files were written against the `skills` fixture parameter instead, consistent
+  with `test_structure.py`. The plan flagged uncertainty over the in-process session
+  handle; the implementation used
+  `create_connected_server_and_client_session(mcp)` (the FastMCP wrapper object
+  itself), not `mcp._mcp_server`. Step 3's negative-control check was run as a triple
+  mutation verification — a fake tool name was added to a skill's `tools:` list and
+  confirmed `test_declared_tools_exist_on_the_server` failed naming it; an undeclared
+  tool mention was added to a body and confirmed
+  `test_bodies_do_not_reference_undeclared_tools` failed; a declared-but-unused tool
+  was added and confirmed `test_declared_tools_are_actually_used_in_the_body` failed
+  — all three reverted before commit, `git diff` clean.
+- **T6 (df98edb):** in addition to the planned `docs/installing.md` and `README.md`
+  edits, a scope-adjacent one-line comment was added to
+  `tests/skills/test_tool_references.py` (a T5 file) clarifying that
+  `test_bodies_do_not_reference_undeclared_tools`'s substring matching against tool
+  names is deliberate — skills should not namedrop a tool in prose without declaring
+  it. Left in place as a coordinator-scoped touch on an existing test rather than a
+  new file.
+- **Final suite count:** 249 passed (baseline 236 + 13 new tests in
+  `tests/skills/`: 9 structure tests built up across T1–T4, 3 tool-reference-drift
+  tests and 1 anti-fabrication test added in T5).
