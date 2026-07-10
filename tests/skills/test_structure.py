@@ -7,6 +7,7 @@ EXPECTED_SKILLS = {
     "program-generation",
     "training-checkin",
     "program-adaptation",
+    "program-report",
 }
 
 
@@ -105,3 +106,10 @@ def test_adaptation_skill_protocol(skills):
         "confirm",
     ):
         assert needle in body, f"adaptation skill lost: {needle}"
+
+
+def test_report_skill_protocol(skills):
+    report = next(s for s in skills if s.frontmatter["name"] == "program-report")
+    body = report.body.casefold()
+    for needle in ("render_report", "check_citations", "coach", "expert", "mode"):
+        assert needle in body, f"report skill lost: {needle}"
