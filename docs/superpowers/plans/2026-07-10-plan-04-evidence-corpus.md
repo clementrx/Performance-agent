@@ -1238,9 +1238,10 @@ Task 7 sweep. Final suite: **236 passed**.
   with **10 entries** (target was 8-12): 9 resolved via Crossref DOI and 1 (the ACSM
   resistance-training-progression position stand) recovered via PubMed after its
   Crossref record returned `author: null`, which the title-match assertion would have
-  rejected. The HIIT-vs-continuous-training meta-analysis self-downgraded from the
-  ceiling to `moderate` per its own GRADE statement rather than being graded at the
-  systematic-review/meta-analysis ceiling. Each entry's evidence-level choice is
+  rejected. The strength-training-running-economy meta-analysis self-downgraded from
+  the ceiling to `moderate` per its own authors' GRADE certainty statement; the
+  HIIT-vs-continuous meta is also graded `moderate`, but on magnitude-based-inference
+  grounds ("possibly small effect"), not GRADE. Each entry's evidence-level choice is
   explained with an inline grading-rationale comment in `seed_corpus.yaml`.
 - **T6 (MCP tools):** commit `50f25ea` ("Disclose search OR semantics and dedupe the
   corpus map") removed a duplicate corpus load — `_corpus_by_id()` previously ran its

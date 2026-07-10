@@ -74,8 +74,9 @@ def search_evidence(
     recommendation and say so honestly when evidence is limited.
 
     Multi-word queries match ANY term (OR), not all — adding terms broadens
-    rather than narrows; check rank order and conclusions before citing a
-    low-relevance hit. Word variants are stemmed (taper matches tapering).
+    rather than narrows. Results are ordered most-relevant first: prefer the
+    top hits and read each hit's conclusions before citing it. Word variants
+    are stemmed (taper matches tapering).
     """
     hits = _index().search(query, limit=limit, study_type=study_type, min_level=min_level)
     return SearchResults(
