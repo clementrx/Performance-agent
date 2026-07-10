@@ -9,6 +9,9 @@ dependencies = [
     "mcp==1.28.1",
 ]
 
+[project.scripts]
+performance-agent = "performance_agent.server.app:main"
+
 [build-system]
 requires = ["uv_build>=0.9,<1"]
 build-backend = "uv_build"
