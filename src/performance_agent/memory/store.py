@@ -6,6 +6,7 @@ never deletes history: logs are append-only and program versions are immutable.
 
 import os
 from collections.abc import Callable
+from datetime import date
 from pathlib import Path
 
 import yaml
@@ -17,6 +18,7 @@ PROFILE_FILE = "profile.yaml"
 GOALS_FILE = "goals.yaml"
 SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
+PROGRAMS_DIR = "programs"
 
 
 def _atomic_write(path: Path, content: str) -> None:
@@ -133,3 +135,68 @@ def read_checkins(base_dir: Path) -> list[CheckinEntry]:
         path,
         lambda: [CheckinEntry.model_validate_json(line) for line in lines if line.strip()],
     )
+
+
+def _program_path(base_dir: Path, version: int) -> Path:
+    return base_dir / PROGRAMS_DIR / f"program-v{version}.md"
+
+
+def latest_program_version(base_dir: Path) -> int | None:
+    """Return the highest existing program version, or None."""
+    programs_dir = base_dir / PROGRAMS_DIR
+    if not programs_dir.is_dir():
+        return None
+    versions = [
+        int(stem)
+        for path in programs_dir.glob("program-v*.md")
+        if (stem := path.stem.removeprefix("program-v")).isdigit()
+    ]
+    return max(versions) if versions else None
+
+
+def save_program(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next program version; adapting an existing program requires a reason.
+
+    Versions are immutable: this never overwrites, and the required reason on
+    v2+ is the coaching-decision audit trail.
+    """
+    current = latest_program_version(base_dir)
+    version = 1 if current is None else current + 1
+    if version > 1 and not reason:
+        msg = f"adapting program v{current} to v{version} requires a reason (audit trail)"
+        raise ValueError(msg)
+    frontmatter = {
+        "version": version,
+        "goal_id": goal_id,
+        "created_on": (today or date.today()).isoformat(),
+        "reason": reason,
+    }
+    content = "---\n" + _to_yaml(frontmatter) + "---\n\n" + markdown_body.strip() + "\n"
+    path = _program_path(base_dir, version)
+    if path.exists():
+        msg = f"{path} already exists; program versions are immutable"
+        raise ValueError(msg)
+    _atomic_write(path, content)
+    return path, version
+
+
+def read_program(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest version; None when empty."""
+    target = version if version is not None else latest_program_version(base_dir)
+    if target is None:
+        return None
+    path = _program_path(base_dir, target)
+    if not path.exists():
+        msg = f"program version {target} does not exist"
+        raise ValueError(msg)
+    text = path.read_text(encoding="utf-8")
+    _, frontmatter_text, body = text.split("---\n", 2)
+    return yaml.safe_load(frontmatter_text), body.strip()
