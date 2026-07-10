@@ -5,21 +5,34 @@ is converted (headings, bullets, bold); everything else is escaped plain text,
 so athlete/agent content can never execute as Typst code.
 """
 
+import re
+
 # Order matters: backslash first, then Typst's special characters.
-_SPECIALS = "\\#$*_@[]<>`^"
+# "/" neutralizes // and /* */ comments (recognized anywhere in Typst markup);
+# "=" and "+" neutralize line-start heading/enum syntax uniformly.
+_SPECIALS = "\\#$*_@[]<>`^/=+"
+
+# On an already-escaped line, a markdown "**" appears as "\*\*"; only complete
+# open/close pairs become Typst bold — an unmatched "\*\*" stays literal.
+_BOLD_PAIR = re.compile(r"\\\*\\\*(.+?)\\\*\\\*")
 
 
 def escape_typst(text: str) -> str:
-    """Escape every Typst-significant character in plain text."""
+    """Escape every Typst-significant character in plain text.
+
+    Line boundaries (LF, CRLF, and other Unicode line separators) collapse to
+    a single space first, so escaped text can never introduce new lines and
+    smuggle in Typst line-start syntax such as headings or list items.
+    """
+    text = " ".join(text.splitlines())
     for char in _SPECIALS:
         text = text.replace(char, "\\" + char)
     return text
 
 
 def _convert_bold(line: str) -> str:
-    """Convert markdown **bold** to Typst *bold* on an ALREADY-ESCAPED line."""
-    # after escaping, "**" appears as "\*\*"
-    return line.replace("\\*\\*", "*")
+    """Convert complete markdown **bold** pairs on an ALREADY-ESCAPED line."""
+    return _BOLD_PAIR.sub(r"*\1*", line)
 
 
 def markdown_to_typst(markdown: str) -> str:
