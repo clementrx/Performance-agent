@@ -6,7 +6,8 @@ description: Use when a check-in fires a trigger (missed sessions, high fatigue,
 tools: [read_athlete, get_time_context, read_program, read_sessions, read_checkins,
         compute_session_load, compute_weekly_loads, compute_acwr,
         assess_endurance_goal, prescribe_load, estimate_1rm,
-        build_periodization_waves, check_citations, save_program]
+        build_periodization_waves, search_evidence, get_citation,
+        check_citations, save_program]
 ---
 
 # Program Adaptation
@@ -48,6 +49,11 @@ tools (`prescribe_load` from a fresh `estimate_1rm` for strength; the pace tools
 endurance) — never carry stale numbers forward. If you rebuild waves via
 `build_periodization_waves`, apply the factors to the recomputed loads/paces — a
 wave you don't apply is decoration (see program-generation §2).
+
+- Citation repair: when a render was refused for unknown references, locate the
+  offending claims, replace each with a `search_evidence`-backed citation rendered
+  via `get_citation` (or drop the claim), and save vN+1 with reason "citation
+  repair".
 
 ## 3. Confirm, then version
 
