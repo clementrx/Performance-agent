@@ -9,10 +9,12 @@ from pathlib import Path
 
 import yaml
 
-from performance_agent.memory.schemas import Goal, Profile
+from performance_agent.memory.schemas import CheckinEntry, Goal, Profile, SessionEntry
 
 PROFILE_FILE = "profile.yaml"
 GOALS_FILE = "goals.yaml"
+SESSIONS_FILE = "sessions.jsonl"
+CHECKINS_FILE = "checkins.jsonl"
 
 
 def _atomic_write(path: Path, content: str) -> None:
@@ -74,3 +76,41 @@ def upsert_goal(base_dir: Path, goal: Goal) -> list[Goal]:
         _to_yaml([g.model_dump(mode="json") for g in goals]),
     )
     return goals
+
+
+def _append_jsonl(path: Path, json_line: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json_line + "\n")
+
+
+def append_session(base_dir: Path, entry: SessionEntry) -> None:
+    """Append one completed session to the append-only log."""
+    _append_jsonl(base_dir / SESSIONS_FILE, entry.model_dump_json())
+
+
+def read_sessions(base_dir: Path) -> list[SessionEntry]:
+    """Return all logged sessions in insertion order."""
+    path = base_dir / SESSIONS_FILE
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [SessionEntry.model_validate_json(line) for line in lines if line.strip()]
+
+
+def append_checkin(base_dir: Path, entry: CheckinEntry) -> CheckinEntry:
+    """Append a check-in; fills days_since_last from the previous one when unset."""
+    previous = read_checkins(base_dir)
+    if entry.days_since_last is None and previous:
+        entry = entry.model_copy(update={"days_since_last": (entry.at - previous[-1].at).days})
+    _append_jsonl(base_dir / CHECKINS_FILE, entry.model_dump_json())
+    return entry
+
+
+def read_checkins(base_dir: Path) -> list[CheckinEntry]:
+    """Return all logged check-ins in insertion order."""
+    path = base_dir / CHECKINS_FILE
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [CheckinEntry.model_validate_json(line) for line in lines if line.strip()]
