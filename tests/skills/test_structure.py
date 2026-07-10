@@ -11,7 +11,7 @@ EXPECTED_SKILLS = {
 
 
 def test_all_expected_skills_exist(skills):
-    assert {s.frontmatter["name"] for s in skills} >= {"performance-coach"}
+    assert {s.frontmatter["name"] for s in skills} == EXPECTED_SKILLS
 
 
 def test_every_skill_has_wellformed_frontmatter(skills):
@@ -76,3 +76,32 @@ def test_generation_skill_protocol(skills):
         "purpose",
     ):
         assert needle in body, f"generation skill lost: {needle}"
+
+
+def test_checkin_skill_protocol(skills):
+    checkin = next(s for s in skills if s.frontmatter["name"] == "training-checkin")
+    body = checkin.body.casefold()
+    for needle in (
+        "get_time_context",
+        "log_checkin",
+        "log_session",
+        "pain",
+        "adherence",
+        "fatigue",
+    ):
+        assert needle in body, f"checkin skill lost: {needle}"
+
+
+def test_adaptation_skill_protocol(skills):
+    adaptation = next(s for s in skills if s.frontmatter["name"] == "program-adaptation")
+    body = adaptation.body.casefold()
+    for needle in (
+        "read_sessions",
+        "read_checkins",
+        "compute_acwr",
+        "compute_weekly_loads",
+        "save_program",
+        "reason",
+        "confirm",
+    ):
+        assert needle in body, f"adaptation skill lost: {needle}"
