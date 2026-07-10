@@ -19,6 +19,8 @@ GOALS_FILE = "goals.yaml"
 SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
 PROGRAMS_DIR = "programs"
+_FRONTMATTER_DELIMITER = "---\n"
+_FRONTMATTER_DELIMITER_COUNT = 2
 
 
 def _atomic_write(path: Path, content: str) -> None:
@@ -36,12 +38,16 @@ def _to_yaml(data: object) -> str:
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
 
-def _load_yaml(path: Path) -> object:
+def _parse_yaml(text: str, path: Path) -> object:
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8"))
+        return yaml.safe_load(text)
     except yaml.YAMLError as exc:
         msg = f"{path} contains invalid YAML: {exc}"
         raise ValueError(msg) from exc
+
+
+def _load_yaml(path: Path) -> object:
+    return _parse_yaml(path.read_text(encoding="utf-8"), path)
 
 
 def _validated[T](path: Path, parse: Callable[[], T]) -> T:
@@ -149,7 +155,7 @@ def latest_program_version(base_dir: Path) -> int | None:
     versions = [
         int(stem)
         for path in programs_dir.glob("program-v*.md")
-        if (stem := path.stem.removeprefix("program-v")).isdigit()
+        if (stem := path.stem.removeprefix("program-v")).isdigit() and str(int(stem)) == stem
     ]
     return max(versions) if versions else None
 
@@ -198,5 +204,19 @@ def read_program(
         msg = f"program version {target} does not exist"
         raise ValueError(msg)
     text = path.read_text(encoding="utf-8")
-    _, frontmatter_text, body = text.split("---\n", 2)
-    return yaml.safe_load(frontmatter_text), body.strip()
+    if text.count(_FRONTMATTER_DELIMITER) < _FRONTMATTER_DELIMITER_COUNT:
+        msg = f"{path} is missing YAML frontmatter delimited by '---' lines"
+        raise ValueError(msg)
+    _, frontmatter_text, body = text.split(_FRONTMATTER_DELIMITER, 2)
+    raw = _parse_yaml(frontmatter_text, path)
+    if not isinstance(raw, dict):
+        msg = f"{path} frontmatter must be a YAML mapping"
+        raise ValueError(msg)
+    frontmatter: dict[str, object] = {str(key): value for key, value in raw.items()}
+    if frontmatter.get("version") != target:
+        msg = (
+            f"{path} frontmatter declares version {frontmatter.get('version')} "
+            f"but the filename says {target}"
+        )
+        raise ValueError(msg)
+    return frontmatter, body.strip()

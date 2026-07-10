@@ -70,3 +70,39 @@ def test_program_body_may_contain_frontmatter_delimiters(tmp_path):
     save_program(tmp_path, body, "sub-45-10k", today=TODAY)
     _, read_body = _read_program(tmp_path)
     assert read_body == body
+
+
+def test_non_canonical_filenames_are_ignored(tmp_path):
+    save_program(tmp_path, "v1", "sub-45-10k", today=TODAY)
+    (tmp_path / "programs" / "program-v02.md").write_text("stray", encoding="utf-8")
+    (tmp_path / "programs" / "program-vX.md").write_text("stray", encoding="utf-8")
+    assert latest_program_version(tmp_path) == 1
+    frontmatter, _ = _read_program(tmp_path)
+    assert frontmatter["version"] == 1
+
+
+def test_program_without_frontmatter_names_the_file(tmp_path):
+    programs = tmp_path / "programs"
+    programs.mkdir()
+    (programs / "program-v1.md").write_text("just a body", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"program-v1\.md"):
+        read_program(tmp_path)
+
+
+def test_program_with_corrupt_frontmatter_names_the_file(tmp_path):
+    programs = tmp_path / "programs"
+    programs.mkdir()
+    (programs / "program-v1.md").write_text("---\n{{bad\n---\n\nbody\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"program-v1\.md"):
+        read_program(tmp_path)
+
+
+def test_frontmatter_version_must_match_filename(tmp_path):
+    save_program(tmp_path, "body", "sub-45-10k", today=TODAY)
+    path = tmp_path / "programs" / "program-v1.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("version: 1", "version: 99"),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="99"):
+        read_program(tmp_path)
