@@ -172,3 +172,83 @@ async def test_verify_reference_handles_malformed_input_without_raising(client):
     result = await client.call_tool("verify_reference", {"doi": "not a real doi with spaces"})
     assert not result.isError
     assert result.structuredContent["ok"] is False
+
+
+def _live_entry_payload(**overrides) -> dict:
+    data = {
+        "id": "live-javelin-review",
+        "title": "Javelin throw training review",
+        "authors": ["Doe J"],
+        "year": 2021,
+        "study_type": "systematic_review",
+        "conclusions": "Periodized throwing volume improves distance over a macrocycle.",
+        "evidence_level": "strong",
+        "doi": "10.1000/javelin-review",
+    }
+    data.update(overrides)
+    return data
+
+
+@pytest.mark.anyio
+async def test_save_evidence_persists_and_is_immediately_searchable(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "Javelin throw training review", "resolved via Crossref"
+        ),
+    )
+
+    save_result = await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+    assert not save_result.isError
+    assert save_result.structuredContent["path"].endswith("evidence_extra.yaml")
+
+    search_result = await client.call_tool("search_evidence", {"query": "javelin throw training"})
+    ids = {hit["id"] for hit in search_result.structuredContent["hits"]}
+    assert "live-javelin-review" in ids
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_unresolvable_locator(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            False, None, "DOI did not resolve: 10.1000/javelin-review"
+        ),
+    )
+
+    result = await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+    assert result.isError
+    assert "could not verify" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_grading_ceiling_violation(client):
+    # a cross_sectional study cannot be graded "strong" — schemas.py enforces this
+    result = await client.call_tool(
+        "save_evidence",
+        {
+            "entry": _live_entry_payload(
+                id="live-overgraded", study_type="cross_sectional", evidence_level="strong"
+            )
+        },
+    )
+    assert result.isError
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_id_collision(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "Javelin throw training review", "resolved via Crossref"
+        ),
+    )
+    await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+    result = await client.call_tool(
+        "save_evidence", {"entry": _live_entry_payload(doi="10.1000/other-doi")}
+    )
+    assert result.isError
+    assert "live-javelin-review" in result.content[0].text

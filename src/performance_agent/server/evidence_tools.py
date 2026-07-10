@@ -15,6 +15,7 @@ from performance_agent.evidence.citations import find_unknown_references, format
 from performance_agent.evidence.corpus import load_corpus
 from performance_agent.evidence.index import EvidenceIndex
 from performance_agent.evidence.live_search import run_live_search
+from performance_agent.evidence.personal_corpus import append_entry
 from performance_agent.evidence.schemas import STARS, EvidenceEntry, EvidenceLevel, StudyType
 from performance_agent.evidence.verify import resolve_reference
 
@@ -66,6 +67,12 @@ class ReferenceResolution(TypedDict):
     ok: bool
     title: str | None
     detail: str
+
+
+class WrittenFile(TypedDict):
+    """Path of the file the tool just wrote."""
+
+    path: str
 
 
 class CitationResult(TypedDict):
@@ -203,6 +210,27 @@ def verify_reference(doi: str | None = None, pmid: str | None = None) -> Referen
     return ReferenceResolution(ok=resolved.ok, title=resolved.title, detail=resolved.detail)
 
 
+def save_evidence(entry: EvidenceEntry) -> WrittenFile:
+    """Persist a verified, graded study to your personal evidence corpus.
+
+    The entry is re-verified here (its DOI/PMID must resolve) regardless of what
+    you were told earlier by search_evidence_live or verify_reference — this tool
+    never trusts a self-reported verified flag. The grading ceiling
+    (schemas.GRADING_CEILING) still applies: you cannot save a cross-sectional
+    study as "strong". Once saved, the entry is immediately searchable via
+    search_evidence.
+    """
+    resolved = resolve_reference(entry.doi, entry.pmid)
+    if not resolved.ok:
+        msg = f"{entry.id}: could not verify before saving — {resolved.detail}"
+        raise ValueError(msg)
+    verified_entry = entry.model_copy(update={"verified": True})
+    known_ids = {e.id for e in load_corpus()}
+    path = append_entry(verified_entry, known_ids)
+    _index.cache_clear()
+    return WrittenFile(path=str(path))
+
+
 def register(mcp: FastMCP) -> None:
     """Register every evidence tool on the server."""
     for tool in (
@@ -211,5 +239,6 @@ def register(mcp: FastMCP) -> None:
         check_citations,
         search_evidence_live,
         verify_reference,
+        save_evidence,
     ):
         mcp.tool()(tool)
