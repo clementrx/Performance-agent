@@ -40,9 +40,12 @@ class EvidenceIndex:
     def __init__(self, entries: list[EvidenceEntry]) -> None:
         """Build the in-memory FTS5 index from corpus entries."""
         self._entries = {entry.id: entry for entry in entries}
+        # Process-lifetime singleton (built once via lru_cache in the tools layer);
+        # the :memory: connection is intentionally never closed.
         self._db = sqlite3.connect(":memory:")
         self._db.execute(
-            "CREATE VIRTUAL TABLE evidence USING fts5(id UNINDEXED, title, conclusions, population)"
+            "CREATE VIRTUAL TABLE evidence USING fts5("
+            "id UNINDEXED, title, conclusions, population, tokenize='porter unicode61')"
         )
         self._db.executemany(
             "INSERT INTO evidence (id, title, conclusions, population) VALUES (?, ?, ?, ?)",

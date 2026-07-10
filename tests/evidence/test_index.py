@@ -47,6 +47,13 @@ def test_search_finds_by_content_and_ranks_relevant_first():
     assert hits[0].entry.id == "strength-economy"
 
 
+def test_stemmed_variants_match():
+    index = EvidenceIndex(ENTRIES)
+    hits = index.search("taper")
+    assert hits
+    assert hits[0].entry.id == "taper-performance"
+
+
 def test_search_respects_limit():
     index = EvidenceIndex(ENTRIES)
     assert len(index.search("performance training injury", limit=1)) == 1
