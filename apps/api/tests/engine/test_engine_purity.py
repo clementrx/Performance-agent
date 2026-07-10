@@ -26,6 +26,8 @@ def iter_imported_modules(path: Path):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 yield alias.name
+        # Bare relative imports (`from . import x`) have module=None and are
+        # invisible here; ruff's TID ban-relative-imports covers them repo-wide.
         elif isinstance(node, ast.ImportFrom) and node.module is not None:
             yield node.module
 

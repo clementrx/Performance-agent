@@ -74,6 +74,7 @@ Each engine module has one responsibility and no dependency on the others (excep
 **Files:**
 - Create: `.gitignore`, `LICENSE`, `README.md`
 - Create: `apps/api/pyproject.toml`
+- Create: `apps/api/README.md` (required by uv: pyproject readme field)
 - Create: `apps/api/src/performance_agent/__init__.py`
 - Create: `apps/api/src/performance_agent/engine/__init__.py`
 - Create: `apps/api/tests/engine/__init__.py`
@@ -328,6 +329,12 @@ actionlint .github/workflows/ci.yml && zizmor .github/workflows/ci.yml
 ```
 Expected: no findings from either tool (zizmor may need `--no-online-audits` offline).
 
+**As-built deviations:** after review, the workflow gained a `concurrency` block
+(cancel superseded runs on the same ref) and `apps/api/.python-version` was added to
+pin the interpreter uv resolves. The `pytest` step also briefly tolerated exit code 5
+(empty test suite) until Task 4 landed the first tests, at which point that tolerance
+was removed again.
+
 - [ ] **Step 3: Commit**
 
 ```bash
@@ -453,6 +460,12 @@ def load_for_percentage(one_rm_kg: float, percentage: float) -> float:
     return one_rm_kg * percentage
 ```
 
+**As-built deviations:** the shipped `strength.py` rejects non-integer and boolean
+`reps` (`"reps must be a whole number"`), and tests were added for accepted boundary
+values. Brzycki later gained the same `reps == 1` early-return guard as Epley — a
+Hypothesis counterexample surfaced `100 * 36 / 36` landing one ULP below `100.0` due to
+floating-point rounding, fixed in Task 9's commits.
+
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/engine/test_strength.py -v`
@@ -567,6 +580,11 @@ def pace_s_per_km(distance_m: float, time_s: float) -> float:
         raise ValueError(msg)
     return time_s / (distance_m / 1000)
 ```
+
+**As-built deviations:** the shipped `endurance.py` additionally enforces the Riegel
+model's validity band — both `known_distance_m` and `target_distance_m` must fall
+within `[RIEGEL_MIN_DISTANCE_M, RIEGEL_MAX_DISTANCE_M]` (1500 to 42195 m) — and rejects
+`exponent` outside `(0, MAX_RIEGEL_EXPONENT]` (1.3), raising `ValueError` for both.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -701,6 +719,11 @@ def acute_chronic_ratio(daily_loads: Sequence[float]) -> float | None:
     acute = sum(window[-DAYS_PER_WEEK:]) / DAYS_PER_WEEK
     return acute / chronic
 ```
+
+**As-built deviations:** the shipped `load.py` rejects non-finite daily loads
+(`math.isfinite`), documents that `acute_chronic_ratio` computes the *coupled* ACWR
+(the acute window sits inside the chronic window, inflating self-correlation) directly
+in its docstring, and adds whole-number guards on `rpe` and `duration_min`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -903,6 +926,11 @@ def endurance_feasibility(
     )
 ```
 
+**As-built deviations:** `FeasibilityResult` gained `improvement_needed` as its first
+field (alongside the existing rates). The module docstring discloses that the model
+assumes a constant achievable rate over arbitrary horizons and no asymptotic
+performance limit, so long-horizon and already-met verdicts are optimistic.
+
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/engine/test_feasibility.py -v`
@@ -1071,6 +1099,11 @@ def build_weekly_waves(
     return waves
 ```
 
+**As-built deviations:** `volume_ramp` and `deload_volume` were demoted from function
+parameters to module constants (`DEFAULT_VOLUME_RAMP`, `DELOAD_VOLUME = 0.6`) — they
+were never varied by callers. The shipped signature is
+`build_weekly_waves(total_weeks, *, deload_every=4, taper_weeks=1)`.
+
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/engine/test_periodization.py -v`
@@ -1097,7 +1130,7 @@ git commit -m "Add engine.periodization: weekly waves with deloads and taper"
 Create `apps/api/tests/engine/test_properties.py`:
 
 ```python
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis import strategies as st
 
 from performance_agent.engine import (
@@ -1110,7 +1143,7 @@ from performance_agent.engine.feasibility import TrainingAge
 
 loads = st.floats(min_value=1, max_value=500, allow_nan=False)
 times = st.floats(min_value=60, max_value=36000, allow_nan=False)
-distances = st.floats(min_value=1000, max_value=42195, allow_nan=False)
+riegel_distances = st.floats(min_value=1500, max_value=42195, allow_nan=False)
 
 
 @given(load_kg=loads, reps=st.integers(min_value=1, max_value=11))
@@ -1123,9 +1156,11 @@ def test_one_rm_is_at_least_the_lifted_load(load_kg, reps):
     assert one_rm_epley(load_kg, reps) >= load_kg
 
 
-@given(known_d=distances, known_t=times, factor=st.floats(min_value=1.01, max_value=4))
-def test_riegel_longer_distance_takes_longer(known_d, known_t, factor):
-    assert riegel_predict(known_d, known_t, known_d * factor) > known_t
+@given(d1=riegel_distances, d2=riegel_distances, known_t=times)
+def test_riegel_longer_distance_takes_longer(d1, d2, known_t):
+    assume(abs(d2 - d1) > 1.0)
+    lo, hi = min(d1, d2), max(d1, d2)
+    assert riegel_predict(lo, known_t, hi) > known_t
 
 
 @given(
@@ -1148,6 +1183,18 @@ def test_waves_cover_every_week_with_positive_factors(total_weeks, deload_every)
     assert len(waves) == total_weeks
     assert all(w.volume_factor > 0 and w.intensity_factor > 0 for w in waves)
 ```
+
+**As-built deviations:** the plan's original `test_riegel_longer_distance_takes_longer`
+(drawing `known_d` from a 1000-42195 m strategy and multiplying by a random `factor`)
+was latently broken against the Riegel validity band `endurance.py` enforces (Task 5's
+as-built deviation) — `known_d * factor` can land above 42195 m or the distances can be
+lower than the 1500 m floor, both now rejected with `ValueError`. The as-built version
+above draws both endpoints from `riegel_distances` (1500-42195 m), discards draws closer
+than 1 m apart with `assume`, and orders them low-to-high before calling
+`riegel_predict`. Properties were later parametrized over both 1RM formulas
+(`one_rm_formulas = st.sampled_from([one_rm_epley, one_rm_brzycki])`) and extended with
+load-conservation (`weekly_loads` sums equal the input total), ACWR non-negativity, and
+week-numbering properties.
 
 - [ ] **Step 2: Run tests to verify they fail**
 
@@ -1301,8 +1348,12 @@ git commit -m "Add architectural test enforcing engine purity"
 
 ### Task 11: Final verification sweep
 
+**As-built deviations:** the README-engine-section step below moved to a dedicated
+follow-up task — a full README rewrite is planned separately, so this plan's closeout
+no longer touches `README.md`.
+
 **Files:**
-- Modify: `README.md` (engine section)
+- Modify: `README.md` (engine section) — **superseded, see note above**
 
 - [ ] **Step 1: Run the complete quality gate**
 
