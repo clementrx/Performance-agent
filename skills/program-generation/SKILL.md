@@ -29,7 +29,12 @@ label that part of the plan as coaching judgment.
 - Weeks available: quote `get_time_context`.
 - Call `build_periodization_waves` (choose deload_every and taper_weeks to fit the
   goal; racing goals get a taper, strength peaks usually 1 taper week).
-- Map waves onto weekly session slots from profile.availability. Respect
+- The waves are multipliers against YOUR baseline week: define the baseline
+  (week-1 volumes and intensities), then scale each week by its volume_factor
+  (sets/duration) and intensity_factor (the %1RM you pass to `prescribe_load`, the
+  pace effort you target). A wave you don't apply to the numbers is decoration.
+- Map waves onto weekly session slots from profile.availability. Confirm
+  availability is still current before laying out the week. Respect
   sessions_per_week strictly — a plan the athlete cannot attend is a failed plan.
 
 ## 3. Sessions
@@ -37,7 +42,15 @@ label that part of the plan as coaching judgment.
 For each week, write concrete sessions. Every hard prescription must be computed:
 - Strength loads: `estimate_1rm` from a recent set → `prescribe_load` for the
   percentage you program. Never guess a load in kg.
-- Running paces: `predict_race_time` / `compute_pace` from a current benchmark.
+- Running paces: only RACE pace at a distance is computable (`predict_race_time` /
+  `compute_pace` from a current benchmark; note the tools enforce 1500 m–marathon).
+  Easy, threshold, and interval paces are coaching-judgment DERIVATIONS from race
+  pace — label the NUMBER itself "coaching judgment (derived from race pace)",
+  never present a derived pace as tool-computed. Never guess a pace, same rule as
+  loads.
+- No recent set or benchmark to compute from (e.g. the goal was assessed off a
+  derived estimate)? Open the program with a benchmark/test week and label the
+  early loads provisional — do not guess a number to fill the gap.
 - Each session line carries: what, sets×reps or duration, the computed load/pace,
   rest, and a one-line **purpose**. Purposes backed by evidence carry the corpus
   citation and its **stars**; purposes without corpus backing are labeled
@@ -54,6 +67,11 @@ to confirm the weekly layout before you save.
 
 - Run `check_citations` over the full program text; fix anything flagged.
 - `save_program` (markdown body; goal_id; v1 needs no reason). Quote the saved
-  version and path back.
+  version and path back. Check `read_athlete`'s program_version first: versioning
+  is GLOBAL across the athlete directory, so if ANY program already exists this
+  save is v2+ and REQUIRES a reason (e.g. "first program for new goal
+  sub-45-10k"). Only a truly first-ever program is v1.
+- Carry the assessment's named risks and checkpoints into the program's check-in
+  triggers.
 - Close with: how to log sessions (`log_session`), when the first check-in happens
   (Mode B), and what would trigger an early adaptation.
