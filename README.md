@@ -86,12 +86,11 @@ subscription — **zero additional LLM cost**.
   honest goal assessment with counter-proposals, evidence-cited program generation,
   structured check-ins, versioned adaptation — each eval-guarded against tool drift
   and fabricated references
+- ✅ Typst PDF reports (coach & expert modes, en/fr/es) behind a hard citation gate —
+  a program citing anything outside the corpus refuses to render
 
 **MVP in progress** — running (5K–marathon) and barbell-strength verticals first
-- 🔜 Report MCP tools
 - 🔜 Corpus growth toward ~200 studies (ongoing curation)
-- 🔜 Professional PDF reports (coach mode: terse · expert mode: full scientific
-  rationale) in 🇬🇧 English · 🇫🇷 Français · 🇪🇸 Español
 
 **Roadmap**
 - **V2:** outcome simulation (Banister fitness–fatigue + Monte Carlo), nutrition &

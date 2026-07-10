@@ -8,6 +8,8 @@ PyPI release, install from a local clone.
 - [`uv`](https://docs.astral.sh/uv/getting-started/installation/) — the only thing you
   need to install yourself; it fetches the right Python (3.13) automatically.
 - One of the three agent CLIs below, already working.
+- [`typst`](https://typst.app) — only needed for PDF reports (`brew install typst`);
+  everything else works without it.
 
 ```bash
 git clone https://github.com/<your-org>/performance-agent
@@ -105,8 +107,9 @@ the server entry.)
 
 Some CLIs only pick up new servers on restart — reload the session first.
 
-Ask your agent: *"List the performance-agent tools."* You should see 22 tools (9
-engine + 10 memory + 3 evidence: assess_endurance_goal, read_athlete, search_evidence, …).
+Ask your agent: *"List the performance-agent tools."* You should see 23 tools (9
+engine + 10 memory + 3 evidence + 1 report: assess_endurance_goal, read_athlete,
+search_evidence, …).
 
 Also verify the coaching skills (see the section above): ask what the
 performance-coach skill's session ritual is.
