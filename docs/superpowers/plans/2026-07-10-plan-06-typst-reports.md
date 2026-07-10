@@ -892,3 +892,73 @@ machine, setup-typst SHA/version resolved, final suite count.
 - **Known uncertainties, handled in-plan:** _convert_bold rebuild (simplify-and-report
   fallback); ruff noqa needs; setup-typst action inputs (check README live);
   frontmatter dict access via str()/int() casts (established Plan 03 pattern).
+
+## As-Built Deviations
+
+- **T1 (848a51e, f457c18):** shipped with security hardening beyond the plan's
+  draft. `_SPECIALS` was extended from `"\\#$*_@[]<>`^"` to add `/=+`, neutralizing
+  `//`/`/* */` comment syntax and line-start heading/enum syntax (`=`, `+`) inside
+  escaped text. `escape_typst` now collapses all line boundaries (`splitlines()` +
+  `" ".join`) before escaping, so escaped text can never smuggle in a newline and
+  therefore can never forge Typst line-start syntax. `_convert_bold` was rewritten
+  from the plan's index-based `\*\*`-split rebuild (which the plan itself flagged as
+  possibly reading wrong, with a "simplify to `.replace`" fallback) to a
+  balance-aware regex, `_BOLD_PAIR = re.compile(r"\\\*\\\*(.+?)\\\*\\\*")`, so only
+  complete open/close `**` pairs convert to Typst bold and an unmatched `\*\*` stays
+  literal — neither the plan's original dead-branch rebuild nor its literal fallback
+  shipped. The plan's proposed test assertion `assert "#eval" not in out` (step 1,
+  `test_hostile_injection_cannot_escape_into_code`) was dropped as logically
+  impossible to satisfy alongside `assert "\\#eval" in out` in the same test — the
+  escaped form `\#eval` necessarily contains `#eval` as a substring — and replaced
+  with a comment explaining why, keeping only the escaped-form assertion.
+
+- **T2 (d6a1237):** `tests/reports/test_source.py` builds `ReportContext` variants
+  with `dataclasses.replace(CONTEXT, ...)` instead of the plan's proposed
+  `ReportContext(**{**CONTEXT.__dict__, ...})` splat (lines 265/273 of the original
+  draft) — `ty` treats the `__dict__` splat as untyped, `dataclasses.replace` is the
+  type-safe equivalent for a frozen dataclass. The same impossible-substring-assertion
+  fix from T1 was applied in `test_athlete_text_cannot_inject_typst`: `"#eval(...)"
+  not in source` was dropped in favor of asserting only the escaped `"\\#eval" in
+  source`, with the same explanatory comment.
+
+- **T3 (3e5aecb, 3da3f3c):** typst 0.15.0 was installed locally via `brew install
+  typst` to develop and test the renderer against a real binary. The plan's proposed
+  `# noqa: S603` on `subprocess.run` was never added — `S` (flake8-bandit) is not in
+  this project's `ruff.lint.select` list (`pyproject.toml`), so ruff never flags
+  S603 and the noqa would itself be a bare/unused-noqa violation. Two noqas the plan
+  didn't anticipate were needed in `tests/reports/test_renderer.py`: `# noqa: RUF043`
+  on a `pytest.raises(..., match="10.9999/fake")` (literal-string regex match) and
+  `# noqa: PLC0415` on a test-local `from performance_agent.evidence.corpus import
+  load_corpus`. Post-review (commit 3da3f3c, after the initial T3 commit landed),
+  `subprocess.TimeoutExpired` was caught explicitly and re-raised as `ValueError`
+  with a readable "typst compile timed out after {N}s" message, instead of letting
+  the raw `TimeoutExpired` propagate uncaught.
+
+- **T5 (9e27769, 9186bf1):** the program-report skill's "If the render fails" prose
+  was worded differently from the plan's draft. The plan's line ("replace the claim
+  with a `search_evidence`-backed one") named a tool the skill doesn't declare
+  (`tools:` frontmatter for program-report lists only `read_athlete`, `read_program`,
+  `check_citations`, `render_report`); `tests/skills/test_tool_references.py::
+  test_bodies_do_not_reference_undeclared_tools` would have failed, so the shipped
+  text reads "replace the claim with an evidence-corpus-backed one" instead. Beyond
+  the plan's scope, `skills/program-adaptation/SKILL.md` was extended post-review
+  (9186bf1) to add `search_evidence` and `get_citation` to its declared tools and a
+  new "Citation repair" protocol bullet: when a render is refused for unknown
+  references, locate the offending claims, replace each with a `search_evidence`-
+  backed citation rendered via `get_citation` (or drop the claim), and save vN+1
+  with reason "citation repair" — closing the loop the report skill's failure path
+  routes into.
+
+- **T6 (0fbe528):** `typst-community/setup-typst` was pinned to `v5` at
+  `63ac138db421d586de61f7f5ac3bcef6a2e6c78c`, with `typst-version: '0.15.0'` pinned
+  via the action's input (matching the locally installed version). Unlike the SHA
+  resolution in Plan 01, the plan's documented dereference step (`gh api
+  .../git/tags/<sha>` to unwrap an annotated tag) was not needed: `gh api
+  repos/typst-community/setup-typst/git/ref/tags/v5` resolves directly to a
+  `"type": "commit"` object — `v5` is a lightweight tag, so the ref SHA already is
+  the commit SHA.
+
+- **Final suite count:** 282 tests passed (`rtk proxy uv run pytest`), matching the
+  count recorded at the start of this plan — no net test count change from Task 7
+  itself (Task 7 only runs the gate and documents deviations; all test additions
+  happened in T1-T6).
