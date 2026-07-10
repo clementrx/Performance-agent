@@ -395,3 +395,41 @@ action SHAs, license-file packaging outcome, final suite count).
   are intentional maintainer-fill markers, documented as such.
 - **Type consistency:** wheel_path fixture used by all five packaging tests; no
   cross-task code references.
+
+## As-Built Deviations
+
+- **PyPI name check (T1 step 1):** `performance-agent` returned `404` from
+  `https://pypi.org/pypi/performance-agent/json` — the name is free. No rename needed;
+  RELEASING.md's one-time-setup step 1 still tells the maintainer to re-verify at
+  release time.
+- **License-files contingency (T1 step 2 note):** triggered. The first packaging-test
+  run showed the wheel missing `licenses/LICENSE`, so `license-files = ["LICENSE"]` was
+  added to `[project]` in the same commit (874ce12) rather than as a follow-up — the
+  plan's contingency path, not a deviation in outcome.
+- **`pypa/gh-action-pypi-publish` SHA (T2 step 1):** resolved to `v1.14.0` at
+  `cef221092ed1bacb1cc03d23a2d87d1d172e277b`. The GitHub release tag was an annotated
+  tag; the SHA in the workflow is the dereferenced commit SHA (via
+  `git/tags/<tag-object-sha>`), not the tag-object SHA itself, per actions-SHA-pinning
+  convention.
+- **zizmor cache-poisoning fixes (T2 step 3):** zizmor flagged `astral-sh/setup-uv`'s
+  default cache behavior as a cache-poisoning risk on both the `gate` and `publish`
+  jobs; both `setup-uv` steps were pinned with `enable-cache: false` to clear the
+  finding. `actionlint` + `uvx zizmor` are clean on both workflows as a result.
+- **RELEASING.md step 3 correction (T4 step 1):** the plan's draft text named
+  `docs/installing.md` and "CONTRIBUTING.md's clone line" as placeholder-URL
+  locations; CONTRIBUTING.md's clone line has no `<your-org>` placeholder (it's a
+  generic `git clone <this repo>` instruction), so the as-built step 3 only points at
+  `docs/installing.md`.
+- **RELEASING.md sdist bullet (T4 step 1, added):** a sixth one-time-setup bullet was
+  added, not in the plan's draft: the sdist currently ships the build-sufficient set
+  only (no `tests/`); if downstream distros ever need test-in-build, uv_build's sdist
+  includes would need extending. Recorded for the maintainer, not acted on.
+- **Tag-version gate step (T5, post-review hardening):** a `tag must match pyproject
+  version` step was added to the `gate` job of `release.yml` (after `uv sync --locked`,
+  before the lint steps) — a review finding, not part of the original T2 plan. It reads
+  `[project.version]` via `tomllib` and fails the job if `v<version>` doesn't match
+  `GITHUB_REF_NAME`, so a tag/version mismatch fails fast in `gate` instead of
+  publishing a wheel with a mismatched version. `actionlint` and `uvx zizmor` stay
+  clean with no shell-quoting adjustments needed.
+- **Final suite count:** 290 passed (up from the 285 baseline the plan entered with —
+  the 5 packaging regression tests in Task 1 account for the delta).
