@@ -14,6 +14,9 @@ node_modules/
 # Athlete data (never commit — see docs/installing.md)
 athlete/
 
+# Git worktrees
+.worktrees/
+
 # Environment & editors
 .env
 .env.*
