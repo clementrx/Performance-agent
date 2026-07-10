@@ -68,7 +68,7 @@ subscription — **zero additional LLM cost**.
 ## Features
 
 **Working today**
-- ✅ Deterministic sports-science engine, 93 engine tests (179 total) incl. property-based (Hypothesis):
+- ✅ Deterministic sports-science engine, 93 engine tests (290 total) incl. property-based (Hypothesis):
   1RM estimation (Epley/Brzycki) · Riegel race prediction with enforced validity bounds ·
   session-RPE load & ACWR (with honest methodological caveats) · goal feasibility with
   explainable drivers · periodization waves (mesocycles, deloads, taper)

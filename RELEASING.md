@@ -8,11 +8,11 @@ local agent session. The repo is release-ready when this checklist completes.
 1. **Check the PyPI name.** https://pypi.org/project/performance-agent/ — if taken,
    pick a distribution name (e.g. performanceagent-coach), update `[project] name`
    in pyproject.toml, and re-run `uv run pytest tests/packaging`.
-2. **Create the GitHub repository** and push:
+2. **Create the GitHub repository** and push (tip: create it `--private` first, complete step 3, then flip to public — main is never public with a placeholder):
    ```bash
    gh repo create <org>/performance-agent --public --source . --push
    ```
-3. **Replace the placeholder URLs.** Search for `<your-org>` (docs/installing.md)
+3. **Replace the placeholder URLs.** Search for both `<your-org>` and `<org>` (docs/installing.md)
    and replace with the real org/repo. Add to pyproject.toml under `[project]`:
    ```toml
    [project.urls]
@@ -39,7 +39,7 @@ local agent session. The repo is release-ready when this checklist completes.
 3. The `release` workflow re-runs the full gate, builds, and publishes. Verify on
    PyPI, then smoke-test the published package:
    ```bash
-   uvx performance-agent@latest < /dev/null; echo "exit: $?"   # expect 0
+   uvx performance-agent@latest < /dev/null; echo "exit: $?"   # starts, exits cleanly on EOF
    claude mcp add performance-agent -- uvx performance-agent    # the post-PyPI form
    ```
 4. Update docs/installing.md to the `uvx` form (drop the `--directory` local-clone
