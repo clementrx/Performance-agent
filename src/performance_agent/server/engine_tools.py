@@ -5,16 +5,14 @@ itself. Docstrings become the tool descriptions the agent reads, so they
 state units, valid ranges, and honesty requirements.
 """
 
-from dataclasses import asdict
-
 from mcp.server.fastmcp import FastMCP
 
-from performance_agent.engine import TrainingAge, endurance_feasibility
+from performance_agent.engine import FeasibilityResult, TrainingAge, endurance_feasibility
 
 
 def assess_endurance_goal(
-    current_time_s: float, target_time_s: float, weeks: int, training_age: str
-) -> dict[str, float]:
+    current_time_s: float, target_time_s: float, weeks: int, training_age: TrainingAge
+) -> FeasibilityResult:
     """Score the feasibility of an endurance time goal (honest-coach verdict).
 
     Both times are in seconds over the same distance; training_age is one of
@@ -23,13 +21,7 @@ def assess_endurance_goal(
     weekly rates, their ratio). Always present the drivers alongside the
     probability, never the bare number.
     """
-    try:
-        age = TrainingAge(training_age)
-    except ValueError:
-        valid = ", ".join(a.value for a in TrainingAge)
-        msg = f"training_age must be one of: {valid}; got {training_age!r}"
-        raise ValueError(msg) from None
-    return asdict(endurance_feasibility(current_time_s, target_time_s, weeks, age))
+    return endurance_feasibility(current_time_s, target_time_s, weeks, training_age)
 
 
 def register(mcp: FastMCP) -> None:
