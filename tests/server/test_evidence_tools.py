@@ -5,6 +5,7 @@ import pytest
 import performance_agent.server.evidence_tools as evidence_tools_module
 from performance_agent.evidence.live_search import LiveCandidate, LiveSearchOutcome
 from performance_agent.evidence.schemas import StudyType
+from performance_agent.evidence.verify import ResolvedReference
 
 
 @pytest.fixture(autouse=True)
@@ -134,3 +135,33 @@ async def test_search_evidence_live_is_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}
     assert "search_evidence_live" in names
+
+
+@pytest.mark.anyio
+async def test_verify_reference_resolves_doi(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "A federation whitepaper", "resolved via Crossref"
+        ),
+    )
+    result = await client.call_tool("verify_reference", {"doi": "10.1000/whitepaper"})
+    assert not result.isError
+    assert result.structuredContent == {
+        "ok": True,
+        "title": "A federation whitepaper",
+        "detail": "resolved via Crossref",
+    }
+
+
+@pytest.mark.anyio
+async def test_verify_reference_reports_failure_without_raising(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(False, None, "DOI did not resolve: 10.1000/fake"),
+    )
+    result = await client.call_tool("verify_reference", {"doi": "10.1000/fake"})
+    assert not result.isError
+    assert result.structuredContent["ok"] is False

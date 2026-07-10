@@ -16,6 +16,7 @@ from performance_agent.evidence.corpus import load_corpus
 from performance_agent.evidence.index import EvidenceIndex
 from performance_agent.evidence.live_search import run_live_search
 from performance_agent.evidence.schemas import STARS, EvidenceEntry, EvidenceLevel, StudyType
+from performance_agent.evidence.verify import resolve_reference
 
 
 class EvidenceHit(TypedDict):
@@ -57,6 +58,14 @@ class LiveSearchResults(TypedDict):
 
     candidates: list[LiveCandidateResult]
     failed_sources: list[str]
+
+
+class ReferenceResolution(TypedDict):
+    """Whether a bare DOI/PMID resolves against Crossref/PubMed, and its title."""
+
+    ok: bool
+    title: str | None
+    detail: str
 
 
 class CitationResult(TypedDict):
@@ -182,7 +191,25 @@ def search_evidence_live(language_terms: dict[str, str]) -> LiveSearchResults:
     )
 
 
+def verify_reference(doi: str | None = None, pmid: str | None = None) -> ReferenceResolution:
+    """Confirm a DOI or PMID found via general web search actually resolves.
+
+    Call this before proposing save_evidence for anything found outside
+    search_evidence_live — e.g. a reference surfaced by a general web search for a
+    federation, thesis, or conference paper. Never save an entry whose locator did
+    not resolve here.
+    """
+    resolved = resolve_reference(doi, pmid)
+    return ReferenceResolution(ok=resolved.ok, title=resolved.title, detail=resolved.detail)
+
+
 def register(mcp: FastMCP) -> None:
     """Register every evidence tool on the server."""
-    for tool in (search_evidence, get_citation, check_citations, search_evidence_live):
+    for tool in (
+        search_evidence,
+        get_citation,
+        check_citations,
+        search_evidence_live,
+        verify_reference,
+    ):
         mcp.tool()(tool)
