@@ -165,3 +165,10 @@ async def test_verify_reference_reports_failure_without_raising(client, monkeypa
     result = await client.call_tool("verify_reference", {"doi": "10.1000/fake"})
     assert not result.isError
     assert result.structuredContent["ok"] is False
+
+
+@pytest.mark.anyio
+async def test_verify_reference_handles_malformed_input_without_raising(client):
+    result = await client.call_tool("verify_reference", {"doi": "not a real doi with spaces"})
+    assert not result.isError
+    assert result.structuredContent["ok"] is False

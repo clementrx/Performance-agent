@@ -117,3 +117,8 @@ def test_resolve_reference_doi_does_not_resolve(monkeypatch):
     resolved = resolve_reference("10.1000/missing", None)
     assert not resolved.ok
     assert "10.1000/missing" in resolved.detail
+
+
+def test_resolve_reference_handles_malformed_doi():
+    resolved = resolve_reference("not a real doi with spaces", None)
+    assert not resolved.ok

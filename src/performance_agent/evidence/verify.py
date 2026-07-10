@@ -6,6 +6,7 @@ whenever the manifest changes:
     uv run python -m performance_agent.evidence.verify
 """
 
+import http.client
 import json
 import re
 import sys
@@ -51,7 +52,7 @@ def fetch_json(url: str) -> dict | None:
     try:
         with urllib.request.urlopen(request, timeout=_TIMEOUT_S) as response:
             return json.loads(response.read().decode("utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, http.client.HTTPException):
         return None
 
 
