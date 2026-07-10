@@ -1,6 +1,5 @@
 import performance_agent.evidence.live_search as live_search_module
 from performance_agent.evidence.live_search import (
-    PUBMED_TYPE_MAP,  # noqa: F401 - asserts the map is exported as public API
     LiveCandidate,
     _map_pubmed_type,
     search_pubmed,
