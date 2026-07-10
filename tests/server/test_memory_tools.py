@@ -107,6 +107,13 @@ async def test_program_versioning_through_tools(client):
 
 
 @pytest.mark.anyio
+async def test_read_program_before_any_save_is_a_readable_error(client):
+    result = await client.call_tool("read_program", {})
+    assert result.isError
+    assert "save_program" in result.content[0].text
+
+
+@pytest.mark.anyio
 async def test_get_time_context_quotes_deltas(client):
     await client.call_tool("log_session", {"entry": {"performed_at": "2026-07-01T18:00:00"}})
     await client.call_tool(
