@@ -5,9 +5,11 @@ never deletes history: logs are append-only and program versions are immutable.
 """
 
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import yaml
+from pydantic import ValidationError
 
 from performance_agent.memory.schemas import CheckinEntry, Goal, Profile, SessionEntry
 
@@ -40,12 +42,20 @@ def _load_yaml(path: Path) -> object:
         raise ValueError(msg) from exc
 
 
+def _validated[T](path: Path, parse: Callable[[], T]) -> T:
+    try:
+        return parse()
+    except ValidationError as exc:
+        msg = f"{path} contains data that violates the schema: {exc}"
+        raise ValueError(msg) from exc
+
+
 def read_profile(base_dir: Path) -> Profile:
     """Return the stored profile, or a default Profile when none exists."""
     path = base_dir / PROFILE_FILE
     if not path.exists():
         return Profile()
-    return Profile.model_validate(_load_yaml(path) or {})
+    return _validated(path, lambda: Profile.model_validate(_load_yaml(path) or {}))
 
 
 def write_profile(base_dir: Path, profile: Profile) -> Path:
@@ -64,7 +74,7 @@ def read_goals(base_dir: Path) -> list[Goal]:
     if not isinstance(raw, list):
         msg = f"{path} must contain a YAML list of goals (each item starting with '- ')"
         raise ValueError(msg)
-    return [Goal.model_validate(item) for item in raw]
+    return _validated(path, lambda: [Goal.model_validate(item) for item in raw])
 
 
 def upsert_goal(base_dir: Path, goal: Goal) -> list[Goal]:
@@ -95,11 +105,17 @@ def read_sessions(base_dir: Path) -> list[SessionEntry]:
     if not path.exists():
         return []
     lines = path.read_text(encoding="utf-8").splitlines()
-    return [SessionEntry.model_validate_json(line) for line in lines if line.strip()]
+    return _validated(
+        path,
+        lambda: [SessionEntry.model_validate_json(line) for line in lines if line.strip()],
+    )
 
 
 def append_checkin(base_dir: Path, entry: CheckinEntry) -> CheckinEntry:
-    """Append a check-in; fills days_since_last from the previous one when unset."""
+    """Append a check-in; fills days_since_last from the previous one when unset.
+
+    days_since_last may be negative for backdated entries.
+    """
     previous = read_checkins(base_dir)
     if entry.days_since_last is None and previous:
         entry = entry.model_copy(update={"days_since_last": (entry.at - previous[-1].at).days})
@@ -113,4 +129,7 @@ def read_checkins(base_dir: Path) -> list[CheckinEntry]:
     if not path.exists():
         return []
     lines = path.read_text(encoding="utf-8").splitlines()
-    return [CheckinEntry.model_validate_json(line) for line in lines if line.strip()]
+    return _validated(
+        path,
+        lambda: [CheckinEntry.model_validate_json(line) for line in lines if line.strip()],
+    )

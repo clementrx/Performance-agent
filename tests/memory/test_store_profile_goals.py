@@ -65,3 +65,9 @@ def test_goals_file_must_be_a_list(tmp_path):
     (tmp_path / "goals.yaml").write_text("id: goal-a\nstatement: A\n", encoding="utf-8")
     with pytest.raises(ValueError, match="list"):
         read_goals(tmp_path)
+
+
+def test_schema_invalid_profile_names_the_file(tmp_path):
+    (tmp_path / "profile.yaml").write_text("locale: xx\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"profile\.yaml"):
+        read_profile(tmp_path)

@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pytest
+
 from performance_agent.memory.schemas import CheckinEntry, SessionEntry
 from performance_agent.memory.store import (
     append_checkin,
@@ -48,3 +50,18 @@ def test_explicit_days_since_last_is_respected(tmp_path):
         tmp_path, CheckinEntry(at=datetime(2026, 7, 10, 9, 0), days_since_last=99)
     )
     assert stored.days_since_last == 99
+
+
+def test_backdated_checkin_yields_negative_days_since_last(tmp_path):
+    # backfill/corrections are legitimate; negative deltas are intentional
+    append_checkin(tmp_path, CheckinEntry(at=datetime(2026, 7, 10, 9, 0)))
+    stored = append_checkin(tmp_path, CheckinEntry(at=datetime(2026, 7, 5, 9, 0)))
+    assert stored.days_since_last == -5
+
+
+def test_schema_invalid_session_line_names_the_file(tmp_path):
+    (tmp_path / "sessions.jsonl").write_text(
+        '{"performed_at": "2026-07-01T18:00:00", "rpe": 15}\n', encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match=r"sessions\.jsonl"):
+        read_sessions(tmp_path)
