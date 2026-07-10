@@ -3,6 +3,9 @@
 from importlib import resources
 
 from performance_agent.evidence.manifest import parse_manifest
+
+# no cycle: personal_corpus does not import this module
+from performance_agent.evidence.personal_corpus import load_personal_entries
 from performance_agent.evidence.schemas import EvidenceEntry
 
 __all__ = ["load_corpus", "parse_manifest"]
@@ -18,10 +21,6 @@ def load_corpus() -> list[EvidenceEntry]:
 
     Raises ValueError if a personal entry's id collides with a packaged one.
     """
-    # Local import: no cycle exists (personal_corpus.py doesn't import this module),
-    # but keeping it here documents that this dependency direction is deliberate.
-    from performance_agent.evidence.personal_corpus import load_personal_entries  # noqa: PLC0415
-
     packaged = parse_manifest(_packaged_manifest_text())
     personal = load_personal_entries()
     seen = {entry.id for entry in packaged}
