@@ -78,10 +78,14 @@ subscription — **zero additional LLM cost**.
 - ✅ File-based athlete memory: schema-validated profile & goals, append-only session
   and check-in logs, versioned programs with a required-reason adaptation audit trail,
   and time awareness ("your last update was 14 days ago")
+- ✅ Evidence corpus: live-verified starter corpus of 10 studies with grading ceilings
+  enforced by schema, Porter-stemmed FTS5 full-text search, an anti-fabrication
+  `check_citations` tool, and a maintainer verification CLI that asserts registry title
+  matches before an entry ships
 
 **MVP in progress** — running (5K–marathon) and barbell-strength verticals first
-- 🔜 Evidence and report MCP tools
-- 🔜 Curated evidence corpus (~200 graded studies) with anti-fabrication enforcement
+- 🔜 Report MCP tools
+- 🔜 Corpus growth toward ~200 studies (ongoing curation)
 - 🔜 Coaching skills: onboarding → honest assessment → program generation →
   personalization → check-ins & adaptation
 - 🔜 Professional PDF reports (coach mode: terse · expert mode: full scientific

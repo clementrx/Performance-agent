@@ -1207,3 +1207,45 @@ summary.
   configure + report); ruff noqa needs in verify.py; `_LEVEL_RANK` privacy (rename
   instruction); FastMCP enum-param handling for StudyType/EvidenceLevel filters is
   proven by Plan 02's TrainingAge precedent.
+
+---
+
+## As-Built Deviations
+
+Verified against the code and `git log` on `feat/plan-04-evidence-corpus` as of the
+Task 7 sweep. Final suite: **236 passed**.
+
+- **T3 (search index):** the plan's Task 3 snippet joined sanitized terms with implicit
+  FTS5 AND (`" ".join`), which fails the plan's own `test_search_respects_limit` test —
+  none of the fixture entries contain all of "performance", "training", and "injury", so
+  an AND match returns zero rows. The as-built `_sanitized_match_query` OR-joins the
+  quoted terms instead (commit `9dcc694`), and `LEVEL_RANK` was made public from the
+  start of that commit rather than staying `_LEVEL_RANK` (the plan's fallback rename
+  instruction). Porter stemming was added post-review in `63a1233` ("Stem search terms
+  with the Porter tokenizer") so word variants like taper/tapering match.
+- **T4 (citations):** post-review commit `7732016` ("Catch PubMed URLs in the
+  fabrication scan") added `_PUBMED_URL_PATTERN` to catch bare PubMed URLs
+  (`pubmed.ncbi.nlm.nih.gov/<pmid>`), deduplicated PMID hits reported in both `PMID:`
+  and URL form, and added `_is_known_doi`, which trims trailing URL path segments (e.g.
+  a corpus DOI cited as `.../10.1000/x/full-text.html`) down to the minimal known prefix
+  before declaring it unknown.
+- **T5 (verification + corpus):** post-review commit `c7fc54e` ("Assert title matches in
+  corpus verification") added a title-match assertion — `verify_entry` now compares the
+  manifest title against the registry title (Crossref title + subtitle, normalized token
+  containment) so a resolvable-but-wrong DOI is caught as a TITLE MISMATCH instead of
+  passing; `_fetch_json` also treats a non-JSON body as unresolved, sends a polite-pool
+  `User-Agent` header, and `main()` sleeps briefly between requests. The corpus shipped
+  with **10 entries** (target was 8-12): 9 resolved via Crossref DOI and 1 (the ACSM
+  resistance-training-progression position stand) recovered via PubMed after its
+  Crossref record returned `author: null`, which the title-match assertion would have
+  rejected. The HIIT-vs-continuous-training meta-analysis self-downgraded from the
+  ceiling to `moderate` per its own GRADE statement rather than being graded at the
+  systematic-review/meta-analysis ceiling. Each entry's evidence-level choice is
+  explained with an inline grading-rationale comment in `seed_corpus.yaml`.
+- **T6 (MCP tools):** commit `50f25ea` ("Disclose search OR semantics and dedupe the
+  corpus map") removed a duplicate corpus load — `_corpus_by_id()` previously ran its
+  own `@lru_cache`-backed `load_corpus()` separate from `_index()`'s; it now reads
+  `EvidenceIndex.by_id`, a single source of truth — and added a docstring paragraph on
+  `search_evidence` disclosing that multi-word queries match ANY term (OR), not all, and
+  that terms are stemmed.
+- **Final suite:** 236 passed (up from the 179 baseline entering this plan).
