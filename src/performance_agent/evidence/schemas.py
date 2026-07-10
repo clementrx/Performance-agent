@@ -35,7 +35,7 @@ class EvidenceLevel(StrEnum):
     EXPERT = "expert"
 
 
-_LEVEL_RANK: dict[EvidenceLevel, int] = {
+LEVEL_RANK: dict[EvidenceLevel, int] = {
     EvidenceLevel.EXPERT: 0,
     EvidenceLevel.LIMITED: 1,
     EvidenceLevel.MODERATE: 2,
@@ -84,7 +84,7 @@ class EvidenceEntry(BaseModel):
     @model_validator(mode="after")
     def _enforce_grading_ceiling(self) -> Self:
         ceiling = GRADING_CEILING[self.study_type]
-        if _LEVEL_RANK[self.evidence_level] > _LEVEL_RANK[ceiling]:
+        if LEVEL_RANK[self.evidence_level] > LEVEL_RANK[ceiling]:
             msg = (
                 f"{self.id}: a {self.study_type.value} study cannot be graded "
                 f"{self.evidence_level.value}; its ceiling is {ceiling.value}"
