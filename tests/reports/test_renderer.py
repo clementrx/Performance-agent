@@ -63,6 +63,31 @@ def test_pdf_compiles_end_to_end(tmp_path):
 
 
 @pytest.mark.skipif(not HAS_TYPST, reason="typst CLI not installed")
+def test_expert_references_carry_stars(tmp_path):
+    from performance_agent.evidence.corpus import load_corpus  # noqa: PLC0415
+
+    entry = load_corpus()[0]
+    locator = f"DOI: {entry.doi}" if entry.doi else f"PMID: {entry.pmid}"
+    _seed_athlete(tmp_path, f"# Plan\nBloc force ({locator}).")
+    result = render_report_files(tmp_path, mode="expert")
+    text = result.source_path.read_text(encoding="utf-8")
+    references_block = text.split("Références")[1]
+    assert "★" in references_block
+    # stars on the citation bullet itself, not just in the legend below it
+    assert "- ★" in references_block
+
+
+def test_bare_digits_do_not_inject_references():
+    from performance_agent.evidence.corpus import load_corpus  # noqa: PLC0415
+    from performance_agent.reports.renderer import _citations_for  # noqa: PLC0415
+
+    pmid_entry = next((e for e in load_corpus() if e.pmid), None)
+    if pmid_entry is None:
+        pytest.skip("no PMID entry in corpus")
+    assert _citations_for(f"Session id {pmid_entry.pmid} logged.") == []
+
+
+@pytest.mark.skipif(not HAS_TYPST, reason="typst CLI not installed")
 def test_expert_report_with_real_corpus_citation_compiles(tmp_path):
     from performance_agent.evidence.corpus import load_corpus  # noqa: PLC0415 - test-local import
 

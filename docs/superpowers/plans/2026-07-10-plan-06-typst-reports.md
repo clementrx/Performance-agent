@@ -934,6 +934,11 @@ machine, setup-typst SHA/version resolved, final suite count.
   with a readable "typst compile timed out after {N}s" message, instead of letting
   the raw `TimeoutExpired` propagate uncaught.
 
+- **T4 (d419bb8):** render_report's shipped signature is `(mode, version)` — the
+  athlete dir comes from the environment and the locale from the stored profile —
+  diverging from spec §3's illustrative `(program_id, mode, locale)`;
+  single-source-of-truth locale is the rationale.
+
 - **T5 (9e27769, 9186bf1):** the program-report skill's "If the render fails" prose
   was worded differently from the plan's draft. The plan's line ("replace the claim
   with a `search_evidence`-backed one") named a tool the skill doesn't declare
@@ -962,3 +967,12 @@ machine, setup-typst SHA/version resolved, final suite count.
   count recorded at the start of this plan — no net test count change from Task 7
   itself (Task 7 only runs the gate and documents deviations; all test additions
   happened in T1-T6).
+
+- **Post-merge-review renderer polish:** expert references now carry per-entry
+  evidence stars (`STARS[entry.evidence_level]` prepended in `_citations_for`;
+  the shared `format_citation` was left untouched), PMID matching in
+  `_citations_for` is context-aware (a `PMID:` prefix or PubMed URL is required,
+  mirroring `evidence.citations` — bare digits in prose never inject a
+  reference), and `build_report_source` raises a readable ValueError naming the
+  valid locales instead of a KeyError on an unknown one. Three tests added;
+  suite at 285.

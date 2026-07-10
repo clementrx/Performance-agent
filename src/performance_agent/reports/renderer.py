@@ -5,6 +5,7 @@ reference in the report that is not in the evidence corpus ABORTS the render.
 The .typ source is written next to the .pdf for user-owned transparency.
 """
 
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -12,11 +13,16 @@ from pathlib import Path
 
 from performance_agent.evidence.citations import find_unknown_references, format_citation
 from performance_agent.evidence.corpus import load_corpus
+from performance_agent.evidence.schemas import STARS
 from performance_agent.memory import store
 from performance_agent.reports.source import ReportContext, ReportMode, build_report_source
 
 REPORTS_DIR = "reports"
 _COMPILE_TIMEOUT_S = 60
+
+# Mirrors the two PMID forms recognized by evidence.citations: an explicit
+# "PMID:" prefix or a PubMed URL. Bare digits in prose are never a citation.
+_PMID_CONTEXT = r"(?:PMID:?\s*|(?:pubmed\.ncbi\.nlm\.nih\.gov/|ncbi\.nlm\.nih\.gov/pubmed/))"
 
 
 @dataclass(frozen=True)
@@ -34,14 +40,18 @@ def _typst_binary() -> str | None:
     return shutil.which("typst")
 
 
+def _pmid_cited(pmid: str, body: str) -> bool:
+    return re.search(rf"{_PMID_CONTEXT}{re.escape(pmid)}\b", body, re.IGNORECASE) is not None
+
+
 def _citations_for(body: str) -> list[str]:
-    """Formatted citations for every corpus entry whose locator appears in the body."""
+    """Star-graded citations for every corpus entry whose locator appears in the body."""
     citations = []
     for entry in load_corpus():
         doi_hit = entry.doi and entry.doi.casefold() in body.casefold()
-        pmid_hit = entry.pmid and entry.pmid in body
+        pmid_hit = entry.pmid and _pmid_cited(entry.pmid, body)
         if doi_hit or pmid_hit:
-            citations.append(format_citation(entry))
+            citations.append(f"{STARS[entry.evidence_level]} {format_citation(entry)}")
     return citations
 
 

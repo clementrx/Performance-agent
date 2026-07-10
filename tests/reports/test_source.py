@@ -1,5 +1,7 @@
 from dataclasses import replace
 
+import pytest
+
 from performance_agent.reports.source import ReportContext, build_report_source
 
 CONTEXT = ReportContext(
@@ -51,6 +53,12 @@ def test_athlete_text_cannot_inject_typst():
     # contains "#eval" as a substring. The escaped form is the actual
     # security property (see tests/reports/test_typst_text.py precedent).
     assert "\\#eval" in source
+
+
+def test_unknown_locale_is_a_readable_error():
+    bogus = replace(CONTEXT, locale="de")
+    with pytest.raises(ValueError, match="de"):
+        build_report_source(bogus)
 
 
 def test_french_labels_used():

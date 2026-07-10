@@ -26,7 +26,10 @@ class ReportContext:
 
 def build_report_source(context: ReportContext) -> str:
     """Assemble the full Typst document source."""
-    labels = LABELS[context.locale]
+    labels = LABELS.get(context.locale)
+    if labels is None:
+        msg = f"unsupported report locale {context.locale!r}; valid locales: {sorted(LABELS)}"
+        raise ValueError(msg)
     parts = [
         f'#set text(lang: "{context.locale}")',
         "#set page(margin: 2cm)",
