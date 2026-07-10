@@ -5,9 +5,10 @@ start, quotes get_time_context instead of computing dates, and records every
 adaptation through the versioned program store.
 """
 
-from typing import TypedDict
+from typing import Annotated, TypedDict
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 from performance_agent.memory import store
 from performance_agent.memory.paths import resolve_athlete_dir
@@ -119,7 +120,7 @@ def log_checkin(entry: CheckinEntry) -> CheckinEntry:
     return store.append_checkin(resolve_athlete_dir(), entry)
 
 
-def read_sessions(last_n: int | None = None) -> SessionHistory:
+def read_sessions(last_n: Annotated[int, Field(ge=1)] | None = None) -> SessionHistory:
     """Return logged training sessions, oldest first.
 
     Use these to build daily-load series for compute_weekly_loads/compute_acwr
@@ -131,7 +132,7 @@ def read_sessions(last_n: int | None = None) -> SessionHistory:
     return SessionHistory(sessions=sessions)
 
 
-def read_checkins(last_n: int | None = None) -> CheckinHistory:
+def read_checkins(last_n: Annotated[int, Field(ge=1)] | None = None) -> CheckinHistory:
     """Return logged check-ins, oldest first (last_n limits to the most recent N)."""
     checkins = store.read_checkins(resolve_athlete_dir())
     if last_n is not None:

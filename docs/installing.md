@@ -83,8 +83,8 @@ the server entry.)
 
 Some CLIs only pick up new servers on restart — reload the session first.
 
-Ask your agent: *"List the performance-agent tools."* You should see 9 engine
-tools (assess_endurance_goal, predict_race_time, estimate_1rm, …).
+Ask your agent: *"List the performance-agent tools."* You should see 19 tools (9
+engine + 10 memory: assess_endurance_goal, read_athlete, get_time_context, …).
 
 Once published to PyPI (roadmap Plan 07), the `command`/`args` simplify to
 `uvx` / `["performance-agent"]`.

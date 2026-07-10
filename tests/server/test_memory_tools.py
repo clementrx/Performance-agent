@@ -182,6 +182,14 @@ async def test_get_time_context_quotes_deltas(client):
 
 
 @pytest.mark.anyio
+async def test_last_n_must_be_positive(client):
+    result = await client.call_tool("read_sessions", {"last_n": 0})
+    assert result.isError
+    result = await client.call_tool("read_checkins", {"last_n": -2})
+    assert result.isError
+
+
+@pytest.mark.anyio
 async def test_memory_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}

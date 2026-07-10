@@ -1340,3 +1340,24 @@ git commit -m "Record Plan 03 as-built state and update docs"
 - **Known uncertainties, handled in-plan:** FastMCP acceptance of Pydantic-model
   params and TypedDict-with-model fields (BLOCKED instruction if not); exact ty
   behavior on frontmatter dict access (narrowest-suppression instruction).
+
+## As-Built Deviations
+
+1. Athlete-dir deployment guard added after T1 review: `.gitignore` athlete/ entry
+   + installing.md "Where your data lives" section with --env examples (commit
+   7fce3fb).
+2. T2: naive-local-wall-clock timestamp policy enforced by shared _require_naive
+   validator; Goal.id max_length=64 (commit 9691f1f); one
+   `# ty: ignore[unknown-argument]` on the intentional unknown-field test.
+3. T3/T4: uniform file-naming error wrapping — _load_yaml/_parse_yaml for YAML
+   errors, PEP 695 `_validated[T]` helper for pydantic ValidationErrors across all
+   four readers; isinstance list guard on goals.yaml; _atomic_write tmp cleanup;
+   negative days_since_last documented as intentional (commits 04e2332, fa13577).
+4. T5: canonical-filename filter (program-v02.md strays ignored); frontmatter
+   split guard + version cross-check + mapping guard, all naming the file (commit
+   fccf9d3).
+5. T7: read_program returns ProgramView and raises on empty store (FastMCP wraps
+   Optional returns in {"result":...}); read_sessions/read_checkins history tools
+   added post-review (plan had a write-only log oversight) → 10 memory tools, not
+   8; last_n ge=1 (commits bd90263, 32033a3, eeedbb6 + this one).
+6. Test-count drift: plan estimates vs actuals (final: 179).

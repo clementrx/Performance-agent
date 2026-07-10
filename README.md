@@ -75,11 +75,12 @@ subscription — **zero additional LLM cost**.
 - ✅ Engine purity enforced by an architectural test (stdlib-only, no LLM/network/DB)
 - ✅ CI with SHA-pinned actions, exact-pinned toolchain (uv, ruff, ty)
 - ✅ MCP server exposing the engine as 9 tools — see [docs/installing.md](docs/installing.md)
+- ✅ File-based athlete memory: schema-validated profile & goals, append-only session
+  and check-in logs, versioned programs with a required-reason adaptation audit trail,
+  and time awareness ("your last update was 14 days ago")
 
 **MVP in progress** — running (5K–marathon) and barbell-strength verticals first
-- 🔜 Evidence, memory, and report MCP tools
-- 🔜 File-based athlete memory with time awareness ("your last update was 14 days ago")
-  and versioned programs with a full adaptation audit trail
+- 🔜 Evidence and report MCP tools
 - 🔜 Curated evidence corpus (~200 graded studies) with anti-fabrication enforcement
 - 🔜 Coaching skills: onboarding → honest assessment → program generation →
   personalization → check-ins & adaptation
