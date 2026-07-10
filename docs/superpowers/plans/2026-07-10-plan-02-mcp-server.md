@@ -898,3 +898,54 @@ git commit -m "Record Plan 02 as-built deviations"
 - **Known uncertainty, handled in-plan:** exact SDK shapes for `list_tools()` return
   and `StdioServerParameters` import location — both flagged with explicit
   adapt-and-report instructions rather than false certainty.
+
+## As-Built Deviations
+
+1. **SDK reality.** The installed stable dependency is `mcp==1.28.1` (the v1 API
+   line), not the v2 line this plan's "SDK facts" section cites. Actual shapes used
+   throughout the implementation: `FastMCP` from `mcp.server.fastmcp` (not
+   `MCPServer` from `mcp.server`); in-process tool tests via
+   `mcp.shared.memory.create_connected_server_and_client_session` (no `mcp.Client`);
+   tool-call result attributes are camelCase (`isError`, `structuredContent`); the
+   stdio E2E test uses `stdio_client(StdioServerParameters(...))` +
+   `ClientSession` from `mcp.client.stdio` / `mcp` directly.
+
+2. **Schema-typing pattern upgrade (from the Task 2 quality review).** The plan's
+   Task 2-4 code blocks show tool signatures taking plain `str` params and returning
+   `asdict(...)` dicts. The as-built code instead uses engine enums, dataclasses, and
+   `Literal` types in tool signatures plus `TypedDict` return shapes (see
+   `src/performance_agent/server/engine_tools.py`: `RacePrediction`, `Pace`,
+   `OneRmEstimate`, `LoadPrescription`, `SessionLoad`, `WeeklyLoads`, `AcwrResult`,
+   `PeriodizationWaves`, and `Literal["epley", "brzycki"]` on `estimate_1rm`). This
+   makes enum values and named properties appear directly in the generated MCP tool
+   schemas, which the plan's superseded shapes did not provide.
+
+3. **Task 5 (error surfacing).** The test helper is a synchronous `error_text(result)`
+   function (flagged by ruff as not needing `async`), not async as a naive port of the
+   async test functions might suggest. The enum/`Literal`-typed params (formula,
+   training_age) now surface invalid-value errors via Pydantic's pre-call validation
+   rather than the engine raising `ValueError` — both paths produce readable
+   tool-error text, so no behavior gap. `tests/server/test_errors.py` carries two more
+   per-category cases and a tightened band assertion beyond what the plan's Task 5
+   block specified (commit 1adc254, "Round out per-category error surfacing
+   coverage").
+
+4. **Task 6 (stdio E2E).** Hardened beyond the plan's sketch: the test pins
+   `cwd=REPO_ROOT` when spawning the subprocess and wraps the exchange in
+   `anyio.fail_after(30)` to bound the smoke test (commit 6818db6, "Harden stdio E2E:
+   pinned cwd and bounded timeout"), plus an SIM117 `with` collapse and an explicit
+   `structuredContent is not None` narrowing assert before indexing into it.
+
+5. **Task 7 (install docs).** All three CLI config syntaxes (Claude Code, Gemini CLI,
+   Codex) in `docs/installing.md` were verified against current official docs with
+   zero corrections needed. The doc was subsequently polished with prerequisites,
+   config-merge guidance, and a restart caveat (commit 08920a7, "Polish install docs:
+   prerequisites and merge caveats").
+
+6. **Task 1 (flatten).** The `.claude/` runtime directory is untracked (it appears
+   nowhere in git history and holds no `.gitignore` entry of its own) and was
+   correctly excluded from commit 2916f22 ("Flatten repo: move Python package from
+   apps/api to root"), which only moved tracked `apps/api/*` paths to repo root.
+
+7. **Suite size.** The plan's Task 8 quality-gate snippet expects "111 passed"; the
+   as-built suite (after Tasks 5 and 6 added coverage beyond the plan) is 113 passed.
