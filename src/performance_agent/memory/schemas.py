@@ -3,16 +3,28 @@
 Structured facts live here with a strict contract (extra="forbid", bounded
 values); free-text preferences go in Profile.notes. The schema is what makes
 profile.yaml trustworthy for both humans and agents.
+
+Timestamps are naive local wall-clock time; timezone-aware values are rejected.
 """
 
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from performance_agent.engine import TrainingAge
 
 Locale = Literal["en", "fr", "es"]
+
+
+def _require_naive(value: datetime) -> datetime:
+    if value.tzinfo is not None:
+        msg = (
+            "timestamps are naive local wall-clock time by design; "
+            f"drop the timezone offset (got {value.isoformat()})"
+        )
+        raise ValueError(msg)
+    return value
 
 
 class Injury(BaseModel):
@@ -60,7 +72,7 @@ class Goal(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
     statement: str
     metric: str | None = None
     current_value: float | None = None
@@ -81,6 +93,8 @@ class SessionEntry(BaseModel):
     duration_min: int | None = Field(default=None, ge=1)
     notes: str | None = None
 
+    _naive_performed_at = field_validator("performed_at")(staticmethod(_require_naive))
+
 
 class CheckinEntry(BaseModel):
     """One coaching check-in record."""
@@ -93,3 +107,5 @@ class CheckinEntry(BaseModel):
     fatigue: int | None = Field(default=None, ge=1, le=10)
     pain_flags: list[str] = Field(default_factory=list)
     notes: str | None = None
+
+    _naive_at = field_validator("at")(staticmethod(_require_naive))

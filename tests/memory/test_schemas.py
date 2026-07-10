@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -65,6 +65,18 @@ def test_session_entry_bounds():
     assert entry.rpe == 7
     with pytest.raises(ValidationError):
         SessionEntry(performed_at=datetime(2026, 7, 10), rpe=11)
+
+
+def test_aware_datetimes_are_rejected_with_guidance():
+    with pytest.raises(ValidationError, match="naive local"):
+        SessionEntry(performed_at=datetime(2026, 7, 10, 18, 0, tzinfo=UTC))
+    with pytest.raises(ValidationError, match="naive local"):
+        CheckinEntry(at=datetime(2026, 7, 10, 9, 0, tzinfo=UTC))
+
+
+def test_goal_id_length_is_bounded():
+    with pytest.raises(ValidationError):
+        Goal(id="a" * 65, statement="x")
 
 
 def test_checkin_entry_bounds():
