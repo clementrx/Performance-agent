@@ -61,3 +61,18 @@ def test_assessment_skill_protocol(skills):
         "estimate_1rm",
     ):
         assert needle in body, f"assessment skill lost: {needle}"
+
+
+def test_generation_skill_protocol(skills):
+    generation = next(s for s in skills if s.frontmatter["name"] == "program-generation")
+    body = generation.body.casefold()
+    for needle in (
+        "search_evidence",
+        "build_periodization_waves",
+        "prescribe_load",
+        "save_program",
+        "check_citations",
+        "stars",
+        "purpose",
+    ):
+        assert needle in body, f"generation skill lost: {needle}"
