@@ -5,7 +5,9 @@ description = "Evidence-based AI physical preparation platform — backend"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "Apache-2.0"
-dependencies = []
+dependencies = [
+    "mcp==1.28.1",
+]
 
 [build-system]
 requires = ["uv_build>=0.9,<1"]
