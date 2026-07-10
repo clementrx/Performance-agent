@@ -66,6 +66,15 @@ async def test_check_citations_passes_clean_text(client):
 
 
 @pytest.mark.anyio
+async def test_search_filters_work_through_the_tool(client):
+    result = await client.call_tool("search_evidence", {"query": "training", "min_level": "strong"})
+    assert not result.isError
+    hits = result.structuredContent["hits"]
+    assert hits, "at least one strong entry should match 'training'"
+    assert all(hit["evidence_level"] == "strong" for hit in hits)
+
+
+@pytest.mark.anyio
 async def test_evidence_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}

@@ -57,9 +57,8 @@ def _index() -> EvidenceIndex:
     return EvidenceIndex(load_corpus())
 
 
-@lru_cache(maxsize=1)
 def _corpus_by_id() -> dict[str, EvidenceEntry]:
-    return {entry.id: entry for entry in load_corpus()}
+    return _index().by_id
 
 
 def search_evidence(
@@ -73,6 +72,10 @@ def search_evidence(
     Cite ONLY ids returned here. Stars come from the study design's grading
     ceiling (★★★★★ strong … ★☆☆☆☆ expert opinion); present them with every
     recommendation and say so honestly when evidence is limited.
+
+    Multi-word queries match ANY term (OR), not all — adding terms broadens
+    rather than narrows; check rank order and conclusions before citing a
+    low-relevance hit. Word variants are stemmed (taper matches tapering).
     """
     hits = _index().search(query, limit=limit, study_type=study_type, min_level=min_level)
     return SearchResults(

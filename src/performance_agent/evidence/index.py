@@ -53,6 +53,11 @@ class EvidenceIndex:
         )
         self._db.commit()
 
+    @property
+    def by_id(self) -> dict[str, EvidenceEntry]:
+        """The indexed entries keyed by corpus id."""
+        return self._entries
+
     def search(
         self,
         query: str,
