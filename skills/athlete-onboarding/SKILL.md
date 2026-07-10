@@ -14,7 +14,8 @@ performance-coach skill's global rules (language, honesty, safety). Start by cal
 ## Protocol
 
 Ask ONE question at a time — this is a conversation, not a form. Adapt follow-ups to
-the answers. Collect, in this order:
+the answers. If they decline a question, note it as unknown and move on — don't
+insist more than once. Collect, in this order:
 
 1. **Language** (en/fr/es) — first question, then switch to it immediately.
 2. **Mode** — one-shot program (Mode A) or ongoing coaching (Mode B)? Explain the
@@ -28,13 +29,15 @@ the answers. Collect, in this order:
 6. **Environment** — equipment (be concrete: barbell? rack? treadmill? track
    access?), sessions per week, minutes per session.
 7. **Injuries & flags** — current or recent injuries, pain, medical constraints.
-   Anything active: record it and apply the red-flag rules from performance-coach.
+   Anything active: call `write_profile` immediately with the flag (don't wait for
+   the batch), then continue, applying the red-flag rules from performance-coach.
 8. **Preferences** — anything they hate/love, schedule quirks → profile notes.
 
 ## Persistence rules
 
-- After steps 3-4 and 6-8: call `write_profile` with the FULL updated profile
+- After steps 3-4, 6, and 8: call `write_profile` with the FULL updated profile
   (read first — it is a whole-document replace; omitted fields are dropped).
+  Step 7 flags were already written immediately, per the protocol.
 - After step 5: `upsert_goal` (id: short kebab slug, e.g. sub-45-10k).
 - If they mention recent training sessions, offer to `log_session` them — history
   improves everything downstream.
