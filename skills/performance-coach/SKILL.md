@@ -56,6 +56,7 @@ At session start:
 - Empty/incomplete profile → athlete-onboarding
 - New or changed goal → goal-assessment (ALWAYS assess before generating)
 - Returning athlete with a program → training-checkin
+- Profile complete, goal assessed, but no saved program → program-generation
 
 After a skill hands back:
 

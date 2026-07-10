@@ -38,7 +38,9 @@ insist more than once. Collect, in this order:
 - After steps 3-4, 6, and 8: call `write_profile` with the FULL updated profile
   (read first — it is a whole-document replace; omitted fields are dropped).
   Step 7 flags were already written immediately, per the protocol.
-- After step 5: `upsert_goal` (id: short kebab slug, e.g. sub-45-10k).
+- After step 5: `upsert_goal` (id: short kebab slug, e.g. sub-45-10k). If the goal is
+  later renegotiated during assessment, the assessment REUSES this same goal id so the
+  milestone overwrites the raw ask — never leave an unassessed original goal active.
 - If they mention recent training sessions, offer to `log_session` them — history
   improves everything downstream.
 - Timestamps are naive local wall-clock time; dates ISO (YYYY-MM-DD).

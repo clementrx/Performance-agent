@@ -33,7 +33,7 @@ The product's signature moment. Follow performance-coach global rules. Profile f
 4. **Counter-proposal loop** (for < 30%): propose an adjusted target and/or timeline,
    re-run `assess_endurance_goal` on it, and show the new probability. Iterate with
    the athlete until you land on a goal you both accept. If the athlete insists on
-   the original target, `upsert_goal` the negotiated milestone as the active goal
+   the original target, `upsert_goal` the negotiated milestone as the active goal (REUSE the original goal's id so it overwrites the raw ask)
    and note the original ask inline in the statement (e.g. "sub-45 10k — originally
    sub-40, renegotiated after a <30% verdict"). Never upsert the infeasible original
    as-is.
