@@ -71,3 +71,27 @@ async def test_taper_longer_than_block_is_rejected(client):
         {"total_weeks": 8, "deload_every": 4, "taper_weeks": 8},
     )
     assert "taper_weeks" in error_text(result)
+
+
+@pytest.mark.anyio
+async def test_out_of_range_reps_is_rejected(client):
+    result = await client.call_tool("estimate_1rm", {"load_kg": 100, "reps": 13})
+    text = error_text(result)
+    assert "reps" in text
+    assert "12" in text
+
+
+@pytest.mark.anyio
+async def test_out_of_range_percentage_is_rejected(client):
+    result = await client.call_tool("prescribe_load", {"one_rm_kg": 150, "percentage": 1.5})
+    text = error_text(result)
+    assert "percentage" in text
+    assert "1.3" in text
+
+
+@pytest.mark.anyio
+async def test_non_positive_duration_is_rejected(client):
+    result = await client.call_tool("compute_session_load", {"rpe": 7, "duration_min": 0})
+    text = error_text(result)
+    assert "duration" in text
+    assert "positive" in text

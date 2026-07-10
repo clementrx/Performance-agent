@@ -54,7 +54,7 @@ flowchart TB
     H <-->|MCP| S[performance-agent server]
     H -.follows.-> SK[Coaching skills<br/>onboarding · assessment · program generation ·
 personalization · check-ins · adaptation]
-    S --> E[Sports science engine<br/>deterministic · 93 tests · zero LLM]
+    S --> E[Sports science engine<br/>deterministic · property-tested · zero LLM]
     S --> EV[(Evidence corpus<br/>graded studies, SQLite FTS5)]
     S --> M[(Athlete directory<br/>profile · programs · logs — plain files)]
     S --> R[Typst PDF reports<br/>coach & expert modes · en/fr/es]
@@ -68,7 +68,7 @@ subscription — **zero additional LLM cost**.
 ## Features
 
 **Working today**
-- ✅ Deterministic sports-science engine, 93 tests incl. property-based (Hypothesis):
+- ✅ Deterministic sports-science engine, 93 engine tests (116 total) incl. property-based (Hypothesis):
   1RM estimation (Epley/Brzycki) · Riegel race prediction with enforced validity bounds ·
   session-RPE load & ACWR (with honest methodological caveats) · goal feasibility with
   explainable drivers · periodization waves (mesocycles, deloads, taper)
