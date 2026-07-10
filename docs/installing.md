@@ -102,9 +102,9 @@ the server entry.)
 
 Some CLIs only pick up new servers on restart — reload the session first.
 
-Ask your agent: *"List the performance-agent tools."* You should see 23 tools (9
-engine + 10 memory + 3 evidence + 1 report: assess_endurance_goal, read_athlete,
-search_evidence, …).
+Ask your agent: *"List the performance-agent tools."* You should see 26 tools (9
+engine + 10 memory + 6 evidence + 1 report: assess_endurance_goal, read_athlete,
+search_evidence, search_evidence_live, verify_reference, save_evidence, …).
 
 Also verify the coaching skills (see the section above): ask what the
 performance-coach skill's session ritual is.
