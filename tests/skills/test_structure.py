@@ -41,3 +41,23 @@ def test_coach_skill_carries_the_global_rules(skills):
         "never compute dates",
     ):
         assert needle in body, f"coach skill lost the rule: {needle}"
+
+
+def test_onboarding_skill_protocol(skills):
+    onboarding = next(s for s in skills if s.frontmatter["name"] == "athlete-onboarding")
+    body = onboarding.body.casefold()
+    for needle in ("write_profile", "upsert_goal", "one question", "equipment", "injur"):
+        assert needle in body, f"onboarding skill lost: {needle}"
+
+
+def test_assessment_skill_protocol(skills):
+    assessment = next(s for s in skills if s.frontmatter["name"] == "goal-assessment")
+    body = assessment.body.casefold()
+    for needle in (
+        "assess_endurance_goal",
+        "drivers",
+        "counter-proposal",
+        "honest",
+        "estimate_1rm",
+    ):
+        assert needle in body, f"assessment skill lost: {needle}"
