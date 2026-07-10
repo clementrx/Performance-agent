@@ -30,7 +30,7 @@ def test_parse_manifest_returns_entries_in_order():
 def test_duplicate_ids_are_rejected():
     duplicated = MANIFEST + MANIFEST.replace("entry-one", "entry-two", 1)
     with pytest.raises(ValueError, match="duplicate"):
-        parse_manifest(duplicated + "")  # any dup id must be named in the error
+        parse_manifest(duplicated)
 
 
 def test_manifest_must_be_a_list():
@@ -42,3 +42,10 @@ def test_packaged_corpus_loads_and_validates():
     entries = load_corpus()
     assert len(entries) >= 1
     assert all(entry.doi or entry.pmid for entry in entries)
+
+
+def test_shipped_corpus_is_fully_verified():
+    entries = load_corpus()
+    assert all(entry.verified for entry in entries)
+    assert "bootstrap-placeholder" not in {entry.id for entry in entries}
+    assert len(entries) >= 8

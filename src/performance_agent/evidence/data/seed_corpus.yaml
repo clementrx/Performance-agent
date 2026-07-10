@@ -1,11 +1,138 @@
 # PerformanceAgent seed corpus.
-# Every entry here MUST have been verified against Crossref/PubMed by a maintainer
-# (see performance_agent/evidence/verify.py). Do not add entries from memory.
-- id: bootstrap-placeholder
-  title: "Bootstrap placeholder (replaced by live-verified entries in Plan 04 Task 5)"
-  authors: [PerformanceAgent Maintainers]
-  year: 2026
-  study_type: expert_opinion
-  conclusions: Placeholder entry so the loader has content before curation lands.
-  evidence_level: expert
-  doi: 10.0000/placeholder
+#
+# Every entry here has been verified against Crossref (live query, one DOI at a
+# time) by a maintainer per performance_agent/evidence/verify.py. Titles,
+# authors, years, journals, and DOIs are copied verbatim from the Crossref API
+# response for the given DOI; conclusions are the maintainer's own
+# conservative summary of the registry metadata (title, and abstract where
+# Crossref provided one). Do not add entries from memory — see
+# docs/superpowers/plans/2026-07-10-plan-04-evidence-corpus.md Task 5.
+
+- id: strength-training-running-economy-meta-2024
+  title: "Effect of Strength Training Programs in Middle- and Long-Distance Runners' Economy at Different Running Speeds: A Systematic Review with Meta-analysis"
+  authors: [Llanos-Lagos C, Ramirez-Campillo R, Moran J, "Sáez de Villarreal E"]
+  year: 2024
+  journal: Sports Medicine
+  study_type: meta_analysis
+  population: Middle- and long-distance runners
+  conclusions: >
+    A systematic review with meta-analysis found that high-load, plyometric, and combined
+    strength training improved running economy in middle- and long-distance runners versus
+    control conditions, while submaximal-load and isometric strength training showed no
+    consistent improvement.
+  evidence_level: strong
+  doi: 10.1007/s40279-023-01978-y
+  verified: true
+
+- id: strength-training-distance-running-review-2018
+  title: "Effects of Strength Training on the Physiological Determinants of Middle- and Long-Distance Running Performance: A Systematic Review"
+  authors: [Blagrove RC, Howatson G, Hayes PR]
+  year: 2018
+  journal: Sports Medicine
+  study_type: systematic_review
+  population: Middle- and long-distance runners
+  conclusions: >
+    A systematic review examined how strength training affects physiological determinants
+    of middle- and long-distance running performance, such as running economy and
+    neuromuscular function.
+  evidence_level: moderate
+  doi: 10.1007/s40279-017-0835-7
+  verified: true
+
+- id: tapering-performance-meta-2007
+  title: "Effects of Tapering on Performance: A Meta-Analysis"
+  authors: [Bosquet L, Montpetit J, Arvisais D, Mujika I]
+  year: 2007
+  journal: Medicine & Science in Sports & Exercise
+  study_type: meta_analysis
+  conclusions: >
+    A meta-analysis quantified the effect of tapering interventions on athletic performance
+    outcomes across the sports-science literature.
+  evidence_level: moderate
+  doi: 10.1249/mss.0b013e31806010e0
+  verified: true
+
+- id: session-rpe-training-load-2001
+  title: A New Approach to Monitoring Exercise Training
+  authors: [Foster C, Florhaug JA, Franklin J, Gottschall L, Hrovatin LA, Parker S, Doleshal P, Dodge C]
+  year: 2001
+  journal: Journal of Strength and Conditioning Research
+  study_type: cross_sectional
+  conclusions: >
+    This study introduced and evaluated a session-RPE method for monitoring exercise
+    training load, proposing it as a practical approach to quantifying training stress.
+  evidence_level: limited
+  doi: 10.1519/00124278-200102000-00019
+  verified: true
+
+- id: resistance-training-volume-hypertrophy-meta-2017
+  title: "Dose-response relationship between weekly resistance training volume and increases in muscle mass: A systematic review and meta-analysis"
+  authors: [Schoenfeld BJ, Ogborn D, Krieger JW]
+  year: 2017
+  journal: Journal of Sports Sciences
+  study_type: meta_analysis
+  conclusions: >
+    A systematic review and meta-analysis examined the dose-response relationship between
+    weekly resistance-training volume and increases in muscle mass.
+  evidence_level: moderate
+  doi: 10.1080/02640414.2016.1210197
+  verified: true
+
+- id: resistance-training-frequency-strength-meta-2018
+  title: "Effect of Resistance Training Frequency on Gains in Muscular Strength: A Systematic Review and Meta-Analysis"
+  authors: [Grgic J, Schoenfeld BJ, Davies TB, Lazinica B, Krieger JW, Pedisic Z]
+  year: 2018
+  journal: Sports Medicine
+  study_type: meta_analysis
+  conclusions: >
+    A systematic review and meta-analysis examined the effect of resistance-training
+    frequency on gains in muscular strength.
+  evidence_level: moderate
+  doi: 10.1007/s40279-018-0872-x
+  verified: true
+
+- id: acute-chronic-workload-ratio-injury-cohort-2016
+  title: "The acute:chronic workload ratio predicts injury: high chronic workload may decrease injury risk in elite rugby league players"
+  authors: [Hulin BT, Gabbett TJ, Lawson DW, Caputi P, Sampson JA]
+  year: 2016
+  journal: British Journal of Sports Medicine
+  study_type: cohort
+  population: Elite rugby league players
+  conclusions: >
+    In a two-season prospective cohort of 53 elite rugby league players, very-high
+    acute:chronic workload ratios were associated with the greatest injury risk, while
+    chronic workload alone did not consistently predict injury; as a single-cohort,
+    single-sport study, findings may not generalize to other athlete populations.
+  evidence_level: limited
+  doi: 10.1136/bjsports-2015-094817
+  verified: true
+
+- id: hiit-vs-continuous-training-vo2max-meta-2015
+  title: "Effectiveness of High-Intensity Interval Training (HIT) and Continuous Endurance Training for VO2max Improvements: A Systematic Review and Meta-Analysis of Controlled Trials"
+  authors: [Milanović Z, Sporiš G, Weston M]
+  year: 2015
+  journal: Sports Medicine
+  study_type: meta_analysis
+  conclusions: >
+    A systematic review and meta-analysis of controlled trials evaluated the effectiveness
+    of high-intensity interval training versus continuous endurance training for improving
+    VO2max.
+  evidence_level: moderate
+  doi: 10.1007/s40279-015-0365-0
+  verified: true
+
+- id: plyometric-training-vertical-jump-meta-2007
+  title: "Does plyometric training improve vertical jump height? A meta-analytical review"
+  authors: [Markovic G]
+  year: 2007
+  journal: British Journal of Sports Medicine
+  study_type: meta_analysis
+  population: Healthy individuals
+  conclusions: >
+    A meta-analysis of 26 studies found that plyometric training produced statistically
+    significant improvements in vertical jump height across squat jump, countermovement
+    jump, countermovement jump with arm swing, and drop jump tests, with the largest mean
+    effect for the countermovement jump (about 8.7%).
+  evidence_level: strong
+  doi: 10.1136/bjsm.2007.035113
+  verified: true
