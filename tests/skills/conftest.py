@@ -22,6 +22,9 @@ class Skill:
 def parse_skill(path: Path) -> Skill:
     """Parse a SKILL.md file (--- frontmatter --- body)."""
     text = path.read_text(encoding="utf-8")
+    if text.count("---\n") < 2:
+        msg = f"{path} is missing YAML frontmatter delimited by '---' lines"
+        raise ValueError(msg)
     _, frontmatter_text, body = text.split("---\n", 2)
     frontmatter = yaml.safe_load(frontmatter_text)
     if not isinstance(frontmatter, dict):

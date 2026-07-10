@@ -39,7 +39,7 @@ No new dependencies.
 
 ```
 skills/
-├── coach/SKILL.md                 # entry point: rituals, language, honesty, safety, routing
+├── performance-coach/SKILL.md     # entry point: rituals, language, honesty, safety, routing
 ├── athlete-onboarding/SKILL.md    # questionnaire → write_profile / upsert_goal
 ├── goal-assessment/SKILL.md       # honest feasibility verdicts + negotiation
 ├── program-generation/SKILL.md    # evidence pack → waves → prescriptions → save_program
@@ -68,10 +68,10 @@ from the task blocks; these rules are for reviewers):**
 
 ---
 
-### Task 1: Skill test infrastructure + the `coach` entry skill
+### Task 1: Skill test infrastructure + the `performance-coach` entry skill
 
 **Files:**
-- Create: `skills/coach/SKILL.md`
+- Create: `skills/performance-coach/SKILL.md`
 - Create: `tests/skills/__init__.py` (empty), `tests/skills/conftest.py`
 - Test: `tests/skills/test_structure.py`
 
@@ -181,7 +181,7 @@ tightens it to the full EXPECTED_SKILLS set once all six exist.)
 - [ ] **Step 2: Run to verify red** — `rtk proxy uv run pytest tests/skills -v` fails
 (no skills/ directory yet).
 
-- [ ] **Step 3: Create `skills/coach/SKILL.md`** (verbatim):
+- [ ] **Step 3: Create `skills/performance-coach/SKILL.md`** (verbatim):
 
 ```markdown
 ---
