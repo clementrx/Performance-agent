@@ -82,12 +82,14 @@ subscription — **zero additional LLM cost**.
   enforced by schema, Porter-stemmed FTS5 full-text search, an anti-fabrication
   `check_citations` tool, and a maintainer verification CLI that asserts registry title
   matches before an entry ships
+- ✅ Six coaching skills (Claude Code plugin format): session rituals, onboarding,
+  honest goal assessment with counter-proposals, evidence-cited program generation,
+  structured check-ins, versioned adaptation — each eval-guarded against tool drift
+  and fabricated references
 
 **MVP in progress** — running (5K–marathon) and barbell-strength verticals first
 - 🔜 Report MCP tools
 - 🔜 Corpus growth toward ~200 studies (ongoing curation)
-- 🔜 Coaching skills: onboarding → honest assessment → program generation →
-  personalization → check-ins & adaptation
 - 🔜 Professional PDF reports (coach mode: terse · expert mode: full scientific
   rationale) in 🇬🇧 English · 🇫🇷 Français · 🇪🇸 Español
 

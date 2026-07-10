@@ -32,6 +32,8 @@ def test_declared_tools_are_actually_used_in_the_body(skills):
             assert tool in skill.body, f"{skill.path} declares but never uses: {tool}"
 
 
+# Substring matching is deliberate: skills should not namedrop tools they don't
+# declare, even in prose.
 @pytest.mark.anyio
 async def test_bodies_do_not_reference_undeclared_tools(skills):
     names = await _server_tool_names()

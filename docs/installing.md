@@ -62,6 +62,28 @@ command = "uv"
 args = ["--directory", "/path/to/performance-agent", "run", "performance-agent"]
 ```
 
+## Installing the coaching skills (Claude Code)
+
+The skills are the coaching protocols the agent follows. Copy (or symlink) them into
+your personal skills directory:
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R /path/to/performance-agent/skills/* ~/.claude/skills/
+```
+
+Per-project alternative: copy them into `.claude/skills/` inside the project where
+you talk to your coach.
+
+Gemini CLI / Codex: the SKILL.md files are plain markdown protocols — reference them
+from your system prompt or context files (e.g. GEMINI.md/AGENTS.md) until native
+skill support is configured. The `tools:` frontmatter names the MCP tools each
+protocol expects.
+
+Verify: ask your agent *"What does your performance-coach skill tell you to do at
+the start of a session?"* — it should describe the read_athlete + get_time_context
+ritual.
+
 ## Where your data lives
 
 The coach stores your profile, goals, programs, and logs in a plain-file directory:
