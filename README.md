@@ -74,10 +74,10 @@ subscription — **zero additional LLM cost**.
   explainable drivers · periodization waves (mesocycles, deloads, taper)
 - ✅ Engine purity enforced by an architectural test (stdlib-only, no LLM/network/DB)
 - ✅ CI with SHA-pinned actions, exact-pinned toolchain (uv, ruff, ty)
+- ✅ MCP server exposing the engine as 9 tools — see [docs/installing.md](docs/installing.md)
 
 **MVP in progress** — running (5K–marathon) and barbell-strength verticals first
-- 🔜 MCP server exposing the engine, evidence, memory, and report tools
-  (`uvx performance-agent`, `claude mcp add`)
+- 🔜 Evidence, memory, and report MCP tools
 - 🔜 File-based athlete memory with time awareness ("your last update was 14 days ago")
   and versioned programs with a full adaptation audit trail
 - 🔜 Curated evidence corpus (~200 graded studies) with anti-fabrication enforcement
