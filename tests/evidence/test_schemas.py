@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from performance_agent.evidence.schemas import (
+    GRADING_CEILING,
     STARS,
     EvidenceEntry,
     EvidenceLevel,
@@ -74,6 +75,15 @@ def test_pmid_alone_is_enough():
     del data["doi"]
     entry = EvidenceEntry.model_validate({**data, "pmid": "11708692"})
     assert entry.pmid == "11708692"
+
+
+def test_conclusions_cannot_be_empty():
+    with pytest.raises(ValidationError):
+        EvidenceEntry.model_validate({**VALID, "conclusions": ""})
+
+
+def test_grading_ceilings_cover_every_study_type():
+    assert set(GRADING_CEILING) == set(StudyType)
 
 
 def test_stars_cover_every_level():

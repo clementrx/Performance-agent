@@ -2,6 +2,10 @@
 
 The grading ceiling is the honesty rule of spec v2 §5: an entry's evidence
 level can never exceed what its study design can support.
+
+The corpus only admits journal-indexed work carrying a DOI or PMID; guideline
+documents without either are out of scope for now (deliberate, revisit if
+curation drops a candidate for this reason).
 """
 
 from enum import StrEnum
@@ -38,6 +42,9 @@ _LEVEL_RANK: dict[EvidenceLevel, int] = {
     EvidenceLevel.STRONG: 3,
 }
 
+# RCT and cohort share the moderate ceiling deliberately: in sports performance,
+# several key questions (e.g. workload and injury) cannot ethically be randomized,
+# so a well-controlled prospective cohort is the best attainable design there.
 GRADING_CEILING: dict[StudyType, EvidenceLevel] = {
     StudyType.SYSTEMATIC_REVIEW: EvidenceLevel.STRONG,
     StudyType.META_ANALYSIS: EvidenceLevel.STRONG,
@@ -68,7 +75,7 @@ class EvidenceEntry(BaseModel):
     journal: str | None = None
     study_type: StudyType
     population: str | None = None
-    conclusions: str
+    conclusions: str = Field(min_length=1)
     evidence_level: EvidenceLevel
     doi: str | None = None
     pmid: str | None = None
