@@ -1,0 +1,11 @@
+# PerformanceAgent seed corpus.
+# Every entry here MUST have been verified against Crossref/PubMed by a maintainer
+# (see performance_agent/evidence/verify.py). Do not add entries from memory.
+- id: bootstrap-placeholder
+  title: "Bootstrap placeholder (replaced by live-verified entries in Plan 04 Task 5)"
+  authors: [PerformanceAgent Maintainers]
+  year: 2026
+  study_type: expert_opinion
+  conclusions: Placeholder entry so the loader has content before curation lands.
+  evidence_level: expert
+  doi: 10.0000/placeholder
