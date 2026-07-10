@@ -94,12 +94,16 @@ def render_report_files(
             "Install typst (https://typst.app, `brew install typst`) and retry."
         )
         raise ValueError(msg)
-    completed = subprocess.run(
-        [binary, "compile", str(source_path), str(pdf_path)],
-        capture_output=True,
-        timeout=_COMPILE_TIMEOUT_S,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            [binary, "compile", str(source_path), str(pdf_path)],
+            capture_output=True,
+            timeout=_COMPILE_TIMEOUT_S,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        msg = f"typst compile timed out after {_COMPILE_TIMEOUT_S}s for {source_path}"
+        raise ValueError(msg) from exc
     if completed.returncode != 0:
         stderr = completed.stderr.decode("utf-8", errors="replace")[:500]
         msg = f"typst compile failed for {source_path}: {stderr}"

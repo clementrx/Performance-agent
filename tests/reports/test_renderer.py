@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 from datetime import date
 
 import pytest
@@ -19,7 +20,7 @@ def _seed_athlete(tmp_path, body: str) -> None:
 
 def test_fabricated_reference_aborts_before_any_file_is_written(tmp_path):
     _seed_athlete(tmp_path, "# Plan\nProuvé par la science (doi:10.9999/fake).")
-    with pytest.raises(ValueError, match="10.9999/fake"):  # noqa: RUF043 - literal DOI, "." matches "."
+    with pytest.raises(ValueError, match="10.9999/fake"):  # noqa: RUF043 - literal DOI
         render_report_files(tmp_path, mode="expert")
     assert not (tmp_path / "reports").exists()
 
@@ -32,6 +33,17 @@ def test_source_file_is_always_written(tmp_path, monkeypatch):
     source_path = tmp_path / "reports" / "program-v1-coach-fr.typ"
     assert source_path.exists()
     assert "= Rapport d'entraînement" in source_path.read_text(encoding="utf-8")
+
+
+def test_compile_timeout_is_a_readable_error(tmp_path, monkeypatch):
+    _seed_athlete(tmp_path, "# Plan\n- ok")
+
+    def _boom(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd=["typst"], timeout=60)
+
+    monkeypatch.setattr("performance_agent.reports.renderer.subprocess.run", _boom)
+    with pytest.raises(ValueError, match="timed out"):
+        render_report_files(tmp_path, mode="coach")
 
 
 def test_missing_program_is_a_readable_error(tmp_path):
