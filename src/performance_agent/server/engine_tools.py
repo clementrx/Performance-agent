@@ -40,7 +40,7 @@ class OneRmEstimate(TypedDict):
     """Estimated one-rep max and the formula that produced it."""
 
     one_rm_kg: float
-    formula: str
+    formula: Literal["epley", "brzycki"]
 
 
 class LoadPrescription(TypedDict):
@@ -79,7 +79,10 @@ def predict_race_time(
 
 
 def compute_pace(distance_m: float, time_s: float) -> Pace:
-    """Return running pace in seconds per kilometre for a distance and time."""
+    """Return running pace in seconds per kilometre for a distance and time.
+
+    distance_m and time_s must be positive.
+    """
     return Pace(pace_s_per_km=pace_s_per_km(distance_m, time_s))
 
 
@@ -95,7 +98,11 @@ def estimate_1rm(
 
 
 def prescribe_load(one_rm_kg: float, percentage: float) -> LoadPrescription:
-    """Return the absolute load in kg for a fraction of 1RM (e.g. 0.8 = 80%)."""
+    """Return the absolute load in kg for a fraction of 1RM (e.g. 0.8 = 80%).
+
+    percentage must be in (0, 1.3]; values above 1.0 are for supra-maximal
+    work (eccentrics, partials).
+    """
     return LoadPrescription(load_kg=load_for_percentage(one_rm_kg, percentage))
 
 
