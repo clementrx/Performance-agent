@@ -148,6 +148,8 @@ def compute_weekly_loads(daily_loads: list[float]) -> WeeklyLoads:
 
     Loads must be finite and non-negative. Blocks are anchored at the first
     element (oldest day); a short final block contains the most recent days.
+    These start-anchored blocks are NOT aligned with compute_acwr's
+    end-anchored windows unless the history length is a multiple of 7.
     """
     return WeeklyLoads(weekly_totals=weekly_loads(daily_loads))
 
@@ -171,6 +173,8 @@ def build_periodization_waves(
     mesocycle; every deload_every-th building week is a deload (0.6 volume,
     0.9 intensity); the final taper_weeks weeks halve volume at baseline
     intensity. Factors are multipliers against a baseline week (1.0).
+    total_weeks must be >= 1; deload_every must be >= 2; taper_weeks must be
+    >= 0 and < total_weeks.
     """
     waves = build_weekly_waves(total_weeks, deload_every=deload_every, taper_weeks=taper_weeks)
     return PeriodizationWaves(weeks=waves)
