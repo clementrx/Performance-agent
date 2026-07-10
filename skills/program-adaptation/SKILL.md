@@ -4,8 +4,9 @@ description: Use when a check-in fires a trigger (missed sessions, high fatigue,
   pain, plateau, schedule change). Diagnoses from logged data and writes the next
   program version with an explicit reason.
 tools: [read_athlete, get_time_context, read_program, read_sessions, read_checkins,
-        compute_weekly_loads, compute_acwr, assess_endurance_goal, prescribe_load,
-        estimate_1rm, build_periodization_waves, check_citations, save_program]
+        compute_session_load, compute_weekly_loads, compute_acwr,
+        assess_endurance_goal, prescribe_load, estimate_1rm,
+        build_periodization_waves, check_citations, save_program]
 ---
 
 # Program Adaptation
