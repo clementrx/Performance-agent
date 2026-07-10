@@ -12,11 +12,10 @@ PyPI release, install from a local clone.
   everything else works without it.
 
 ```bash
-git clone https://github.com/<your-org>/performance-agent
+git clone https://github.com/clementrx/Performance-agent
 cd performance-agent && uv sync
 ```
 
-(repo not yet public — replace with this repository's actual location)
 
 ## Claude Code
 

@@ -28,6 +28,10 @@ dependencies = [
     "pyyaml==6.0.3",
 ]
 
+[project.urls]
+Homepage = "https://github.com/clementrx/Performance-agent"
+Issues = "https://github.com/clementrx/Performance-agent/issues"
+
 [project.scripts]
 performance-agent = "performance_agent.server.app:main"
 
