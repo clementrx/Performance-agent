@@ -76,6 +76,53 @@ async def test_log_session_and_checkin(client):
 
 
 @pytest.mark.anyio
+async def test_logged_sessions_can_be_read_back(client):
+    await client.call_tool(
+        "log_session",
+        {"entry": {"performed_at": "2026-07-01T18:00:00", "rpe": 7, "duration_min": 60}},
+    )
+    await client.call_tool(
+        "log_session",
+        {"entry": {"performed_at": "2026-07-03T18:00:00", "rpe": 5, "duration_min": 45}},
+    )
+    result = await client.call_tool("read_sessions", {})
+    assert not result.isError
+    sessions = result.structuredContent["sessions"]
+    assert len(sessions) == 2
+    assert sessions[0]["rpe"] == 7
+
+    limited = await client.call_tool("read_sessions", {"last_n": 1})
+    assert len(limited.structuredContent["sessions"]) == 1
+    assert limited.structuredContent["sessions"][0]["rpe"] == 5
+
+
+@pytest.mark.anyio
+async def test_logged_checkins_can_be_read_back(client):
+    await client.call_tool("log_checkin", {"entry": {"at": "2026-06-26T09:00:00"}})
+    await client.call_tool("log_checkin", {"entry": {"at": "2026-07-10T09:00:00", "fatigue": 6}})
+    result = await client.call_tool("read_checkins", {})
+    assert not result.isError
+    checkins = result.structuredContent["checkins"]
+    assert len(checkins) == 2
+    assert checkins[-1]["fatigue"] == 6
+
+
+@pytest.mark.anyio
+async def test_backdated_checkin_negative_delta_through_tool(client):
+    await client.call_tool("log_checkin", {"entry": {"at": "2026-07-10T09:00:00"}})
+    stored = await client.call_tool("log_checkin", {"entry": {"at": "2026-07-05T09:00:00"}})
+    assert stored.structuredContent["days_since_last"] == -5
+
+
+@pytest.mark.anyio
+async def test_write_profile_is_a_full_replace(client):
+    await client.call_tool("write_profile", {"profile": {"locale": "fr", "equipment": ["barbell"]}})
+    await client.call_tool("write_profile", {"profile": {"locale": "fr"}})
+    back = await client.call_tool("read_athlete", {})
+    assert back.structuredContent["profile"]["equipment"] == []  # dropped: replace, not merge
+
+
+@pytest.mark.anyio
 async def test_program_versioning_through_tools(client):
     v1 = await client.call_tool(
         "save_program", {"markdown_body": "# Plan\nWeek 1", "goal_id": "sub-45-10k"}

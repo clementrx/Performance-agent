@@ -42,6 +42,18 @@ class SessionCount(TypedDict):
     total_sessions: int
 
 
+class SessionHistory(TypedDict):
+    """Logged sessions, oldest first."""
+
+    sessions: list[SessionEntry]
+
+
+class CheckinHistory(TypedDict):
+    """Logged check-ins, oldest first."""
+
+    checkins: list[CheckinEntry]
+
+
 class ProgramSaved(TypedDict):
     """Result of writing a new program version."""
 
@@ -78,7 +90,8 @@ def write_profile(profile: Profile) -> WrittenFile:
     """Replace the athlete profile.
 
     Read the athlete first, then write the FULL updated profile — this is a
-    whole-document replace, not a merge.
+    whole-document replace, not a merge: omitted fields are DROPPED
+    (injuries, equipment, availability, notes).
     """
     return WrittenFile(path=str(store.write_profile(resolve_athlete_dir(), profile)))
 
@@ -106,6 +119,26 @@ def log_checkin(entry: CheckinEntry) -> CheckinEntry:
     return store.append_checkin(resolve_athlete_dir(), entry)
 
 
+def read_sessions(last_n: int | None = None) -> SessionHistory:
+    """Return logged training sessions, oldest first.
+
+    Use these to build daily-load series for compute_weekly_loads/compute_acwr
+    and to diagnose adherence. last_n limits to the most recent N entries.
+    """
+    sessions = store.read_sessions(resolve_athlete_dir())
+    if last_n is not None:
+        sessions = sessions[-last_n:]
+    return SessionHistory(sessions=sessions)
+
+
+def read_checkins(last_n: int | None = None) -> CheckinHistory:
+    """Return logged check-ins, oldest first (last_n limits to the most recent N)."""
+    checkins = store.read_checkins(resolve_athlete_dir())
+    if last_n is not None:
+        checkins = checkins[-last_n:]
+    return CheckinHistory(checkins=checkins)
+
+
 def save_program(markdown_body: str, goal_id: str, reason: str | None = None) -> ProgramSaved:
     """Write the NEXT program version (immutable audit trail).
 
@@ -120,7 +153,8 @@ def read_program(version: int | None = None) -> ProgramView:
     """Return the latest (or a specific) program version.
 
     Raises a readable error if no program has been saved yet — call
-    save_program first.
+    save_program first. Check read_athlete's program_version first: null
+    there means nothing to read yet.
     """
     result = store.read_program(resolve_athlete_dir(), version)
     if result is None:
@@ -155,6 +189,8 @@ def register(mcp: FastMCP) -> None:
         upsert_goal,
         log_session,
         log_checkin,
+        read_sessions,
+        read_checkins,
         save_program,
         read_program,
         get_time_context,
