@@ -229,7 +229,15 @@ def _dedup(candidates: list[LiveCandidate]) -> list[LiveCandidate]:
 
 
 def _verify_candidates(candidates: list[LiveCandidate]) -> list[LiveCandidate]:
-    return [c for c in candidates if resolve_reference(c.doi, c.pmid).ok]
+    verified = []
+    first_call = True
+    for candidate in candidates:
+        if not first_call:
+            time.sleep(_POLITE_DELAY_S)
+        first_call = False
+        if resolve_reference(candidate.doi, candidate.pmid).ok:
+            verified.append(candidate)
+    return verified
 
 
 @dataclass(frozen=True)
@@ -251,6 +259,7 @@ def run_live_search(language_terms: dict[str, str]) -> LiveSearchOutcome:
     """
     raw: list[LiveCandidate] = []
     failed: list[str] = []
+    # only the very first network call of the whole run skips the delay
     first_call = True
     for language, term in language_terms.items():
         for source_name, search_fn in _SOURCES:
@@ -259,6 +268,9 @@ def run_live_search(language_terms: dict[str, str]) -> LiveSearchOutcome:
             first_call = False
             try:
                 raw.extend(search_fn(term, language))
-            except (OSError, ValueError):
+            except (OSError, ValueError, TypeError, AttributeError, KeyError):
+                # search_fn walks an untrusted third-party JSON response; a
+                # malformed shape (e.g. items not a list, missing author keys)
+                # should only drop this source/language, not abort the run.
                 failed.append(f"{source_name}:{language}")
     return LiveSearchOutcome(candidates=_verify_candidates(_dedup(raw)), failed_sources=failed)
