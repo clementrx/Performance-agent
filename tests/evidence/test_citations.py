@@ -53,3 +53,23 @@ def test_doi_with_trailing_punctuation_is_normalized():
 
 def test_text_without_references_is_clean():
     assert find_unknown_references("Squat 5x5 at 80%.", [ENTRY]) == []
+
+
+def test_pubmed_url_with_unknown_id_is_flagged():
+    text = "See https://pubmed.ncbi.nlm.nih.gov/99887766/ for the abstract."
+    assert find_unknown_references(text, [ENTRY]) == ["PMID:99887766"]
+
+
+def test_pubmed_url_with_known_id_passes():
+    text = "See https://pubmed.ncbi.nlm.nih.gov/123456/ for details."
+    assert find_unknown_references(text, [ENTRY]) == []
+
+
+def test_same_unknown_pmid_in_both_forms_is_reported_once():
+    text = "See PMID: 99887766 (https://pubmed.ncbi.nlm.nih.gov/99887766/)."
+    assert find_unknown_references(text, [ENTRY]) == ["PMID:99887766"]
+
+
+def test_known_doi_cited_as_url_with_trailing_path_passes():
+    text = "Full text at https://doi.org/10.1000/strength/full-text.html today."
+    assert find_unknown_references(text, [ENTRY]) == []
