@@ -12,12 +12,17 @@ from mcp.server.fastmcp import FastMCP
 from performance_agent.engine import (
     FeasibilityResult,
     TrainingAge,
+    WeekLoad,
+    acute_chronic_ratio,
+    build_weekly_waves,
     endurance_feasibility,
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
     pace_s_per_km,
     riegel_predict,
+    session_rpe_load,
+    weekly_loads,
 )
 
 _ONE_RM_FORMULAS = {"brzycki": one_rm_brzycki, "epley": one_rm_epley}
@@ -47,6 +52,30 @@ class LoadPrescription(TypedDict):
     """Absolute load for a percentage of 1RM."""
 
     load_kg: float
+
+
+class SessionLoad(TypedDict):
+    """Session-RPE training load."""
+
+    session_load: float
+
+
+class WeeklyLoads(TypedDict):
+    """Daily loads summed into consecutive 7-day blocks."""
+
+    weekly_totals: list[float]
+
+
+class AcwrResult(TypedDict):
+    """Acute:chronic workload ratio (null when history is insufficient)."""
+
+    acute_chronic_ratio: float | None
+
+
+class PeriodizationWaves(TypedDict):
+    """Week-by-week volume/intensity multipliers."""
+
+    weeks: list[WeekLoad]
 
 
 def assess_endurance_goal(
@@ -106,6 +135,47 @@ def prescribe_load(one_rm_kg: float, percentage: float) -> LoadPrescription:
     return LoadPrescription(load_kg=load_for_percentage(one_rm_kg, percentage))
 
 
+def compute_session_load(rpe: int, duration_min: int) -> SessionLoad:
+    """Return Foster's session-RPE training load (CR-10 RPE x whole minutes).
+
+    rpe must be 1-10; duration_min must be positive whole minutes.
+    """
+    return SessionLoad(session_load=session_rpe_load(rpe, duration_min))
+
+
+def compute_weekly_loads(daily_loads: list[float]) -> WeeklyLoads:
+    """Sum daily session loads into consecutive 7-day blocks.
+
+    Loads must be finite and non-negative. Blocks are anchored at the first
+    element (oldest day); a short final block contains the most recent days.
+    """
+    return WeeklyLoads(weekly_totals=weekly_loads(daily_loads))
+
+
+def compute_acwr(daily_loads: list[float]) -> AcwrResult:
+    """Acute:chronic workload ratio over the most recent 28 days (coupled variant).
+
+    Returns null when history is shorter than 28 days or the chronic load is
+    zero. Descriptive trend only — its injury-prediction validity is contested;
+    never present it as an injury probability.
+    """
+    return AcwrResult(acute_chronic_ratio=acute_chronic_ratio(daily_loads))
+
+
+def build_periodization_waves(
+    total_weeks: int, deload_every: int = 4, taper_weeks: int = 1
+) -> PeriodizationWaves:
+    """Generate week-by-week volume/intensity multipliers for a training block.
+
+    Building weeks ramp volume (+5%/wk) and intensity (+2.5%/wk) within each
+    mesocycle; every deload_every-th building week is a deload (0.6 volume,
+    0.9 intensity); the final taper_weeks weeks halve volume at baseline
+    intensity. Factors are multipliers against a baseline week (1.0).
+    """
+    waves = build_weekly_waves(total_weeks, deload_every=deload_every, taper_weeks=taper_weeks)
+    return PeriodizationWaves(weeks=waves)
+
+
 def register(mcp: FastMCP) -> None:
     """Register every engine tool on the server."""
     for tool in (
@@ -114,5 +184,9 @@ def register(mcp: FastMCP) -> None:
         compute_pace,
         estimate_1rm,
         prescribe_load,
+        compute_session_load,
+        compute_weekly_loads,
+        compute_acwr,
+        build_periodization_waves,
     ):
         mcp.tool()(tool)
