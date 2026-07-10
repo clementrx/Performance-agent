@@ -10,7 +10,6 @@ ENGINE_DIR = Path(performance_agent.engine.__file__).parent
 
 ALLOWED_STDLIB = {
     "math",
-    "statistics",
     "dataclasses",
     "enum",
     "typing",

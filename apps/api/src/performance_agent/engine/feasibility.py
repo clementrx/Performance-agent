@@ -14,6 +14,8 @@ import math
 from dataclasses import dataclass
 from enum import StrEnum
 
+from performance_agent.engine._validation import validate_finite, validate_whole_number
+
 
 class TrainingAge(StrEnum):
     """Coarse training-experience buckets used for achievable-rate lookup."""
@@ -49,17 +51,13 @@ class FeasibilityResult:
 
 
 def _validate_inputs(current_time_s: float, target_time_s: float, weeks: int) -> None:
-    if isinstance(weeks, bool) or not isinstance(weeks, int):
-        msg = f"weeks must be a whole number, got {weeks!r}"
-        raise ValueError(msg)
+    validate_whole_number("weeks", weeks)
     for name, value in (("current_time_s", current_time_s), ("target_time_s", target_time_s)):
-        if not math.isfinite(value):
-            msg = f"{name} must be finite, got {value}"
-            raise ValueError(msg)
+        validate_finite(name, value)
     if current_time_s <= 0 or target_time_s <= 0 or weeks <= 0:
         msg = (
             "current_time_s, target_time_s and weeks must be positive, "
-            f"got {current_time_s}, {target_time_s}, {weeks}"
+            f"got {current_time_s!r}, {target_time_s!r}, {weeks!r}"
         )
         raise ValueError(msg)
 

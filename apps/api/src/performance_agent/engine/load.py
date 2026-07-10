@@ -8,25 +8,21 @@ descriptive trend, never as an injury probability.
 import math
 from collections.abc import Sequence
 
+from performance_agent.engine._validation import validate_whole_number
+
 MIN_RPE = 1
 MAX_RPE = 10
 DAYS_PER_WEEK = 7
 CHRONIC_WINDOW_DAYS = 28
 
 
-def _validate_whole_number(name: str, value: int) -> None:
-    if isinstance(value, bool) or not isinstance(value, int):
-        msg = f"{name} must be a whole number, got {value!r}"
-        raise ValueError(msg)
-
-
 def _validate_daily_loads(daily_loads: Sequence[float]) -> None:
     for day, value in enumerate(daily_loads):
         if not math.isfinite(value):
-            msg = f"daily loads must be finite, got {value} at index {day}"
+            msg = f"daily loads must be finite, got {value!r} at index {day}"
             raise ValueError(msg)
         if value < 0:
-            msg = f"daily loads must not be negative, got {value} at index {day}"
+            msg = f"daily loads must not be negative, got {value!r} at index {day}"
             raise ValueError(msg)
 
 
@@ -36,13 +32,13 @@ def session_rpe_load(rpe: int, duration_min: int) -> float:
     Duration is whole minutes by design; sub-minute precision is not
     meaningful for session-RPE quantification.
     """
-    _validate_whole_number("rpe", rpe)
-    _validate_whole_number("duration_min", duration_min)
+    validate_whole_number("rpe", rpe)
+    validate_whole_number("duration_min", duration_min)
     if not MIN_RPE <= rpe <= MAX_RPE:
-        msg = f"rpe must be between {MIN_RPE} and {MAX_RPE}, got {rpe}"
+        msg = f"rpe must be between {MIN_RPE} and {MAX_RPE}, got {rpe!r}"
         raise ValueError(msg)
     if duration_min <= 0:
-        msg = f"duration_min must be positive, got {duration_min}"
+        msg = f"duration_min must be positive, got {duration_min!r}"
         raise ValueError(msg)
     return float(rpe * duration_min)
 

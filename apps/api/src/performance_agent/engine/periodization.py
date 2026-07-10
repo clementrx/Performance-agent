@@ -6,6 +6,8 @@ intensity). The Periodization agent later maps these onto concrete sessions.
 
 from dataclasses import dataclass
 
+from performance_agent.engine._validation import validate_whole_number
+
 MIN_DELOAD_EVERY = 2
 DEFAULT_VOLUME_RAMP = 0.05
 DEFAULT_INTENSITY_RAMP = 0.025
@@ -26,24 +28,18 @@ class WeekLoad:
     is_taper: bool
 
 
-def _validate_whole_number(name: str, value: int) -> None:
-    if isinstance(value, bool) or not isinstance(value, int):
-        msg = f"{name} must be a whole number, got {value!r}"
-        raise ValueError(msg)
-
-
 def _validate(total_weeks: int, deload_every: int, taper_weeks: int) -> None:
-    _validate_whole_number("total_weeks", total_weeks)
-    _validate_whole_number("deload_every", deload_every)
-    _validate_whole_number("taper_weeks", taper_weeks)
+    validate_whole_number("total_weeks", total_weeks)
+    validate_whole_number("deload_every", deload_every)
+    validate_whole_number("taper_weeks", taper_weeks)
     if total_weeks < 1:
-        msg = f"total_weeks must be >= 1, got {total_weeks}"
+        msg = f"total_weeks must be >= 1, got {total_weeks!r}"
         raise ValueError(msg)
     if deload_every < MIN_DELOAD_EVERY:
-        msg = f"deload_every must be >= {MIN_DELOAD_EVERY}, got {deload_every}"
+        msg = f"deload_every must be >= {MIN_DELOAD_EVERY}, got {deload_every!r}"
         raise ValueError(msg)
     if not 0 <= taper_weeks < total_weeks:
-        msg = f"taper_weeks must be >= 0 and < total_weeks, got {taper_weeks}"
+        msg = f"taper_weeks must be >= 0 and < total_weeks, got {taper_weeks!r}"
         raise ValueError(msg)
 
 

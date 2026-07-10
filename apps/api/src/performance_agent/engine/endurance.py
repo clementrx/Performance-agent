@@ -22,7 +22,7 @@ def riegel_predict(
     if known_distance_m <= 0 or known_time_s <= 0 or target_distance_m <= 0:
         msg = (
             "known_distance_m, known_time_s and target_distance_m must be positive, "
-            f"got {known_distance_m}, {known_time_s}, {target_distance_m}"
+            f"got {known_distance_m!r}, {known_time_s!r}, {target_distance_m!r}"
         )
         raise ValueError(msg)
     for name, distance_m in (
@@ -32,11 +32,11 @@ def riegel_predict(
         if not RIEGEL_MIN_DISTANCE_M <= distance_m <= RIEGEL_MAX_DISTANCE_M:
             msg = (
                 f"{name} must be a distance within the Riegel validity band "
-                f"[{RIEGEL_MIN_DISTANCE_M}, {RIEGEL_MAX_DISTANCE_M}] m, got {distance_m}"
+                f"[{RIEGEL_MIN_DISTANCE_M}, {RIEGEL_MAX_DISTANCE_M}] m, got {distance_m!r}"
             )
             raise ValueError(msg)
     if not 0 < exponent <= MAX_RIEGEL_EXPONENT:
-        msg = f"exponent must be in (0, {MAX_RIEGEL_EXPONENT}], got {exponent}"
+        msg = f"exponent must be in (0, {MAX_RIEGEL_EXPONENT}], got {exponent!r}"
         raise ValueError(msg)
     return known_time_s * (target_distance_m / known_distance_m) ** exponent
 
@@ -44,6 +44,6 @@ def riegel_predict(
 def pace_s_per_km(distance_m: float, time_s: float) -> float:
     """Return pace in seconds per kilometre."""
     if distance_m <= 0 or time_s <= 0:
-        msg = f"distance_m and time_s must be positive, got {distance_m}, {time_s}"
+        msg = f"distance_m and time_s must be positive, got {distance_m!r}, {time_s!r}"
         raise ValueError(msg)
     return time_s / (distance_m / 1000)
