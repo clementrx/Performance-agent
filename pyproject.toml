@@ -5,6 +5,23 @@ description = "Evidence-based AI physical preparation platform — backend"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = [
+    "strength-and-conditioning",
+    "training",
+    "coaching",
+    "mcp",
+    "evidence-based",
+    "sports-science",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
 dependencies = [
     "mcp==1.28.1",
     "pydantic==2.13.4",
