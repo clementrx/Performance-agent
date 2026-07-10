@@ -4,7 +4,7 @@ description: Use when a returning athlete with an active program shows up — or
   whenever days have passed since the last contact. Runs the structured check-in,
   logs it, and routes to adaptation when triggers fire.
 tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
-        read_sessions, compute_session_load]
+        read_sessions, compute_session_load, write_profile]
 ---
 
 # Training Check-in
@@ -27,9 +27,12 @@ a coach's five minutes, not an interrogation. Confirm profile facts via
    everything else), body-weight change if relevant, schedule changes coming.
 4. `log_checkin` with what you collected. Quote the stored days_since_last back.
 5. Route:
-   - Pain flagged → record it in the profile injuries (via athlete-onboarding's
-     persistence rules), stop loading that pattern, recommend a professional if
-     it is more than a niggle, and go to program-adaptation to reshape the week.
+   - Pain flagged → record it in the profile injuries: read the current profile,
+     add the injury, `write_profile` the FULL document (whole-document replace).
+     Stop loading that pattern, recommend a professional if it is more than a
+     niggle, and go to program-adaptation to reshape the week.
    - Adherence < 70%, fatigue ≥ 8, plateau suspicion, or schedule change →
      program-adaptation.
-   - All green → encourage, preview the next block (read_program), done.
+   - All green → encourage, preview the next block (read_program), done. If
+     `read_athlete`'s program_version is null there is no program to preview —
+     route to program-generation instead.

@@ -22,12 +22,22 @@ every one carries a reason the athlete (and future you) can audit.
 - `read_sessions` / `read_checkins` for the recent window.
 - Build the daily-load series from logged sessions (rpe × duration via
   `compute_session_load` values, zeros for rest days) → `compute_weekly_loads` and
-  `compute_acwr`. Present ACWR as a descriptive trend only — its injury-prediction
-  validity is contested; never present it as an injury probability.
+  `compute_acwr`. Build the series date-indexed: from `get_time_context`'s today
+  back at least 28 days, one value per calendar day, SUMMING same-day sessions,
+  zero for days with no session and for sessions missing rpe/duration; the array's
+  LAST element must be today. `compute_acwr` is date-blind — a misaligned array
+  gives a wrong-but-plausible number with no error. Present ACWR as a descriptive
+  trend only — its injury-prediction validity is contested; never present it as an
+  injury probability.
+- If `get_time_context` shows the deadline already passed (negative
+  days_remaining), do NOT call `assess_endurance_goal` (it errors on non-positive
+  weeks); route to goal-assessment to renegotiate the deadline first.
 - Re-run `assess_endurance_goal` with today's numbers if the goal's feasibility may
   have moved (quote the new drivers vs the old ones).
 - Name the diagnosis in one sentence: under-recovery / under-stimulus / interrupted
-  training / life-constraint change / pain-driven.
+  training / life-constraint change / pain-driven (map check-in triggers loosely:
+  fatigue ≥ 8 → under-recovery; adherence < 70% → interrupted training; but
+  diagnose from the data, not the trigger label).
 
 ## 2. Propose the change
 
