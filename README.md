@@ -116,7 +116,7 @@ verdict = endurance_feasibility(
 verdict.probability  # 0.0023 — with improvement_needed, required and achievable rates
 ```
 
-Repository layout: `apps/api` (Python package: engine, soon MCP server) ·
+Repository layout: `src/performance_agent` (engine + MCP server) ·
 `docs/superpowers/specs` (architecture blueprint) · `docs/superpowers/plans`
 (implementation plans with as-built notes).
 
