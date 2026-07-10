@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from performance_agent.memory.schemas import Goal, Injury, Profile
 from performance_agent.memory.store import (
     read_goals,
@@ -51,3 +53,15 @@ def test_upsert_keeps_other_goals(tmp_path):
     upsert_goal(tmp_path, Goal(id="goal-a", statement="A"))
     goals = upsert_goal(tmp_path, Goal(id="goal-b", statement="B"))
     assert {g.id for g in goals} == {"goal-a", "goal-b"}
+
+
+def test_corrupt_yaml_names_the_file(tmp_path):
+    (tmp_path / "profile.yaml").write_text("{{invalid", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"profile\.yaml"):
+        read_profile(tmp_path)
+
+
+def test_goals_file_must_be_a_list(tmp_path):
+    (tmp_path / "goals.yaml").write_text("id: goal-a\nstatement: A\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="list"):
+        read_goals(tmp_path)

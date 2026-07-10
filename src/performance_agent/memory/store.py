@@ -18,12 +18,24 @@ GOALS_FILE = "goals.yaml"
 def _atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(content, encoding="utf-8")
-    os.replace(tmp, path)
+    try:
+        tmp.write_text(content, encoding="utf-8")
+        os.replace(tmp, path)
+    except OSError:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def _to_yaml(data: object) -> str:
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+
+
+def _load_yaml(path: Path) -> object:
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        msg = f"{path} contains invalid YAML: {exc}"
+        raise ValueError(msg) from exc
 
 
 def read_profile(base_dir: Path) -> Profile:
@@ -31,7 +43,7 @@ def read_profile(base_dir: Path) -> Profile:
     path = base_dir / PROFILE_FILE
     if not path.exists():
         return Profile()
-    return Profile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")) or {})
+    return Profile.model_validate(_load_yaml(path) or {})
 
 
 def write_profile(base_dir: Path, profile: Profile) -> Path:
@@ -46,7 +58,10 @@ def read_goals(base_dir: Path) -> list[Goal]:
     path = base_dir / GOALS_FILE
     if not path.exists():
         return []
-    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or []
+    raw = _load_yaml(path) or []
+    if not isinstance(raw, list):
+        msg = f"{path} must contain a YAML list of goals (each item starting with '- ')"
+        raise ValueError(msg)
     return [Goal.model_validate(item) for item in raw]
 
 
