@@ -33,8 +33,15 @@ def one_rm_epley(load_kg: float, reps: int) -> float:
 
 
 def one_rm_brzycki(load_kg: float, reps: int) -> float:
-    """Estimate 1RM with the Brzycki formula: load * 36 / (37 - reps)."""
+    """Estimate 1RM with the Brzycki formula: load * 36 / (37 - reps).
+
+    A single rep at a given load is, by definition, at least a 1RM at that
+    load, so ``reps == 1`` returns ``load_kg`` unchanged (float rounding in
+    ``load * 36 / 36`` would otherwise land one ULP below the lifted load).
+    """
     _validate_load_and_reps(load_kg, reps)
+    if reps == 1:
+        return float(load_kg)
     return load_kg * 36 / (37 - reps)
 
 

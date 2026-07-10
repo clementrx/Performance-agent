@@ -19,6 +19,11 @@ def test_brzycki_known_value():
     assert one_rm_brzycki(load_kg=100, reps=5) == pytest.approx(112.5, abs=0.01)
 
 
+def test_brzycki_single_rep_is_the_load_itself():
+    # float rounding regression guard: 1.9 * 36 / 36 != 1.9 exactly
+    assert one_rm_brzycki(load_kg=1.9, reps=1) == 1.9
+
+
 @pytest.mark.parametrize("reps", [0, -1, 13])
 def test_rep_range_is_validated(reps):
     with pytest.raises(ValueError, match="reps"):
