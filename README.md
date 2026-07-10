@@ -128,9 +128,10 @@ Repository layout: `src/performance_agent` (engine + MCP server) ·
 
 ## Contributing
 
-Early development, moving fast. The blueprint in `docs/superpowers/specs/` is the
-source of truth. Sports scientists and S&C coaches: the evidence-grading pipeline will
-need expert reviewers — watch this space.
+Early development, moving fast — see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev
+setup and review conventions. The blueprint in `docs/superpowers/specs/` is the source
+of truth. Sports scientists and S&C coaches: the evidence-grading pipeline will need
+expert reviewers — watch this space.
 
 ## License
 
