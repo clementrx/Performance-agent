@@ -1,556 +1,287 @@
-# PerformanceAgent — Technical Architecture Blueprint
+# PerformanceAgent — Technical Architecture Blueprint (v2, agent-native)
 
-**Date:** 2026-07-10
-**Status:** Approved (2026-07-10)
-**Scope:** Complete technical design for an open-source, AI-powered, evidence-based
-physical preparation platform (digital strength & conditioning assistant).
+**Date:** 2026-07-10 (v2 — agent-native pivot, same day)
+**Status:** Approved direction; v2 pending final review
+**Supersedes:** v1 (web platform architecture) — see git history of this file. The v1
+product vision, evidence philosophy, safety rules, and MVP verticals are unchanged;
+the delivery architecture is replaced.
 
 ---
 
 ## 1. Executive Summary
 
-PerformanceAgent is an open-source AI coaching ecosystem that designs, explains, monitors,
-and adapts physical preparation programs for any athlete, sport, and objective. It is not a
-workout generator: it is a long-lived coaching system built on three pillars:
+PerformanceAgent is an open-source, evidence-based AI Strength & Conditioning coach that
+runs **inside the user's existing AI coding agent** — Claude Code, Gemini CLI, Codex —
+using their existing LLM subscription. There is no backend, no web app, no API key to
+provision, nothing to host.
 
-1. **Evidence first** — every recommendation traces to graded scientific sources stored in a
-   verifiable evidence database. The system architecturally *cannot* fabricate references.
-2. **Adaptive coaching** — programs are living objects that respond to completed sessions,
-   fatigue, injuries, missed workouts, and schedule changes.
-3. **Long-term athlete memory** — a structured, persistent athlete profile means no
-   conversation ever starts from zero.
+The product is three things, installed together:
 
-The architecture is a **modular monolith** (Python/FastAPI) hosting a **multi-agent
-orchestration layer** (LangGraph), a **deterministic sports-science engine** (pure Python,
-no LLM), a **RAG evidence pipeline** (PostgreSQL + pgvector), and a **Next.js frontend**
-with first-class i18n (English, French, Spanish).
+1. **An MCP server** exposing deterministic tools: the sports-science engine
+   (feasibility, predictions, loads, periodization — built, 93 tests), a graded
+   scientific-evidence corpus with search and citation validation, file-based athlete
+   memory, and a Typst PDF report renderer.
+2. **A set of coaching skills** (structured protocol documents) that turn the host
+   agent into a professional S&C coach: onboarding, assessment, program generation,
+   personalization, check-ins, adaptation.
+3. **A transparent athlete data directory** (plain markdown/YAML files) holding the
+   profile, goals, program versions, session logs, and check-in history — readable,
+   diffable, portable, syncable by the user.
 
-A core design stance: **LLMs narrate and reason; deterministic code calculates.** Feasibility
-scores, race-time predictions, training-load models, and progression math live in a
-unit-testable engine. Agents call the engine as tools and explain its outputs. This keeps
-the science reproducible, testable, and honest.
+The host agent (Claude/Gemini/Codex) does what LLMs do best — converse, reason, adapt,
+explain — and is architecturally prevented from doing what they do worst: it cannot
+invent a training number (numbers come from engine tools) and it cannot fabricate a
+citation (citations must resolve against the local evidence corpus, enforced at report
+rendering).
 
----
-
-## 2. Approach Options Considered
-
-### Option A — Modular monolith: Python backend + LangGraph + Postgres/pgvector + Next.js (RECOMMENDED)
-
-- **Pros:** Python owns the scientific ecosystem (numpy/scipy/pandas for the simulation
-  engine), the strongest RAG/agent tooling, one deployable unit for self-hosters
-  (`docker compose up`), clean extraction path to services later. LangGraph provides
-  durable agent state, checkpointing, and human-in-the-loop interrupts — exactly what
-  Mode B (long-term coach) requires.
-- **Cons:** Two languages across the repo (Python API, TypeScript web). Mitigated by an
-  OpenAPI-generated TypeScript client.
-
-### Option B — TypeScript full-stack (Next.js + Vercel AI SDK / Mastra)
-
-- **Pros:** One language, one runtime, simpler contributor story for web developers.
-- **Cons:** The simulation engine (impulse-response load models, Bayesian feasibility
-  estimation, performance prediction) fights the ecosystem; scientific literature ingestion
-  and evaluation tooling are weaker; the S&C/data-science contributor community lives
-  in Python.
-
-### Option C — Microservices per agent from day one
-
-- **Pros:** Independent scaling of agents.
-- **Cons:** Nine networked services for a project with zero users is operational suicide for
-  an open-source, self-hostable product. Agents share the same athlete state constantly;
-  network boundaries between them add latency and failure modes without benefit.
-
-**Decision: Option A.** Agents are modules behind interfaces, not services. If one agent ever
-needs independent scaling (e.g., literature ingestion), it extracts cleanly because module
-boundaries are enforced from day one.
+**Core stance unchanged from v1: LLMs narrate, deterministic code calculates.**
 
 ---
 
-## 3. Technology Stack
+## 2. Why agent-native (decision record)
 
-| Layer | Choice | Rationale |
-|---|---|---|
-| Backend runtime | Python 3.13 + `uv` | Scientific ecosystem, agent tooling |
-| API framework | FastAPI + Pydantic v2 | Async, typed, OpenAPI-native |
-| Agent orchestration | LangGraph | Stateful graphs, checkpointing, interrupts, streaming |
-| LLM access | Provider-agnostic adapter (default: Anthropic Claude; OpenAI, local via Ollama/vLLM supported) | Open-source users bring their own key/model |
-| Embeddings | Provider-agnostic (default: `voyage-3.5`; local fallback `bge-m3` — multilingual) | Multilingual corpus (EN/FR/ES queries against EN literature) |
-| Relational DB | PostgreSQL 16 | Single source of truth |
-| Vector store | pgvector (same Postgres) | One database to operate; hybrid search with `tsvector`. Revisit dedicated store (Qdrant) only if corpus > ~5M chunks |
-| Background jobs | Procrastinate (Postgres-backed queue) | Zero extra infrastructure; Redis not required for MVP |
-| ORM / migrations | SQLAlchemy 2 (async) + Alembic | Standard, typed |
-| Frontend | Next.js 15 (App Router) + TypeScript | SSR, ecosystem |
-| UI | Tailwind CSS + shadcn/ui | Accessible, themeable |
-| Data fetching | TanStack Query + OpenAPI-generated client | Type-safe API contract |
-| i18n (UI) | next-intl | Message catalogs for en/fr/es |
-| Charts | Recharts | Progress dashboards |
-| Auth | fastapi-users (JWT + OAuth2, optional OIDC) | Self-host friendly; no SaaS dependency |
-| PDF reports | Typst (via `typst` CLI in worker) | Professional typesetting, fast, templatable, versionable templates |
-| Observability | OpenTelemetry + structlog; Langfuse (self-hostable) for LLM traces | Explainability requires tracing every agent decision |
-| Python tooling | `uv`, `ruff`, `ty`, `pytest` | Per project standards |
-| TS tooling | `pnpm`, `oxlint`, `oxfmt`, `vitest`, strict `tsc` | Per project standards |
-| Packaging | Docker + docker-compose; single-node deploy | Self-host first |
-| CI/CD | GitHub Actions (SHA-pinned) | Lint, typecheck, test, eval, build |
+The v1 blueprint designed a self-hosted web platform (FastAPI + LangGraph + Next.js +
+Postgres) with bring-your-own-key LLM access. The maintainer redirected: all interaction
+must flow through existing agent CLIs and the user's LLM subscription — no per-call API
+billing, no separate infrastructure.
 
-**Assumption stated:** Redis is deliberately excluded from the MVP. Procrastinate gives
-Postgres-backed queues/schedules; caching needs at MVP scale are served by Postgres and
-in-process caches. Add Redis only when measured.
+Consequences:
+
+| v1 (replaced) | v2 (agent-native) |
+|---|---|
+| FastAPI backend + REST/SSE | MCP server (stdio), tools called by the host agent |
+| LangGraph multi-agent graphs | Coaching skills (protocol markdown) executed by the host agent |
+| Next.js web app + auth | The agent CLI *is* the interface; no auth needed (local files) |
+| PostgreSQL + pgvector | SQLite (FTS5) for evidence; plain files for athlete data |
+| BYOK LLM adapter | The host agent brings its own model/subscription |
+| Procrastinate workers | None — everything is synchronous tool calls |
+| Langfuse tracing | The host CLI's own transcript is the trace |
+
+What survives intact: the deterministic engine (Plan 01, done), the evidence-first
+philosophy and grading hierarchy, anti-fabrication as an architectural guarantee, the
+honest feasibility verdicts, long-term athlete memory, multilingual coaching (en/fr/es),
+Typst reports, the MVP verticals (running 5K–marathon + barbell strength), and all
+safety rules (§9).
+
+Trade-off accepted: the MVP targets users comfortable installing a CLI tool. A web
+front-end for non-technical athletes is explicitly out of scope until the agent-native
+core proves itself (it would reuse the same MCP server).
 
 ---
 
-## 4. System Architecture
+## 3. System Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│                          Next.js Web App                           │
-│   onboarding wizard · chat · program calendar · dashboards · PDF   │
-│                    next-intl (en / fr / es)                        │
-└───────────────┬────────────────────────────────────────────────────┘
-                │ HTTPS (REST + SSE streaming)
-┌───────────────▼────────────────────────────────────────────────────┐
-│                        FastAPI Application                         │
-│  ┌──────────────┐  ┌───────────────────────────────────────────┐  │
-│  │  REST API    │  │        Agent Orchestrator (LangGraph)     │  │
-│  │  auth        │  │  coach graph · onboarding graph ·         │  │
-│  │  athletes    │  │  program-generation graph · check-in graph│  │
-│  │  programs    │  └──────┬──────────────────┬─────────────────┘  │
-│  │  sessions    │         │ tools            │ state              │
-│  │  chat (SSE)  │  ┌──────▼──────┐   ┌───────▼───────┐            │
-│  │  reports     │  │ Sports      │   │ Athlete       │            │
-│  │  evidence    │  │ Science     │   │ Memory        │            │
-│  └──────────────┘  │ Engine      │   │ Service       │            │
-│                    │ (pure py,   │   │ (profile ·    │            │
-│  ┌──────────────┐  │  no LLM)    │   │  episodic ·   │            │
-│  │ RAG Service  │  └─────────────┘   │  semantic)    │            │
-│  │ hybrid       │                    └───────────────┘            │
-│  │ retrieval ·  │  ┌─────────────────────────────────┐            │
-│  │ evidence     │  │ Procrastinate Workers           │            │
-│  │ grading      │  │ literature ingestion · PDF gen ·│            │
-│  └──────────────┘  │ simulations · scheduled check-in│            │
-└────────┬───────────┴────────────────┬────────────────┴────────────┘
-         │                            │
-┌────────▼────────────────────────────▼───────────┐   ┌────────────┐
-│        PostgreSQL 16 (+ pgvector)               │   │ LLM / Embed│
-│  relational schema · vector chunks · job queue  │   │ providers  │
-│  · LangGraph checkpoints                        │   │ (BYOK)     │
-└─────────────────────────────────────────────────┘   └────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│        Host agent CLI (Claude Code / Gemini CLI / Codex)     │
+│        — the conversation, reasoning, and orchestration —    │
+│                                                              │
+│   Coaching skills (installed protocol docs):                 │
+│   onboarding · assessment · program-generation ·             │
+│   personalization · check-in · adaptation · nutrition ·      │
+│   reporting                                                  │
+└───────────────┬──────────────────────────────────────────────┘
+                │ MCP (stdio)
+┌───────────────▼──────────────────────────────────────────────┐
+│                 performance-agent MCP server (Python)        │
+│                                                              │
+│  Engine tools (deterministic, built)                         │
+│   assess_endurance_goal · predict_race_time · estimate_1rm  │
+│   prescribe_load · session_load · weekly_loads · acwr ·      │
+│   build_periodization_waves                                  │
+│                                                              │
+│  Evidence tools                                              │
+│   search_evidence(query, filters) → graded chunks + IDs      │
+│   get_citation(id) → formatted reference (DOI/PMID)          │
+│                                                              │
+│  Memory tools                                                │
+│   read_athlete() · update_profile(...) · log_session(...) ·  │
+│   log_checkin(...) · save_program(...) · get_time_context()  │
+│                                                              │
+│  Report tool                                                 │
+│   render_report(program_id, mode, locale) → PDF (Typst)      │
+│   — validates every citation ID against the corpus; any      │
+│     unknown reference aborts the render (anti-fabrication)   │
+└───────┬──────────────────────────┬───────────────────────────┘
+        │                          │
+┌───────▼───────────┐   ┌──────────▼──────────────────────────┐
+│ evidence.db       │   │ athlete data directory (user-owned) │
+│ SQLite FTS5,      │   │ ~/.performance-agent/ or ./athlete/ │
+│ seeded from a     │   │  profile.yaml · goals.yaml ·        │
+│ curated manifest  │   │  programs/program-v3.md ·           │
+│ (~200 graded      │   │  sessions.jsonl · checkins.jsonl ·  │
+│ studies, MVP)     │   │  reports/*.pdf                      │
+└───────────────────┘   └─────────────────────────────────────┘
 ```
 
-### 4.1 The two coaching modes map to two execution patterns
+### 3.1 Division of labour
 
-- **Mode A — Program Generator:** a finite pipeline (onboarding → assessment → research →
-  prescription → periodization → personalization → report). Runs the program-generation
-  graph once, emits a program + PDF. Stateless after delivery (profile still saved).
-- **Mode B — Long-Term AI Coach:** the same pipeline *plus* a persistent coach graph whose
-  checkpointed state survives across conversations, a check-in protocol driven by time
-  deltas, and the adaptation loop (§7.2). LangGraph's Postgres checkpointer stores thread
-  state; the Athlete Memory Service stores durable facts.
+- **Skills** own the coaching *process*: what to ask during onboarding, when to call
+  which tool, how to negotiate an unrealistic goal, how to structure a check-in after
+  N days away, how to present evidence grades, which language to respond in.
+- **MCP tools** own every *fact*: numbers, dates, citations, athlete history. A skill
+  never states a probability or a load; it calls a tool and explains the result.
+- **The athlete directory** owns all *state*. The MCP server is stateless between
+  calls; everything durable is a file the user can read and version.
 
-### 4.2 LLMs narrate, the engine calculates
+### 3.2 The nine v1 agents map to skills + tools
 
-The **Sports Science Engine** is a deterministic, fully unit-tested Python package with no
-LLM dependency:
-
-- Performance predictors: Riegel/VDOT-style endurance models, CP/W′ (critical power),
-  strength progression estimators (validated 1RM formulas: Epley, Brzycki), sprint/jump
-  benchmark tables by age/sex/level.
-- Training-load models: session-RPE load, ACWR (with its documented limitations), Banister
-  impulse-response fitness–fatigue model for simulation.
-- Feasibility scoring: required progression rate vs. empirical progression-rate
-  distributions by training age → probability estimate with confidence interval.
-- Periodization math: volume/intensity wave generation, taper kinetics, deload placement.
-
-Agents call these as tools. An agent never invents a probability or a load number; it
-requests one, then explains it. This is the single most important testability decision in
-the system.
+| v1 agent | v2 realization |
+|---|---|
+| 1 Assessment & Feasibility | skill `assessment` + `assess_endurance_goal` tool |
+| 2 Scientific Research | skill guidance + `search_evidence`/`get_citation` tools |
+| 3 Exercise Prescription | skill `program-generation` + engine load tools + exercise catalog |
+| 4 Periodization & Planning | same skill + `build_periodization_waves` tool |
+| 5 Personalization | skill `personalization` (equipment/constraints negotiation) |
+| 6 Nutrition & Recovery | skill `nutrition-recovery` (V2), evidence-gated |
+| 7 Simulation | engine tools (Banister/Monte Carlo in V2) |
+| 8 Progression & Adaptation | skill `check-in` + memory tools + engine trend math |
+| 9 Report Generation | `render_report` tool (Typst; coach/expert modes, i18n) |
 
 ---
 
-## 5. Data Model (PostgreSQL)
+## 4. Athlete Memory (file-based)
 
-Core entities (columns abridged; all tables get `id UUID`, `created_at`, `updated_at`):
+Directory resolution: `PERFORMANCE_AGENT_HOME` env var → else `./athlete/` if present
+(project-local coaching folder) → else `~/.performance-agent/`.
 
 ```
-users                 (email, hashed_password, locale, role)
-athletes              (user_id, display_name, birth_date, sex, height_cm, weight_kg,
-                       body_composition JSONB, training_age_years, sport, discipline,
-                       competition_level, locale, coaching_mode ENUM('generator','coach'))
-injury_records        (athlete_id, area, description, occurred_on, status, restrictions JSONB)
-medical_flags         (athlete_id, description, severity, requires_clearance BOOL)
-equipment_profiles    (athlete_id, context ENUM('gym','home','outdoor'), items JSONB)
-                      -- items validated against a catalog enum: barbell, rack, sled, skierg…
-technology_profiles   (athlete_id, devices JSONB)  -- gps, hr_monitor, vbt, force_plates…
-availability          (athlete_id, sessions_per_week, minutes_per_session,
-                       weekly_pattern JSONB, constraints TEXT)
-
-goals                 (athlete_id, statement, sport, metric, target_value, current_value,
-                       deadline DATE, priority, status)
-competitions          (athlete_id, name, date, priority ENUM('A','B','C'))
-
-assessments           (athlete_id, goal_id, feasibility_score, success_probability,
-                       probability_ci JSONB, risks JSONB, recommendations JSONB,
-                       engine_inputs JSONB, agent_rationale TEXT)
-
-programs              (athlete_id, goal_id, status, philosophy TEXT, start_date, end_date,
-                       version INT, parent_version_id)   -- programs are versioned, never
-                                                          -- mutated in place
-macrocycles           (program_id, ordinal, focus, start_date, end_date)
-mesocycles            (macrocycle_id, ordinal, type ENUM('accumulation','intensification',
-                       'realization','deload','taper','maintenance'), objective)
-microcycles           (mesocycle_id, week_number, planned_load, notes)
-planned_sessions      (microcycle_id, day_offset, title, session_type, duration_min)
-prescriptions         (planned_session_id, exercise_id, ordinal, sets, reps, load_scheme
-                       JSONB {pct_1rm, rpe, velocity_target}, rest_sec, purpose TEXT,
-                       evidence_level, citation_ids UUID[])
-
-exercises             (canonical_name, aliases JSONB, patterns JSONB, equipment_required
-                       JSONB, substitutions JSONB, coaching_cues JSONB, i18n JSONB)
-
-completed_sessions    (athlete_id, planned_session_id NULL, performed_at, srpe INT,
-                       duration_min, notes)
-completed_sets        (completed_session_id, prescription_id NULL, exercise_id, set_number,
-                       reps, load_kg, rpe, velocity_mps)
-metrics               (athlete_id, kind ENUM('body_mass','hr_rest','hrv','1rm_estimate',
-                       'time_trial','jump_height',…), value, unit, measured_at, source)
-check_ins             (athlete_id, occurred_at, days_since_last, adherence_pct,
-                       fatigue_score, pain_flags JSONB, responses JSONB, summary TEXT)
-plan_adaptations      (program_id, check_in_id, trigger, diagnosis JSONB,
-                       changes JSONB, from_version, to_version)
-
-evidence_documents    (source ENUM('pubmed','semantic_scholar','cochrane','consensus',
-                       'textbook'), external_id, doi, pmid, title, authors JSONB, year,
-                       journal, study_type ENUM('systematic_review','meta_analysis','rct',
-                       'cohort','cross_sectional','consensus','expert_opinion'),
-                       population JSONB, methodology TEXT, conclusions TEXT,
-                       evidence_level ENUM('strong','moderate','limited','expert'),
-                       verified_at TIMESTAMPTZ)         -- verified against source API
-evidence_chunks       (document_id, content, embedding VECTOR, tsv tsvector, section)
-citations             (target_kind, target_id, document_id, claim TEXT, locale)
-
-conversation_threads  (athlete_id, graph_name, langgraph_thread_id, last_message_at)
-memory_facts          (athlete_id, kind ENUM('preference','constraint','history','feedback'),
-                       content TEXT, embedding VECTOR, source_thread_id, superseded_by NULL)
-reports               (athlete_id, program_id, mode ENUM('coach','expert'), locale,
-                       storage_path, generated_at)
+athlete/
+├── profile.yaml        # identity, locale, biometrics, training age, injuries,
+│                       # equipment, availability — schema-validated by the server
+├── goals.yaml          # goals with target/deadline/priority/status
+├── programs/
+│   ├── program-v1.md   # human-readable program, YAML frontmatter for structure
+│   └── program-v2.md   # adaptations create new versions + a diagnosis note (§ audit)
+├── sessions.jsonl      # one completed session per line (sRPE, sets, notes)
+├── checkins.jsonl      # check-in records (adherence, fatigue, pain flags)
+└── reports/            # rendered PDFs
 ```
 
-Design notes:
-
-- **Programs are immutable versions.** Adaptation creates version N+1 with a
-  `plan_adaptations` record explaining *why*. This gives a full audit trail of coaching
-  decisions — essential for explainability and for training future improvements.
-- **`citation_ids` are foreign keys**, not text. A prescription can only cite documents that
-  exist in `evidence_documents` with a verified DOI/PMID. See §8.3.
-- **Time management** needs no extra machinery: `last_message_at`, `check_ins.days_since_last`,
-  and goal deadlines are computed from timestamps at graph-entry time and injected into
-  agent context (current date, days since last interaction, weeks to objective).
-
----
-
-## 6. Athlete Memory Architecture
-
-Three complementary layers, one service (`memory/`):
-
-1. **Structured profile (source of truth):** the relational tables above. Facts with schema
-   (injuries, equipment, goals, metrics) always live here, never as free text.
-2. **Episodic memory:** append-only event log per athlete (sessions completed, check-ins,
-   adaptations, reports). Time-ordered; powers "your last update was 14 days ago" and
-   trend analysis.
-3. **Semantic memory (`memory_facts`):** distilled free-text facts extracted by the
-   orchestrator at end of each conversation ("prefers morning sessions", "hates burpees",
-   "travels for work every third week"). Embedded for retrieval; a fact can be superseded,
-   never silently deleted.
-
-**Context assembly at graph entry:** profile snapshot + active program summary + last N
-episodic events + top-k semantic facts relevant to the current message + temporal header
-(current date, days since last contact, weeks to deadline). This bounded, deterministic
-context recipe keeps token use predictable and behavior reproducible.
+- **Structured facts live in files with schemas**; the server validates on write and
+  returns actionable errors the agent can relay.
+- **`get_time_context()`** returns current date, days since last interaction, days
+  since last logged session, and weeks to each goal deadline — powering "your last
+  update was 14 days ago" without trusting the LLM's clock.
+- **Program versioning**: `save_program` never overwrites; adaptation writes vN+1 with
+  a required `reason` field. Full audit trail of coaching decisions, as in v1.
+- Free-text preferences ("hates burpees") live in a `notes` section of profile.yaml —
+  the host agent's own memory features complement this but the athlete directory is
+  the portable source of truth.
 
 ---
 
-## 7. Multi-Agent Design
+## 5. Evidence System
 
-All agents are **LangGraph nodes/subgraphs** in `agents/`, each with: a system prompt
-(versioned template), a typed input/output schema (Pydantic), an allow-listed toolset,
-and its own eval suite. One shared `CoachState` schema flows through graphs.
-
-The **Orchestrator** is not an LLM router by default: for well-defined flows (onboarding,
-generation, check-in) routing is explicit graph structure. LLM-based routing exists only
-in the open chat entry point ("intent classification" node).
-
-| # | Agent | Type | Tools | Notes |
-|---|---|---|---|---|
-| 1 | Assessment & Feasibility | LLM + engine | `engine.feasibility`, `engine.predictors`, memory read | Honest by construction: probability comes from the engine; the agent explains drivers, risks, realistic alternatives |
-| 2 | Scientific Research | LLM + retrieval | `rag.search`, `ingestion.request(pubmed/semantic_scholar)` | Retrieval-only citations; can enqueue ingestion of new literature; outputs structured evidence summaries with grade |
-| 3 | Exercise Prescription | LLM + catalog | `rag.search`, `exercises.lookup`, `engine.load_math` | Every prescription carries purpose + evidence level + citation FK |
-| 4 | Periodization & Planning | LLM + engine | `engine.periodize`, competition calendar | Single peak, multi-peak, and in-season maintenance; emits macro/meso/micro structures |
-| 5 | Personalization | LLM | equipment/availability read, `exercises.substitutions` | Diff between optimal and feasible plan; asks validation questions; records substitution impact |
-| 6 | Nutrition & Recovery | LLM + retrieval | `rag.search`, profile read | Evidence-gated: supplement advice only above evidence threshold; hard scope limit — no medical nutrition therapy |
-| 7 | Simulation | Engine-first | `engine.simulate` (Banister FFM, predictor models, Monte Carlo over adherence) | LLM only formats/explains the numeric output (probability, positive factors, limiting factors) |
-| 8 | Progression & Adaptation | LLM + engine | episodic memory, `engine.trend_detect`, plan diff tools | Detects plateau/overreach/under-stimulus from data; proposes plan version N+1 with diagnosis |
-| 9 | Report Generation | Deterministic + LLM prose | Typst templates, program/citation read | Coach mode (terse instructions) vs Expert mode (rationale + references); en/fr/es |
-
-### 7.1 Program-generation flow (Mode A, also the bootstrap of Mode B)
-
-```
-onboarding (lang → mode → questionnaire)
-  → Assessment (feasibility gate: if unrealistic, negotiate goal with user — interrupt)
-  → Research (evidence pack for sport/goal)
-  → Periodization (structure) ─┐
-  → Prescription (sessions)  ──┤ share evidence pack
-  → Personalization (constraint fit; interrupt for validation questions)
-  → Simulation (expected outcome envelope)
-  → Report (PDF, chosen mode + locale)
-```
-
-LangGraph **interrupts** implement every "ask the user" moment; state checkpoints mean the
-flow resumes across sessions or crashes.
-
-### 7.2 Check-in & adaptation loop (Mode B)
-
-Entry trigger: user message OR scheduled prompt (Procrastinate cron per athlete cadence).
-The graph computes time-delta context, asks the check-in question set (adherence, fatigue,
-pain, performance, body mass, schedule changes), writes a `check_ins` row, then routes:
-pain flags → safety protocol (see §10); poor adherence or plateau → Adaptation agent →
-new program version → user approval interrupt → activation.
-(Referenced as the "adaptation loop" from §4.1.)
+- **Corpus**: a curated seed manifest (`data/seed_corpus/manifest.yaml`) of ~200 graded
+  studies for the two MVP verticals — title, authors, year, study type, population,
+  conclusions summary, evidence level, DOI/PMID. Grading ceilings enforced by rules
+  (a cross-sectional study can never be `strong`), as in v1.
+- **Storage**: single-file SQLite with FTS5 (BM25) full-text search. No embeddings in
+  the MVP — no API key may be required for any core function. The host agent
+  compensates by reformulating queries (it is good at that). Cross-lingual: corpus is
+  English; skills instruct the agent to search in English and explain in the athlete's
+  language.
+- **Anti-fabrication (unchanged guarantee, new enforcement point)**: skills mandate
+  citing only IDs returned by `search_evidence`; `render_report` hard-fails on any
+  citation ID absent from the corpus, and a lint tool (`check_citations(text)`) lets
+  the agent self-verify DOI/PMID-shaped strings in prose before presenting them.
+- **Confidence stars** computed by the server from cited documents' grades
+  (★★★★★ strong … ★☆☆☆☆ expert), never by the LLM.
+- Live PubMed/Semantic Scholar ingestion becomes a V2 maintainer pipeline that ships
+  corpus updates as versioned releases users pull — user installs never call
+  external APIs.
 
 ---
 
-## 8. RAG & Evidence System
+## 6. Coaching Skills (the protocol layer)
 
-### 8.1 Ingestion pipeline (worker jobs)
+Skills are markdown protocol documents, versioned in-repo, installable as a Claude Code
+plugin (and mirrored as Gemini/Codex-compatible prompt packs from the same source).
 
-`fetch → parse → extract structured metadata → grade → chunk → embed → index`
+- `coach` (entry): language selection (en/fr/es, stored), Mode A (one-shot program) vs
+  Mode B (ongoing coach), routing to other skills.
+- `onboarding`: the questionnaire protocol (personal, sport, goal, environment,
+  equipment, availability) → writes profile.yaml/goals.yaml via tools.
+- `assessment`: run `assess_endurance_goal` (or strength equivalents), present the
+  verdict with drivers honestly, negotiate realistic alternatives on low probability.
+- `program-generation`: evidence pack via `search_evidence` → structure via
+  `build_periodization_waves` → sessions with purpose + evidence level per
+  prescription → `save_program`.
+- `personalization`: constraint fit, exercise substitutions with expected-impact notes.
+- `check-in` (Mode B): `get_time_context` → adherence/fatigue/pain protocol →
+  `log_checkin` → route to adaptation when triggers fire; pain → safety protocol (§9).
+- `adaptation` (Mode B): diagnose (data via memory tools + engine trend math), propose
+  program vN+1 with reasons, require athlete confirmation before `save_program`.
+- `report`: gather, choose coach/expert mode, call `render_report`.
 
-- **Sources:** PubMed (E-utilities), Semantic Scholar API, Europe PMC, Cochrane; manually
-  curated consensus statements (NSCA, ACSM, IOC) added via an admin CLI with mandatory
-  metadata. The repo ships a **seed corpus manifest** (list of PMIDs/DOIs + grading), not
-  copyrighted full texts — ingestion fetches abstracts/open-access content at deploy time.
-- **Grading:** study type is extracted from metadata (publication type tags) and mapped to
-  the evidence hierarchy; an LLM pass proposes `evidence_level`, a rules layer enforces
-  ceilings (e.g., a single cross-sectional study can never be graded `strong`). Human
-  override supported via admin CLI; overrides are logged.
-- **Verification:** a document is only citable after its DOI/PMID has been resolved against
-  the source API (`verified_at` set). Unverifiable entries are quarantined.
-
-### 8.2 Retrieval
-
-Hybrid search: pgvector cosine + Postgres full-text (`tsv`), reciprocal-rank fusion,
-optional cross-encoder re-rank. Filters: study type, population (age/sex/level/sport),
-recency. Queries in FR/ES are searched with multilingual embeddings (bge-m3/voyage handle
-cross-lingual retrieval against the English corpus) — no translation step needed.
-
-### 8.3 Anti-fabrication guarantee (architectural, not prompt-based)
-
-1. Agents cite by returning **chunk IDs** from retrieval results — never free-text refs.
-2. The rendering layer resolves IDs → `evidence_documents` rows → formatted citations.
-3. An output guard scans generated prose for DOI/PMID-shaped strings not present in the
-   citation set and blocks/regenerates the response.
-4. Confidence stars are computed from the cited documents' `evidence_level` distribution
-   (`strong`→★★★★★, `moderate`→★★★☆☆, `limited`→★★☆☆☆, `expert`→★☆☆☆☆), displayed on
-   every recommendation; prose degrades
-   honestly when evidence is thin ("limited evidence; based on expert recommendation").
+Skill evals (maintainer CI): golden-scenario suites — the canonical "55→35 in 12
+weeks" must produce a refusal with the engine's probability; prescriptions must carry
+valid citation IDs; locale must be respected. Deterministic checks first (schema,
+citation validity), rubric-based LLM judging where needed. CI uses a maintainer key;
+end users never need one.
 
 ---
 
-## 9. Multilingual Design
+## 7. Technology Stack (v2)
 
-- **Stored preference:** `users.locale` / `athletes.locale` (en default, fr, es) set at
-  step 1 of onboarding, changeable anytime.
-- **UI:** next-intl message catalogs (`apps/web/messages/{en,fr,es}.json`); no hardcoded
-  strings (CI check).
-- **AI output:** prompt templates receive `locale`; system prompts mandate response
-  language. Templates themselves are English with locale-specific style notes — LLMs
-  generate fluent fr/es directly; separate prompt translations are not maintained (single
-  source of truth, tested per-locale in evals).
-- **Domain data:** `exercises.i18n` JSONB holds name/cues per locale. Evidence stays in
-  English; agent summaries of evidence are generated in the user's locale.
-- **Reports:** Typst templates parameterized by locale; static labels from the same
-  catalogs as the web app.
+| Layer | Choice |
+|---|---|
+| Language/runtime | Python 3.13, `uv` (unchanged) |
+| MCP server | official `mcp` Python SDK (FastMCP), stdio transport |
+| Engine | `performance_agent.engine` (built; unchanged) |
+| Evidence store | SQLite + FTS5 (stdlib `sqlite3`) |
+| Athlete data | YAML (schema-validated: Pydantic v2) + JSONL + markdown |
+| PDF reports | Typst CLI (bundled check at first run; graceful message if absent) |
+| Skills packaging | Claude Code plugin structure; generated prompt packs for Gemini/Codex |
+| Distribution | PyPI package, run via `uvx performance-agent` / `claude mcp add` |
+| Tooling/CI | uv, ruff, ty, pytest, Hypothesis, prek, SHA-pinned Actions (unchanged) |
 
----
-
-## 10. Safety & Scope Boundaries
-
-- **Not medical advice.** Persistent disclaimer in UI and reports; nutrition agent excludes
-  clinical populations and medical nutrition therapy.
-- **Red-flag protocol:** pain/injury mentions route to a safety node — stop loading advice
-  on the affected pattern, recommend qualified professional, log a `medical_flags` entry,
-  and adapt the plan around (not through) the issue.
-- **Feasibility honesty:** the assessment agent must present engine-computed probability
-  even when discouraging; templates forbid motivational inflation of numbers.
-- **Minor athletes:** age < 16 → conservative prescription rules in the engine (no
-  supra-maximal work, technique-first), flagged in reports.
-- **PII:** self-hosted by design; secrets via env; athlete data export/delete endpoints
-  (GDPR-friendly) from MVP.
+Dropped: FastAPI, Next.js, LangGraph, Postgres/pgvector, Procrastinate, fastapi-users,
+Langfuse, embeddings.
 
 ---
 
-## 11. API Surface (v1, prefix `/api/v1`)
-
-```
-POST   /auth/register | /auth/login | /auth/refresh
-GET    /me                          PATCH /me            (locale, settings)
-POST   /athletes                    GET/PATCH /athletes/{id}
-PUT    /athletes/{id}/equipment     PUT /athletes/{id}/availability
-POST   /athletes/{id}/injuries      POST /athletes/{id}/metrics
-POST   /goals                       GET/PATCH /goals/{id}
-POST   /assessments                 (runs feasibility flow, may 202 + poll)
-POST   /programs/generate           (Mode A pipeline; SSE progress)
-GET    /programs/{id}               GET /programs/{id}/versions
-GET    /programs/{id}/calendar      (planned sessions, week view)
-POST   /sessions/{planned_id}/log   (completed session + sets)
-POST   /chat/threads                POST /chat/threads/{id}/messages   (SSE stream)
-POST   /check-ins                   (Mode B; graph-driven)
-POST   /reports                     GET /reports/{id}/download
-GET    /evidence/search             GET /evidence/{id}
-GET    /exercises                   GET /exercises/{id}
-GET    /export/me                   DELETE /me            (GDPR)
-```
-
-SSE streams carry typed events: `token`, `agent_started`, `tool_call`, `interrupt`
-(question for the user), `state_update`, `done` — the frontend renders agent activity
-transparently (explainable AI as UX).
-
----
-
-## 12. Repository Structure (monorepo)
+## 8. Repository Structure (v2)
 
 ```
 performance-agent/
-├── apps/
-│   ├── api/                          # Python 3.13, uv project
-│   │   ├── src/performance_agent/
-│   │   │   ├── agents/               # one package per agent (9) + orchestrator/
-│   │   │   ├── engine/               # deterministic sports science (no LLM imports — enforced)
-│   │   │   ├── rag/                  # ingestion/, retrieval/, grading/
-│   │   │   ├── memory/               # profile, episodic, semantic services
-│   │   │   ├── domain/               # SQLAlchemy models, Pydantic schemas
-│   │   │   ├── api/                  # routers, deps, SSE
-│   │   │   ├── llm/                  # provider adapter (anthropic, openai, ollama)
-│   │   │   ├── prompts/              # versioned templates (see below)
-│   │   │   ├── reports/              # typst templates + builder
-│   │   │   ├── workers/              # procrastinate tasks
-│   │   │   ├── i18n/                 # backend catalogs (report labels, emails)
-│   │   │   └── core/                 # config, auth, logging, telemetry
-│   │   ├── tests/                    # mirrors src; + evals/ (see §14)
-│   │   ├── alembic/
-│   │   └── pyproject.toml
-│   └── web/                          # Next.js 15, pnpm
-│       ├── src/app/[locale]/…        # onboarding, chat, calendar, dashboard, reports
-│       ├── src/lib/api/              # generated OpenAPI client
-│       ├── messages/{en,fr,es}.json
-│       └── package.json
-├── data/
-│   ├── seed_corpus/manifest.yaml     # PMIDs/DOIs + grades, no copyrighted text
-│   └── exercises/catalog.yaml        # canonical exercise catalog + i18n
-├── docs/
-│   ├── architecture/  adr/  agents/  api/  self-hosting/  contributing/
-│   └── superpowers/specs/            # design docs (this file)
-├── deploy/
-│   ├── docker-compose.yml            # postgres+pgvector, api, worker, web
-│   └── Dockerfile.api  Dockerfile.web
-├── .github/workflows/                # ci.yml, evals.yml, release.yml (SHA-pinned)
-├── .pre-commit-config.yaml           # prek: ruff, ty, oxlint, shellcheck, zizmor
-└── README.md  LICENSE(Apache-2.0)  CONTRIBUTING.md  CODE_OF_CONDUCT.md
+├── apps/api/ → becomes the single Python package (rename path in Plan 02):
+│   src/performance_agent/
+│   ├── engine/            # built (Plan 01)
+│   ├── server/            # MCP server: tool definitions, entrypoint
+│   ├── memory/            # athlete-dir schemas, readers/writers, time context
+│   ├── evidence/          # corpus build, FTS5 search, grading rules, citation check
+│   └── reports/           # typst templates (en/fr/es) + renderer
+├── skills/                # coaching protocol docs (plugin source of truth)
+├── data/seed_corpus/manifest.yaml
+├── data/exercises/catalog.yaml
+├── docs/                  # specs, plans, self-hosting → "installing" docs
+└── tests/                 # engine (built) + server + memory + evidence + skill evals
 ```
 
-**Prompt template format** (`prompts/<agent>/<name>.md`): markdown body + YAML frontmatter
-(`version`, `schema_in`, `schema_out`, `locales_tested`, `changelog`). Prompts are code:
-reviewed in PRs, covered by evals, breaking changes bump version.
+## 9. Safety & Scope (unchanged from v1)
 
----
+Not medical advice; red-flag protocol on pain/injury (stop loading advice on the
+affected pattern, recommend a professional, record a flag, adapt around); honest
+feasibility always presented with drivers; conservative rules for minors; all data
+local by construction (file-based, no server) — GDPR concerns collapse to "it's your
+directory".
 
-## 13. Explainability
+## 10. Revised Plan Sequence
 
-- Every agent step is traced (OpenTelemetry + Langfuse): inputs, retrieved evidence,
-  engine calls, output. A program can answer "why is this session here?" by walking
-  prescription → citations + engine inputs + agent rationale (stored, not regenerated).
-- Reports in **Expert mode** render this chain; **Coach mode** hides it but the data
-  exists — the mode is a view, not a data difference.
+1. ✅ **Foundation & sports science engine** (done — fully reused)
+2. **MCP server core** — FastMCP server exposing the engine as tools; packaging
+   (uvx entrypoint); install docs for Claude Code/Gemini/Codex; integration tests
+   via MCP client harness
+3. **Athlete memory** — file schemas, memory tools, time context, program versioning
+4. **Evidence corpus** — seed manifest (~200 graded studies), SQLite FTS5 build +
+   search/citation tools, anti-fabrication check tool
+5. **Coaching skills** — the protocol layer (onboarding → assessment → generation →
+   personalization → check-in/adaptation), plugin packaging, eval harness
+6. **Reports** — Typst templates (coach/expert × en/fr/es), render_report tool
+7. **Distribution & docs** — PyPI release, README/installing polish, corpus-update
+   release pipeline
 
----
-
-## 14. Testing & Evaluation Strategy
-
-1. **Engine (highest rigor):** pure pytest, property-based tests (Hypothesis) on
-   predictors/load models, golden values from published papers (e.g., known VDOT tables).
-   Mutation testing via `mutmut` on `engine/`.
-2. **API/domain:** pytest + async test client against ephemeral Postgres (testcontainers);
-   behavior-level tests (log a session → program stats update), edge/error paths required.
-3. **RAG:** retrieval quality evals — curated query→relevant-document sets per sport;
-   recall@k tracked in CI; grading-rules unit tests (ceiling enforcement).
-4. **Agents (LLM evals, `tests/evals/`):** golden scenario suites per agent — e.g.,
-   Assessment must refuse the "55→35 min 10K in 3 months" goal; Prescription outputs must
-   validate against schema, cite only retrieved IDs, and respect equipment constraints.
-   Scored by rubric-based LLM-as-judge + deterministic checks (schema, citation validity,
-   locale). Run nightly + on prompt changes (`evals.yml`); regression gates on merges
-   touching `prompts/` or `agents/`.
-5. **Anti-fabrication guard:** adversarial test set that prompts agents toward inventing
-   references; guard must catch 100% of injected fake DOIs.
-6. **Frontend:** vitest + Playwright smoke on onboarding/chat/calendar; i18n key coverage
-   check (no missing/unused keys).
-7. **CI order:** lint (ruff/oxlint) → types (ty/tsc) → unit → integration → build →
-   evals (nightly/label-gated to control cost).
-
----
-
-## 15. Deployment
-
-- **Self-host (primary):** `docker compose up` — postgres, api, worker, web. `.env` for
-  LLM keys. First-run wizard checks provider connectivity and ingests the seed corpus.
-- **Images:** GHCR, multi-arch, published on tagged releases (semver) via GitHub Actions.
-- **Scaling path:** api and worker are separate containers from day one; Postgres managed
-  or self-hosted; extract ingestion worker first if needed.
-
----
-
-## 16. Roadmap
-
-### MVP (v0.1–v0.4) — "the honest program generator"
-
-Mode A end-to-end for **two sport verticals** (running: 5K–marathon; strength: barbell
-sports) to prove depth before breadth: onboarding (3 steps, 3 locales — the mode-choice
-step captures and stores Mode B interest but presents it as "coming in V2"), athlete
-profile +
-equipment, Assessment with engine-backed feasibility, seed evidence corpus (~200 curated
-documents) + retrieval, Prescription + Periodization (single objective), Personalization,
-Typst PDF (coach/expert modes), session logging, docker-compose self-host, auth,
-export/delete. **Explicitly out:** Mode B, simulation Monte Carlo, live literature
-ingestion, wearables.
-
-### V2 — "the coach" (Mode B)
-
-Persistent coach graph + check-in protocol + time-delta awareness; Adaptation agent with
-program versioning; Simulation engine (Banister + Monte Carlo adherence); Nutrition &
-Recovery agent; progress dashboards; scheduled check-ins; live PubMed/Semantic Scholar
-ingestion with grading pipeline; multi-peak periodization; more sports (Hyrox, football,
-tennis, tactical/military tests); CSV import (Garmin/Strava export files).
-
-### V3 — "the professional platform"
-
-Coach-facing multi-athlete dashboard (human coach supervising AI); teams/organizations;
-device integrations (VBT, force plates, live wearable APIs); readiness modeling (HRV
-trends); plugin system for community sport modules + exercise packs; PWA/mobile;
-community evidence-curation workflow (moderated grading contributions); optional
-federation-grade reporting.
-
----
-
-## 17. Risks & Open Questions
-
-| Risk | Mitigation |
-|---|---|
-| LLM cost for self-hosters | BYOK + local model support; engine-first design minimizes LLM calls; context recipes bounded |
-| Evidence corpus licensing | Store abstracts/metadata + open-access only; manifest-based seeding; never redistribute paywalled full text |
-| Scope explosion (every sport at once) | Vertical-first MVP (running + strength); sport modules as plugins later |
-| LLM judge drift in evals | Deterministic checks first; judge rubrics versioned; golden outputs pinned |
-| Liability (injury claims) | Disclaimers, red-flag protocol, conservative defaults, no medical claims — reviewed in CONTRIBUTING |
-
-Decisions confirmed by the maintainer (2026-07-10):
-
-1. License: **Apache-2.0**.
-2. MVP verticals: **running (5K–marathon) + barbell strength**.
-
-Remaining open question: default hosted demo instance (costs money, great for adoption) —
-deferred, later decision.
+V2 (post-MVP): Banister/Monte Carlo simulation tools, nutrition skill, live literature
+ingestion pipeline, more sports. V3: optional web front-end reusing the same MCP server.

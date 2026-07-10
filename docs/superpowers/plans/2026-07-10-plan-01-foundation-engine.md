@@ -19,7 +19,12 @@ skeleton; no FastAPI, no database, no LLM yet.
 
 ## MVP Plan Sequence (context)
 
-The MVP spec decomposes into 7 plans, each shipping working, testable software:
+> **Superseded 2026-07-10 (post-completion):** the project pivoted to an agent-native
+> architecture (MCP server + coaching skills inside Claude Code/Gemini/Codex; no web
+> platform). This plan's deliverables are fully reused; the sequence below is replaced
+> by §10 of the v2 spec (`docs/superpowers/specs/2026-07-10-performanceagent-architecture-design.md`).
+
+Original (v1) sequence, kept for the record:
 
 1. **Foundation & sports science engine** ← this plan
 2. API core — FastAPI, auth (fastapi-users), athlete/equipment/goals CRUD, session logging, Alembic + Postgres
