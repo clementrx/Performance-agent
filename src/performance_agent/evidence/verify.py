@@ -36,7 +36,17 @@ class VerificationResult:
     retrieved_title: str | None = None
 
 
-def _fetch_json(url: str) -> dict | None:
+@dataclass(frozen=True)
+class ResolvedReference:
+    """Outcome of resolving a bare DOI or PMID against its source registry."""
+
+    ok: bool
+    title: str | None
+    detail: str
+
+
+def fetch_json(url: str) -> dict | None:
+    """Fetch and parse a JSON response, returning None on any network/parse failure."""
     request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     try:
         with urllib.request.urlopen(request, timeout=_TIMEOUT_S) as response:
@@ -56,6 +66,40 @@ def _title_from_crossref(payload: dict) -> str | None:
 
 def _title_from_pubmed(payload: dict, pmid: str) -> str | None:
     return payload.get("result", {}).get(pmid, {}).get("title")
+
+
+def _resolve_via_doi(doi: str) -> ResolvedReference:
+    payload = fetch_json(CROSSREF_URL.format(doi=doi))
+    if payload is None:
+        return ResolvedReference(False, None, f"DOI did not resolve: {doi}")
+    title = _title_from_crossref(payload)
+    if title is None:
+        return ResolvedReference(False, None, "Crossref returned no title")
+    return ResolvedReference(True, title, "resolved via Crossref")
+
+
+def _resolve_via_pmid(pmid: str) -> ResolvedReference:
+    payload = fetch_json(PUBMED_URL.format(pmid=pmid))
+    if payload is None:
+        return ResolvedReference(False, None, f"PMID did not resolve: {pmid}")
+    title = _title_from_pubmed(payload, pmid)
+    if title is None:
+        return ResolvedReference(False, None, "PubMed returned no title")
+    return ResolvedReference(True, title, "resolved via PubMed")
+
+
+def resolve_reference(doi: str | None, pmid: str | None) -> ResolvedReference:
+    """Resolve a bare DOI (preferred) or PMID against Crossref/PubMed.
+
+    Used both by verify_entry (which additionally checks the resolved title against
+    a manifest entry's title) and directly by the live-search path, which has no
+    EvidenceEntry yet — only a candidate locator to prove is real.
+    """
+    if doi:
+        return _resolve_via_doi(doi)
+    if pmid:
+        return _resolve_via_pmid(pmid)
+    return ResolvedReference(False, None, "no DOI or PMID provided")
 
 
 def _tokens(text: str) -> set[str]:
@@ -85,15 +129,11 @@ def _title_result(
 
 def verify_entry(entry: EvidenceEntry) -> VerificationResult:
     """Resolve the entry's DOI (preferred) or PMID and assert its title matches the registry."""
-    if entry.doi:
-        payload = _fetch_json(CROSSREF_URL.format(doi=entry.doi))
-        if payload is None:
-            return VerificationResult(entry.id, False, f"DOI did not resolve: {entry.doi}")
-        return _title_result(entry, _title_from_crossref(payload), "Crossref")
-    payload = _fetch_json(PUBMED_URL.format(pmid=entry.pmid))
-    if payload is None:
-        return VerificationResult(entry.id, False, f"PMID did not resolve: {entry.pmid}")
-    return _title_result(entry, _title_from_pubmed(payload, entry.pmid or ""), "PubMed")
+    resolved = resolve_reference(entry.doi, entry.pmid)
+    if not resolved.ok:
+        return VerificationResult(entry.id, False, resolved.detail)
+    source = "Crossref" if entry.doi else "PubMed"
+    return _title_result(entry, resolved.title, source)
 
 
 def main() -> int:
