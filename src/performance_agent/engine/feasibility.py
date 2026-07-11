@@ -27,7 +27,7 @@ class TrainingAge(StrEnum):
 
 # Sustainable weekly improvement in endurance performance (fraction of current
 # time), by training age. Team-chosen priors, not yet validated against data.
-ACHIEVABLE_WEEKLY_RATE: dict[TrainingAge, float] = {
+ENDURANCE_ACHIEVABLE_WEEKLY_RATE: dict[TrainingAge, float] = {
     TrainingAge.BEGINNER: 0.010,
     TrainingAge.INTERMEDIATE: 0.005,
     TrainingAge.ADVANCED: 0.0025,
@@ -45,6 +45,15 @@ STRENGTH_ACHIEVABLE_WEEKLY_RATE: dict[TrainingAge, float] = {
     TrainingAge.BEGINNER: 0.010,
     TrainingAge.INTERMEDIATE: 0.0035,
     TrainingAge.ADVANCED: 0.0010,
+}
+
+# Sustainable lean-mass gain (kg per week), by training age. Team-chosen
+# priors derived from common coaching heuristics (~1%/0.5%/0.25% bodyweight
+# per month for 70-90 kg athletes); revisit with data.
+HYPERTROPHY_ACHIEVABLE_WEEKLY_KG: dict[TrainingAge, float] = {
+    TrainingAge.BEGINNER: 0.23,
+    TrainingAge.INTERMEDIATE: 0.11,
+    TrainingAge.ADVANCED: 0.05,
 }
 
 
@@ -98,7 +107,7 @@ def endurance_feasibility(
     _validate_inputs(current_time_s, target_time_s, weeks)
     improvement_needed = (current_time_s - target_time_s) / current_time_s
     required_weekly_rate = improvement_needed / weeks
-    achievable_weekly_rate = ACHIEVABLE_WEEKLY_RATE[training_age]
+    achievable_weekly_rate = ENDURANCE_ACHIEVABLE_WEEKLY_RATE[training_age]
     ratio = required_weekly_rate / achievable_weekly_rate
     probability = _logistic_probability(ratio)
     return FeasibilityResult(
@@ -154,6 +163,46 @@ def strength_feasibility(
     ratio = required_weekly_rate / achievable_weekly_rate
     return FeasibilityResult(
         improvement_needed=improvement_needed,
+        required_weekly_rate=required_weekly_rate,
+        achievable_weekly_rate=achievable_weekly_rate,
+        ratio=ratio,
+        probability=_logistic_probability(ratio),
+    )
+
+
+def hypertrophy_feasibility(
+    target_lean_gain_kg: float,
+    weeks: int,
+    training_age: TrainingAge,
+) -> FeasibilityResult:
+    """Score the feasibility of a lean-mass gain goal.
+
+    Unlike the endurance and strength paths, rates are ABSOLUTE kilograms per
+    week, not fractions of current performance: improvement_needed carries
+    the target gain in kg, and required/achievable_weekly_rate are kg/week.
+    The ratio and logistic mapping are shared with the other goal types.
+
+    Args:
+        target_lean_gain_kg: Lean mass to gain, in kg (must be positive).
+        weeks: Whole weeks available until the goal deadline.
+        training_age: Athlete's training-experience bucket.
+
+    Returns:
+        A FeasibilityResult whose probability is in the open interval (0, 1).
+    """
+    validate_whole_number("weeks", weeks)
+    validate_finite("target_lean_gain_kg", target_lean_gain_kg)
+    if target_lean_gain_kg <= 0 or weeks <= 0:
+        msg = (
+            "target_lean_gain_kg and weeks must be positive, "
+            f"got {target_lean_gain_kg!r}, {weeks!r}"
+        )
+        raise ValueError(msg)
+    required_weekly_rate = target_lean_gain_kg / weeks
+    achievable_weekly_rate = HYPERTROPHY_ACHIEVABLE_WEEKLY_KG[training_age]
+    ratio = required_weekly_rate / achievable_weekly_rate
+    return FeasibilityResult(
+        improvement_needed=target_lean_gain_kg,
         required_weekly_rate=required_weekly_rate,
         achievable_weekly_rate=achievable_weekly_rate,
         ratio=ratio,

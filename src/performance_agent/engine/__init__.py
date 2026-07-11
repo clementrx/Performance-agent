@@ -9,6 +9,7 @@ from performance_agent.engine.feasibility import (
     FeasibilityResult,
     TrainingAge,
     endurance_feasibility,
+    hypertrophy_feasibility,
     strength_feasibility,
 )
 from performance_agent.engine.load import (
@@ -30,6 +31,7 @@ __all__ = [
     "acute_chronic_ratio",
     "build_weekly_waves",
     "endurance_feasibility",
+    "hypertrophy_feasibility",
     "load_for_percentage",
     "one_rm_brzycki",
     "one_rm_epley",

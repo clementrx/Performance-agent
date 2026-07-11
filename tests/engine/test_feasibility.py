@@ -6,6 +6,7 @@ from performance_agent.engine.feasibility import (
     FeasibilityResult,
     TrainingAge,
     endurance_feasibility,
+    hypertrophy_feasibility,
     strength_feasibility,
 )
 
@@ -247,4 +248,54 @@ def test_strength_non_finite_loads_rejected(bad):
             target_one_rm_kg=bad,
             weeks=20,
             training_age=TrainingAge.INTERMEDIATE,
+        )
+
+
+def test_hypertrophy_feasibility_exact_values():
+    # 5 kg lean gain in 26 weeks, beginner: required 5/26 kg/wk vs 0.23 kg/wk
+    # achievable -> ratio ~0.836, probability 1/(1+exp(3*(ratio-1))) ~ 0.6205
+    result = hypertrophy_feasibility(
+        target_lean_gain_kg=5.0,
+        weeks=26,
+        training_age=TrainingAge.BEGINNER,
+    )
+    assert isinstance(result, FeasibilityResult)
+    assert result.improvement_needed == pytest.approx(5.0)
+    assert result.required_weekly_rate == pytest.approx(5 / 26)
+    assert result.achievable_weekly_rate == pytest.approx(0.23)
+    assert result.ratio == pytest.approx((5 / 26) / 0.23)
+    assert result.probability == pytest.approx(1 / (1 + math.exp(3 * ((5 / 26) / 0.23 - 1))))
+    assert result.probability == pytest.approx(0.6205, abs=0.001)
+
+
+@pytest.mark.parametrize(
+    ("gain", "weeks"),
+    [(0, 26), (-2.0, 26), (5.0, 0), (5.0, -4)],
+)
+def test_hypertrophy_inputs_are_validated(gain, weeks):
+    with pytest.raises(ValueError, match="positive"):
+        hypertrophy_feasibility(
+            target_lean_gain_kg=gain,
+            weeks=weeks,
+            training_age=TrainingAge.BEGINNER,
+        )
+
+
+@pytest.mark.parametrize("weeks", [2.5, True])
+def test_hypertrophy_non_integer_weeks_rejected(weeks):
+    with pytest.raises(ValueError, match="whole number"):
+        hypertrophy_feasibility(
+            target_lean_gain_kg=5.0,
+            weeks=weeks,
+            training_age=TrainingAge.BEGINNER,
+        )
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_hypertrophy_non_finite_gain_rejected(bad):
+    with pytest.raises(ValueError, match="finite"):
+        hypertrophy_feasibility(
+            target_lean_gain_kg=bad,
+            weeks=26,
+            training_age=TrainingAge.BEGINNER,
         )

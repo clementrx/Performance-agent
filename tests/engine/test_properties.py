@@ -6,6 +6,7 @@ from performance_agent.engine import (
     acute_chronic_ratio,
     build_weekly_waves,
     endurance_feasibility,
+    hypertrophy_feasibility,
     one_rm_brzycki,
     one_rm_epley,
     riegel_predict,
@@ -65,6 +66,33 @@ def test_feasibility_probability_is_a_probability(current, target, weeks, age):
 def test_strength_feasibility_probability_is_a_probability(current, target, weeks, age):
     result = strength_feasibility(current, target, weeks, age)
     assert 0.0 < result.probability < 1.0
+
+
+@given(
+    gain=st.floats(min_value=0.1, max_value=30, allow_nan=False),
+    weeks=st.integers(min_value=1, max_value=104),
+    age=st.sampled_from(list(TrainingAge)),
+)
+def test_hypertrophy_feasibility_probability_is_a_probability(gain, weeks, age):
+    result = hypertrophy_feasibility(gain, weeks, age)
+    assert 0.0 < result.probability < 1.0
+
+
+@given(
+    current=st.floats(min_value=40, max_value=300, allow_nan=False),
+    delta1=st.floats(min_value=0.01, max_value=200, allow_nan=False),
+    delta2=st.floats(min_value=0.01, max_value=200, allow_nan=False),
+    weeks=st.integers(min_value=4, max_value=52),
+    age=st.sampled_from(list(TrainingAge)),
+)
+def test_strength_feasibility_probability_non_increasing_in_target(
+    current, delta1, delta2, weeks, age
+):
+    lo, hi = sorted((delta1, delta2))
+    assume(hi - lo > 1e-6)
+    p_lo = strength_feasibility(current, current + lo, weeks, age).probability
+    p_hi = strength_feasibility(current, current + hi, weeks, age).probability
+    assert p_lo >= p_hi
 
 
 @given(daily=st.lists(st.floats(min_value=0, max_value=2000, allow_nan=False), max_size=120))
