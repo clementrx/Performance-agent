@@ -122,3 +122,11 @@ def test_resolve_reference_doi_does_not_resolve(monkeypatch):
 def test_resolve_reference_handles_malformed_doi():
     resolved = resolve_reference("not a real doi with spaces", None)
     assert not resolved.ok
+
+
+def test_fetch_text_returns_none_on_network_failure(monkeypatch):
+    def raise_oserror(*_args, **_kwargs):
+        raise OSError("network down")
+
+    monkeypatch.setattr(verify_module.urllib.request, "urlopen", raise_oserror)
+    assert verify_module.fetch_text("https://example.org") is None

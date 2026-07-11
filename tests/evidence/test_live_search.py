@@ -28,44 +28,109 @@ def test_map_pubmed_type_prefers_first_match_in_map_order():
     assert result in (StudyType.SYSTEMATIC_REVIEW, StudyType.META_ANALYSIS)
 
 
-def test_search_pubmed_builds_candidates(monkeypatch):
+_EFETCH_XML = """<?xml version="1.0" ?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID Version="1">111</PMID>
+      <Article>
+        <Journal>
+          <JournalIssue><PubDate><Year>2021</Year></PubDate></JournalIssue>
+          <Title>Journal of Sports Sciences</Title>
+        </Journal>
+        <ArticleTitle>Javelin biomechanics and throw distance</ArticleTitle>
+        <Abstract>
+          <AbstractText Label="BACKGROUND">Throwing is complex.</AbstractText>
+          <AbstractText Label="RESULTS">Distance improved.</AbstractText>
+        </Abstract>
+        <AuthorList>
+          <Author><LastName>Doe</LastName><Initials>J</Initials></Author>
+        </AuthorList>
+        <PublicationTypeList>
+          <PublicationType>Randomized Controlled Trial</PublicationType>
+        </PublicationTypeList>
+      </Article>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">111</ArticleId>
+        <ArticleId IdType="doi">10.1000/javelin</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID Version="1">222</PMID>
+      <Article>
+        <Journal>
+          <JournalIssue><PubDate><MedlineDate>Winter 2020</MedlineDate></PubDate></JournalIssue>
+        </Journal>
+        <ArticleTitle></ArticleTitle>
+      </Article>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>
+"""
+
+
+def test_search_pubmed_builds_candidates_from_efetch(monkeypatch):
     esearch_payload = {"esearchresult": {"idlist": ["111", "222"]}}
-    esummary_payload = {
-        "result": {
-            "111": {
-                "title": "Javelin biomechanics and throw distance",
-                "authors": [{"name": "Doe J"}],
-                "pubdate": "2021 Jun",
-                "fulljournalname": "J Sports Sci",
-                "pubtype": ["Randomized Controlled Trial"],
-                "articleids": [{"idtype": "doi", "value": "10.1000/javelin"}],
-            },
-            "222": {
-                "title": "",  # no title -> dropped
-                "authors": [],
-                "pubdate": "2020",
-                "pubtype": [],
-                "articleids": [],
-            },
-        }
-    }
 
     def fake_fetch_json(url: str) -> dict | None:
-        return esearch_payload if "esearch" in url else esummary_payload
+        assert "esearch" in url
+        return esearch_payload
+
+    def fake_fetch_text(url: str) -> str | None:
+        assert "efetch" in url
+        assert "rettype=abstract" in url
+        assert "retmode=xml" in url
+        assert "id=111,222" in url
+        return _EFETCH_XML
 
     monkeypatch.setattr(live_search_module, "fetch_json", fake_fetch_json)
+    monkeypatch.setattr(live_search_module, "fetch_text", fake_fetch_text)
 
     candidates = search_pubmed("javelin throw", "en")
 
-    assert len(candidates) == 1
+    assert len(candidates) == 1  # the empty-title article is dropped
     candidate = candidates[0]
     assert isinstance(candidate, LiveCandidate)
     assert candidate.pmid == "111"
     assert candidate.doi == "10.1000/javelin"
+    assert candidate.title == "Javelin biomechanics and throw distance"
+    assert candidate.abstract == "Throwing is complex. Distance improved."
+    assert candidate.year == 2021
+    assert candidate.journal == "Journal of Sports Sciences"
+    assert candidate.authors == ["Doe J"]
     assert candidate.suggested_study_type == StudyType.RCT
     assert candidate.source == "pubmed"
     assert candidate.found_via_language == "en"
-    assert candidate.year == 2021
+
+
+def test_search_pubmed_keeps_candidate_without_year(monkeypatch):
+    xml = _EFETCH_XML.replace("<Year>2021</Year>", "")
+    monkeypatch.setattr(
+        live_search_module, "fetch_json", lambda _url: {"esearchresult": {"idlist": ["111"]}}
+    )
+    monkeypatch.setattr(live_search_module, "fetch_text", lambda _url: xml)
+    candidates = search_pubmed("javelin throw", "en")
+    assert candidates[0].year is None
+
+
+def test_search_pubmed_returns_empty_on_malformed_xml(monkeypatch):
+    monkeypatch.setattr(
+        live_search_module, "fetch_json", lambda _url: {"esearchresult": {"idlist": ["111"]}}
+    )
+    monkeypatch.setattr(live_search_module, "fetch_text", lambda _url: "<not-xml")
+    assert search_pubmed("javelin throw", "en") == []
+
+
+def test_search_pubmed_returns_empty_when_efetch_fails(monkeypatch):
+    monkeypatch.setattr(
+        live_search_module, "fetch_json", lambda _url: {"esearchresult": {"idlist": ["111"]}}
+    )
+    monkeypatch.setattr(live_search_module, "fetch_text", lambda _url: None)
+    assert search_pubmed("javelin throw", "en") == []
 
 
 def test_search_pubmed_returns_empty_when_no_hits(monkeypatch):
@@ -151,6 +216,30 @@ def test_search_semantic_scholar_builds_candidates(monkeypatch):
 def test_search_semantic_scholar_returns_empty_on_network_failure(monkeypatch):
     monkeypatch.setattr(live_search_module, "fetch_json", lambda _url: None)
     assert search_semantic_scholar("javelin", "en") == []
+
+
+def test_search_crossref_keeps_candidate_without_year(monkeypatch):
+    payload = {"message": {"items": [{"title": ["Undated but real"], "DOI": "10.1000/undated"}]}}
+    monkeypatch.setattr(live_search_module, "fetch_json", lambda _url: payload)
+    candidates = search_crossref("javelin", "en")
+    assert len(candidates) == 1
+    assert candidates[0].year is None
+
+
+def test_search_semantic_scholar_keeps_candidate_without_year(monkeypatch):
+    payload = {
+        "data": [
+            {
+                "title": "Undated study",
+                "authors": [{"name": "Doe J"}],
+                "externalIds": {"DOI": "10.1000/undated"},
+            }
+        ]
+    }
+    monkeypatch.setattr(live_search_module, "fetch_json", lambda _url: payload)
+    candidates = search_semantic_scholar("javelin", "en")
+    assert len(candidates) == 1
+    assert candidates[0].year is None
 
 
 def _candidate(**overrides) -> LiveCandidate:

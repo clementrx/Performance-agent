@@ -56,6 +56,16 @@ def fetch_json(url: str) -> dict | None:
         return None
 
 
+def fetch_text(url: str) -> str | None:
+    """Fetch a raw text response body, returning None on any network failure."""
+    request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    try:
+        with urllib.request.urlopen(request, timeout=_TIMEOUT_S) as response:
+            return response.read().decode("utf-8")
+    except (OSError, http.client.HTTPException):
+        return None
+
+
 def _title_from_crossref(payload: dict) -> str | None:
     message = payload.get("message", {})
     titles = message.get("title") or []

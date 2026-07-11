@@ -44,7 +44,7 @@ class LiveCandidateResult(TypedDict):
 
     title: str
     authors: list[str]
-    year: int
+    year: int | None
     journal: str | None
     abstract: str | None
     doi: str | None
