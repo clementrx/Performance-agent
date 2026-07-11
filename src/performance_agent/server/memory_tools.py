@@ -92,7 +92,8 @@ def write_profile(profile: Profile) -> WrittenFile:
 
     Read the athlete first, then write the FULL updated profile — this is a
     whole-document replace, not a merge: omitted fields are DROPPED
-    (injuries, equipment, availability, notes).
+    (injuries, equipment, availability, notes, lift_inventory, body_fat_pct,
+    calendar_type, split_preferences).
     """
     return WrittenFile(path=str(store.write_profile(resolve_athlete_dir(), profile)))
 
@@ -105,6 +106,8 @@ def upsert_goal(goal: Goal) -> GoalCount:
 def log_session(entry: SessionEntry) -> SessionCount:
     """Append one completed training session to the athlete's history.
 
+    Strength sessions should carry structured exercises → sets
+    {reps, load_kg, rir}; endurance sessions may omit exercises entirely.
     Timestamps are naive local wall-clock time (no timezone offset).
     """
     base = resolve_athlete_dir()
@@ -115,6 +118,8 @@ def log_session(entry: SessionEntry) -> SessionCount:
 def log_checkin(entry: CheckinEntry) -> CheckinEntry:
     """Append a check-in; days_since_last is auto-filled from the previous one.
 
+    Record bodyweight_kg at every check-in when the goal involves body
+    composition — the series across check-ins IS the trend the coach reads.
     days_since_last may be negative for backdated entries.
     """
     return store.append_checkin(resolve_athlete_dir(), entry)

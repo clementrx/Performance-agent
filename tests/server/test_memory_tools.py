@@ -203,3 +203,26 @@ async def test_memory_tools_are_listed(client):
         "read_program",
         "get_time_context",
     } <= names
+
+
+@pytest.mark.anyio
+async def test_log_session_round_trips_structured_exercises(client):
+    entry = {
+        "performed_at": "2026-07-11T18:00:00",
+        "kind": "strength",
+        "exercises": [
+            {
+                "name": "back squat",
+                "sets": [
+                    {"reps": 5, "load_kg": 100.0, "rir": 2},
+                    {"reps": 5, "load_kg": 100.0, "rir": 1},
+                ],
+            }
+        ],
+    }
+    result = await client.call_tool("log_session", {"entry": entry})
+    assert not result.isError
+
+    read_back = await client.call_tool("read_sessions", {})
+    sessions = read_back.structuredContent["sessions"]
+    assert sessions[0]["exercises"][0]["sets"][1]["rir"] == 1
