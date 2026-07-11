@@ -58,10 +58,26 @@ For each week, write concrete sessions. Every hard prescription must be computed
 - No recent set or benchmark to compute from (e.g. the goal was assessed off a
   derived estimate)? Open the program with a benchmark/test week and label the
   early loads provisional — do not guess a number to fill the gap.
-- Each session line carries: what, sets×reps or duration, the computed load/pace,
-  rest, and a one-line **purpose**. Purposes backed by evidence carry the corpus
+- **Formatting is not optional, and it is uniform across every session in the
+  program — no exceptions for "short" or "simple" days.** Each session is a
+  markdown bullet list, ONE exercise per bullet, never multiple exercises folded
+  into a single prose sentence. Every bullet carries, in this order: exercise name,
+  sets×reps or duration, load/pace/RPE, rest, and a one-line **purpose**. Never
+  drop the rest field because it "feels obvious" — write it every time, even for
+  accessory work (e.g. "rest 60-90s"). Purposes backed by evidence carry the corpus
   citation and its **stars**; purposes without corpus backing are labeled
-  "coaching judgment".
+  "coaching judgment". Template for every session, copy this shape exactly:
+
+  ```
+  **[Day] [slot] — [session name]:**
+  - [Exercise]: [sets]×[reps] @ [RPE or %1RM] — rest [X min/sec]. *[Purpose]
+    ([citation], [stars]) or (coaching judgment).*
+  - [Exercise]: ...
+  ```
+
+  Before saving, re-read every session in the program and confirm each one matches
+  this template bullet-for-bullet — a session that mixes prose and bullets, or
+  omits rest/RPE on even one exercise, is not done yet.
 
 ## 4. Personalize before saving
 
