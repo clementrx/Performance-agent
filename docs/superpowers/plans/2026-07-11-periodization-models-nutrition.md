@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend the deterministic engine with block, undulating, in-season and strength-peaking periodization models plus a nutrition module (BMR/TDEE, energy targets with hard safety guards), exposed as 6 new MCP tools.
+**Goal:** Extend the deterministic engine with block, undulating, in-season and strength-peaking periodization models plus a nutrition module (BMR/TDEE, energy targets with hard safety guards), exposed as 6 new MCP tools — then (Task 7) the remaining §4.2 progression schemes (top-set/back-off, wave loading) and RPE→RIR conversion as 3 more, for 9 new tools total.
 
 **Architecture:** New pure functions in `engine/periodization.py` and a new stdlib-only `engine/nutrition.py`, TypedDict/dataclass-returning wrappers in `server/engine_tools.py`. Spec: docs/superpowers/specs/2026-07-11-premium-coach-pipeline-design.md §4.3-4.4. Runs after phase 2a (2026-07-11-multi-goal-feasibility-prescription.md).
 
@@ -1453,7 +1453,8 @@ def prescribe_nutrition_targets(
 
 The server now exposes 38 tools (21 engine + 10 memory + 6 evidence + 1 report). These
 edits depend on phase 2a's Task 9 having landed first — the old strings below are exactly
-what 2a leaves behind.
+what 2a leaves behind. (Task 7 bumps the counts again, 38 → 41 and 21 → 24; its docs step
+expects exactly the strings this step leaves behind, so do NOT skip or reword this step.)
 
 - [ ] Verify the post-2a strings exist: `rg -n "32 tools" docs/installing.md README.md` and `rg -n "15 tools" README.md` — all three must hit. If not, STOP and report (2a has not landed or the wording drifted).
 - [ ] In `docs/installing.md`, replace exactly:
@@ -1506,10 +1507,649 @@ with:
 
 ---
 
+## Task 7 — remaining progression schemes + RPE conversion
+
+Top-set/back-off and wave-loading prescriptions plus the RPE→RIR conversion, completing
+spec §4.2's progression schemes (double progression landed in phase 2a). All engine code
+goes in `engine/strength.py` (it already holds `MAX_PERCENTAGE = 1.3` and the
+`load_for_percentage` message style these functions reuse); tools go in
+`server/engine_tools.py` (24 engine tools after this task, 41 total). **Depends on Task 6
+having fully landed** — the engine `__init__.py` rewrite, the 21-tool register tuple, and
+the "38 tools" doc strings below are all Task 6's output.
+
+### Step 1 — write the failing tests
+
+- [ ] In `tests/engine/test_strength.py`, replace the strength import block at the top with:
+
+```python
+from performance_agent.engine.strength import (
+    ProgressionDecision,
+    TopSetBackoff,
+    WeeklySetTargets,
+    double_progression,
+    load_for_percentage,
+    one_rm_brzycki,
+    one_rm_epley,
+    one_rm_lombardi,
+    one_rm_wathan,
+    percentage_for_reps_rir,
+    reps_for_percentage_rir,
+    rir_from_rpe,
+    top_set_backoff,
+    wave_loading,
+    weekly_set_targets,
+)
+```
+
+- [ ] Append to `tests/engine/test_strength.py`:
+
+```python
+def test_top_set_backoff_known_values():
+    # top = 200 * 0.9 = 180; backoff = 200 * (0.9 - 0.10) = 160
+    prescription = top_set_backoff(
+        one_rm_kg=200.0, top_percentage=0.9, backoff_drop=0.10, backoff_sets=3
+    )
+    assert isinstance(prescription, TopSetBackoff)
+    assert prescription.top_set_load_kg == pytest.approx(180.0)
+    assert prescription.backoff_load_kg == pytest.approx(160.0)
+    assert prescription.backoff_sets == 3
+
+
+def test_top_set_backoff_rejects_drop_beyond_half():
+    with pytest.raises(ValueError, match="backoff_drop"):
+        top_set_backoff(one_rm_kg=200.0, top_percentage=0.9, backoff_drop=0.6, backoff_sets=3)
+
+
+def test_top_set_backoff_rejects_drop_that_leaves_no_load():
+    # 0.4 - 0.5 <= 0: both inputs pass their own range checks but combine to nothing
+    with pytest.raises(ValueError, match="leaves no back-off load"):
+        top_set_backoff(one_rm_kg=200.0, top_percentage=0.4, backoff_drop=0.5, backoff_sets=3)
+
+
+@pytest.mark.parametrize("backoff_sets", [0, 11])
+def test_top_set_backoff_rejects_out_of_range_sets(backoff_sets):
+    with pytest.raises(ValueError, match="backoff_sets"):
+        top_set_backoff(
+            one_rm_kg=200.0, top_percentage=0.9, backoff_drop=0.10, backoff_sets=backoff_sets
+        )
+
+
+def test_wave_loading_classic_two_by_three():
+    # wave 1: 0.70, 0.75, 0.80; wave 2 restarts 0.025 up: 0.725, 0.775, 0.825
+    steps = wave_loading(
+        one_rm_kg=100.0,
+        base_percentage=0.70,
+        step_increment=0.05,
+        steps_per_wave=3,
+        waves=2,
+        inter_wave_increment=0.025,
+    )
+    assert [(s.wave, s.step) for s in steps] == [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)]
+    assert [s.percentage for s in steps] == pytest.approx([0.70, 0.75, 0.80, 0.725, 0.775, 0.825])
+    assert [s.load_kg for s in steps] == pytest.approx([70.0, 75.0, 80.0, 72.5, 77.5, 82.5])
+
+
+def test_wave_loading_rejects_peak_over_max_percentage():
+    # peak = 1.0 + 4*0.1 + 3*0.05 = 1.55 > 1.3
+    with pytest.raises(ValueError, match="peak"):
+        wave_loading(
+            one_rm_kg=100.0,
+            base_percentage=1.0,
+            step_increment=0.1,
+            steps_per_wave=5,
+            waves=4,
+            inter_wave_increment=0.05,
+        )
+
+
+def test_wave_loading_rejects_non_overlapping_waves():
+    # inter_wave_increment == step_increment: wave 2 would start where wave 1 ended
+    with pytest.raises(ValueError, match="inter_wave_increment"):
+        wave_loading(
+            one_rm_kg=100.0,
+            base_percentage=0.70,
+            step_increment=0.05,
+            steps_per_wave=3,
+            waves=2,
+            inter_wave_increment=0.05,
+        )
+
+
+def test_wave_loading_bounds_rejections():
+    with pytest.raises(ValueError, match="base_percentage"):
+        wave_loading(100.0, 1.1, 0.05, 3, 2, 0.025)
+    with pytest.raises(ValueError, match="step_increment"):
+        wave_loading(100.0, 0.70, 0.15, 3, 2, 0.025)
+    with pytest.raises(ValueError, match="steps_per_wave"):
+        wave_loading(100.0, 0.70, 0.05, 1, 2, 0.025)
+    with pytest.raises(ValueError, match="waves must be"):
+        wave_loading(100.0, 0.70, 0.05, 3, 5, 0.025)
+
+
+@pytest.mark.parametrize(("rpe", "expected_rir"), [(8.0, 2.0), (8.5, 1.5), (10.0, 0.0)])
+def test_rir_from_rpe_known_values(rpe, expected_rir):
+    assert rir_from_rpe(rpe) == pytest.approx(expected_rir)
+
+
+@pytest.mark.parametrize("rpe", [0.5, 10.5])
+def test_rir_from_rpe_rejects_out_of_scale(rpe):
+    with pytest.raises(ValueError, match="rpe must be between"):
+        rir_from_rpe(rpe)
+
+
+def test_rir_from_rpe_rejects_quarter_points():
+    with pytest.raises(ValueError, match="half-point"):
+        rir_from_rpe(8.25)
+
+
+def test_rir_from_rpe_rejects_nan():
+    with pytest.raises(ValueError, match="finite"):
+        rir_from_rpe(float("nan"))
+```
+
+- [ ] Append to `tests/engine/test_properties.py`, adding the submodule import line (after the
+  nutrition one). The increments are drawn from `st.sampled_from` grids so the overlap slack
+  (`step_increment - inter_wave_increment >= 0.005`) stays far above float noise — the
+  overlap assertion needs no epsilon:
+
+```python
+from performance_agent.engine.strength import MAX_PERCENTAGE, top_set_backoff, wave_loading
+```
+
+```python
+@given(
+    one_rm_kg=st.floats(min_value=1, max_value=500, allow_nan=False),
+    top_percentage=st.floats(min_value=0.51, max_value=1.3, allow_nan=False),
+    backoff_drop=st.floats(min_value=0.05, max_value=0.5, allow_nan=False),
+    backoff_sets=st.integers(min_value=1, max_value=10),
+)
+def test_backoff_load_is_positive_and_below_top_set(
+    one_rm_kg, top_percentage, backoff_drop, backoff_sets
+):
+    prescription = top_set_backoff(one_rm_kg, top_percentage, backoff_drop, backoff_sets)
+    assert 0 < prescription.backoff_load_kg < prescription.top_set_load_kg
+
+
+@given(
+    one_rm_kg=st.floats(min_value=40, max_value=300, allow_nan=False),
+    base_percentage=st.floats(min_value=0.4, max_value=0.7, allow_nan=False),
+    step_increment=st.sampled_from([0.02, 0.025, 0.05, 0.075, 0.1]),
+    steps_per_wave=st.integers(min_value=2, max_value=5),
+    waves=st.integers(min_value=2, max_value=4),
+    inter_wave_increment=st.sampled_from([0.0, 0.01, 0.02, 0.025, 0.05]),
+)
+def test_wave_loading_consecutive_waves_overlap(
+    one_rm_kg, base_percentage, step_increment, steps_per_wave, waves, inter_wave_increment
+):
+    assume(inter_wave_increment < step_increment)
+    peak = (
+        base_percentage
+        + (steps_per_wave - 1) * step_increment
+        + (waves - 1) * inter_wave_increment
+    )
+    assume(peak <= MAX_PERCENTAGE)
+    steps = wave_loading(
+        one_rm_kg, base_percentage, step_increment, steps_per_wave, waves, inter_wave_increment
+    )
+    assert len(steps) == waves * steps_per_wave
+    assert all(s.load_kg > 0 for s in steps)
+    for wave in range(1, waves):
+        last_of_previous = steps[wave * steps_per_wave - 1]
+        first_of_next = steps[wave * steps_per_wave]
+        assert first_of_next.percentage < last_of_previous.percentage
+```
+
+- [ ] Append to `tests/server/test_engine_tools.py`:
+
+```python
+@pytest.mark.anyio
+async def test_prescribe_top_set_backoff(client):
+    result = await client.call_tool(
+        "prescribe_top_set_backoff",
+        {"one_rm_kg": 200.0, "top_percentage": 0.9, "backoff_drop": 0.10, "backoff_sets": 3},
+    )
+    assert not result.isError
+    prescription = result.structuredContent
+    assert prescription["top_set_load_kg"] == pytest.approx(180.0)
+    assert prescription["backoff_load_kg"] == pytest.approx(160.0)
+    assert prescription["backoff_sets"] == 3
+
+
+@pytest.mark.anyio
+async def test_prescribe_wave_loading(client):
+    result = await client.call_tool(
+        "prescribe_wave_loading",
+        {
+            "one_rm_kg": 100.0,
+            "base_percentage": 0.70,
+            "step_increment": 0.05,
+            "steps_per_wave": 3,
+            "waves": 2,
+            "inter_wave_increment": 0.025,
+        },
+    )
+    assert not result.isError
+    steps = result.structuredContent["steps"]
+    assert len(steps) == 6
+    assert [s["load_kg"] for s in steps] == pytest.approx([70.0, 75.0, 80.0, 72.5, 77.5, 82.5])
+    assert steps[3]["wave"] == 2
+    assert steps[3]["step"] == 1
+
+
+@pytest.mark.anyio
+async def test_prescribe_wave_loading_refuses_peak_over_cap(client):
+    result = await client.call_tool(
+        "prescribe_wave_loading",
+        {
+            "one_rm_kg": 100.0,
+            "base_percentage": 1.0,
+            "step_increment": 0.1,
+            "steps_per_wave": 5,
+            "waves": 4,
+            "inter_wave_increment": 0.05,
+        },
+    )
+    assert result.isError
+    assert "peak" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_convert_rpe_to_rir(client):
+    result = await client.call_tool("convert_rpe_to_rir", {"rpe": 8.5})
+    assert not result.isError
+    assert result.structuredContent["rir"] == pytest.approx(1.5)
+```
+
+- [ ] In the existing `test_all_engine_tools_are_listed`, extend the expected name set (it
+  holds 21 names after Task 6) with:
+
+```python
+        "prescribe_top_set_backoff",
+        "prescribe_wave_loading",
+        "convert_rpe_to_rir",
+```
+
+### Step 2 — run tests, expect FAIL
+
+- [ ] `uv run pytest tests/engine/test_strength.py tests/engine/test_properties.py tests/server/test_engine_tools.py -q`
+- Expected failures: `ImportError: cannot import name 'TopSetBackoff' from 'performance_agent.engine.strength'` (collection error on both engine files); each new tool call fails (FastMCP unknown-tool error / `isError`) and `test_all_engine_tools_are_listed` fails the subset assertion.
+
+### Step 3 — implement
+
+- [ ] In `src/performance_agent/engine/strength.py`, extend the validation import (the file currently imports `validate_whole_number` only):
+
+```python
+from performance_agent.engine._validation import validate_finite, validate_whole_number
+```
+
+- [ ] Add after the `MAX_EFFECTIVE_REPS` constant:
+
+```python
+# Back-off drops beyond 50% of 1RM stop being training weight (team-chosen prior).
+MAX_BACKOFF_DROP = 0.5
+# More than 10 back-off sets is volume programming, not a top-set day (team-chosen prior).
+MAX_BACKOFF_SETS = 10
+# Wave-loading bounds, all team-chosen priors: per-set jumps above 10% of 1RM
+# skip too much of the intensity curve; 2-5 sets per wave and 1-4 waves cover
+# every classic scheme.
+MAX_WAVE_STEP = 0.1
+MIN_STEPS_PER_WAVE = 2
+MAX_STEPS_PER_WAVE = 5
+MAX_WAVES = 4
+# CR-10 session-RPE scale bounds (published scale, not a tunable prior).
+MIN_RPE = 1.0
+MAX_RPE = 10.0
+```
+
+- [ ] Add after `double_progression`:
+
+```python
+@dataclass(frozen=True)
+class TopSetBackoff:
+    """A top-set/back-off session prescription."""
+
+    top_set_load_kg: float
+    backoff_load_kg: float
+    backoff_sets: int
+
+
+def top_set_backoff(
+    one_rm_kg: float,
+    top_percentage: float,
+    backoff_drop: float,
+    backoff_sets: int,
+) -> TopSetBackoff:
+    """Prescribe one top set and its back-off sets from a 1RM.
+
+    Top load is one_rm_kg * top_percentage; back-off load sits backoff_drop
+    (a fraction of 1RM, e.g. 0.10 = 10 percentage points) below the top
+    percentage, for backoff_sets sets. top_percentage must be in
+    (0, MAX_PERCENTAGE], backoff_drop in (0, 0.5], backoff_sets a whole
+    number 1-10, and the resulting back-off percentage must stay positive.
+    """
+    validate_whole_number("backoff_sets", backoff_sets)
+    if one_rm_kg <= 0:
+        msg = f"one_rm_kg must be positive, got {one_rm_kg!r}"
+        raise ValueError(msg)
+    if not 0 < top_percentage <= MAX_PERCENTAGE:
+        msg = f"top_percentage must be in (0, {MAX_PERCENTAGE}], got {top_percentage!r}"
+        raise ValueError(msg)
+    if not 0 < backoff_drop <= MAX_BACKOFF_DROP:
+        msg = (
+            f"backoff_drop must be in (0, {MAX_BACKOFF_DROP}], got {backoff_drop!r}: "
+            "back-off drops beyond 50% stop being training weight"
+        )
+        raise ValueError(msg)
+    if not 1 <= backoff_sets <= MAX_BACKOFF_SETS:
+        msg = f"backoff_sets must be between 1 and {MAX_BACKOFF_SETS}, got {backoff_sets!r}"
+        raise ValueError(msg)
+    backoff_percentage = top_percentage - backoff_drop
+    if backoff_percentage <= 0:
+        msg = (
+            f"backoff_drop {backoff_drop!r} leaves no back-off load below "
+            f"top_percentage {top_percentage!r}"
+        )
+        raise ValueError(msg)
+    return TopSetBackoff(
+        top_set_load_kg=one_rm_kg * top_percentage,
+        backoff_load_kg=one_rm_kg * backoff_percentage,
+        backoff_sets=backoff_sets,
+    )
+
+
+@dataclass(frozen=True)
+class WaveStep:
+    """One set in a wave-loading scheme (wave and step are 1-indexed)."""
+
+    wave: int
+    step: int
+    percentage: float
+    load_kg: float
+
+
+def _validate_wave_loading_inputs(
+    one_rm_kg: float,
+    base_percentage: float,
+    step_increment: float,
+    steps_per_wave: int,
+    waves: int,
+    inter_wave_increment: float,
+) -> None:
+    """Raise ValueError if any wave_loading input is out of range."""
+    validate_whole_number("steps_per_wave", steps_per_wave)
+    validate_whole_number("waves", waves)
+    if one_rm_kg <= 0:
+        msg = f"one_rm_kg must be positive, got {one_rm_kg!r}"
+        raise ValueError(msg)
+    if not 0 < base_percentage <= 1:
+        msg = f"base_percentage must be in (0, 1], got {base_percentage!r}"
+        raise ValueError(msg)
+    if not 0 < step_increment <= MAX_WAVE_STEP:
+        msg = f"step_increment must be in (0, {MAX_WAVE_STEP}], got {step_increment!r}"
+        raise ValueError(msg)
+    if not MIN_STEPS_PER_WAVE <= steps_per_wave <= MAX_STEPS_PER_WAVE:
+        msg = (
+            f"steps_per_wave must be between {MIN_STEPS_PER_WAVE} and "
+            f"{MAX_STEPS_PER_WAVE}, got {steps_per_wave!r}"
+        )
+        raise ValueError(msg)
+    if not 1 <= waves <= MAX_WAVES:
+        msg = f"waves must be between 1 and {MAX_WAVES}, got {waves!r}"
+        raise ValueError(msg)
+    if not 0 <= inter_wave_increment < step_increment:
+        msg = (
+            f"inter_wave_increment must be in [0, step_increment), got "
+            f"{inter_wave_increment!r} with step_increment {step_increment!r}: waves must "
+            "overlap — each wave starts below where the previous one ended"
+        )
+        raise ValueError(msg)
+
+
+def wave_loading(
+    one_rm_kg: float,
+    base_percentage: float,
+    step_increment: float,
+    steps_per_wave: int,
+    waves: int,
+    inter_wave_increment: float,
+) -> list[WaveStep]:
+    """Generate a wave-loading set sequence (waves and steps are 1-indexed).
+
+    Wave w, step s: percentage = base_percentage + (s-1)*step_increment +
+    (w-1)*inter_wave_increment; load = one_rm_kg * percentage.
+    inter_wave_increment must stay strictly below step_increment so waves
+    OVERLAP — the defining property of wave loading: wave 2 starts lower
+    than wave 1 ended. The peak percentage (last step of the last wave)
+    must not exceed MAX_PERCENTAGE.
+    """
+    _validate_wave_loading_inputs(
+        one_rm_kg, base_percentage, step_increment, steps_per_wave, waves, inter_wave_increment
+    )
+    peak = (
+        base_percentage
+        + (steps_per_wave - 1) * step_increment
+        + (waves - 1) * inter_wave_increment
+    )
+    if peak > MAX_PERCENTAGE:
+        msg = (
+            f"wave scheme peaks at {peak!r} of 1RM, above the {MAX_PERCENTAGE} supra-maximal "
+            "cap — lower base_percentage, step_increment, waves or inter_wave_increment"
+        )
+        raise ValueError(msg)
+    steps: list[WaveStep] = []
+    for wave in range(1, waves + 1):
+        for step in range(1, steps_per_wave + 1):
+            percentage = (
+                base_percentage
+                + (step - 1) * step_increment
+                + (wave - 1) * inter_wave_increment
+            )
+            steps.append(WaveStep(wave, step, percentage, one_rm_kg * percentage))
+    return steps
+
+
+def rir_from_rpe(rpe: float) -> float:
+    """Convert session RPE (1-10 scale) to reps in reserve: RIR = 10 - RPE.
+
+    Accepts half-point RPEs (e.g. 8.5 -> 1.5 RIR). Prescription work lives
+    at RPE 5-10; below 5 the conversion is arithmetic but rarely meaningful.
+    """
+    validate_finite("rpe", rpe)
+    if not MIN_RPE <= rpe <= MAX_RPE:
+        msg = f"rpe must be between {MIN_RPE} and {MAX_RPE}, got {rpe!r}"
+        raise ValueError(msg)
+    # Half points are exactly representable in binary floats, so a valid
+    # rpe * 2 is an exact integer and the comparison is safe.
+    doubled = rpe * 2
+    if doubled != round(doubled):
+        msg = f"rpe must be on the half-point scale (1.0, 1.5, ... 10.0), got {rpe!r}"
+        raise ValueError(msg)
+    return MAX_RPE - rpe
+```
+
+- [ ] In `src/performance_agent/engine/__init__.py` (Task 6's version), replace the strength
+  import block with:
+
+```python
+from performance_agent.engine.strength import (
+    ProgressionDecision,
+    TopSetBackoff,
+    WaveStep,
+    WeeklySetTargets,
+    double_progression,
+    load_for_percentage,
+    one_rm_brzycki,
+    one_rm_epley,
+    one_rm_lombardi,
+    one_rm_wathan,
+    percentage_for_reps_rir,
+    reps_for_percentage_rir,
+    rir_from_rpe,
+    top_set_backoff,
+    wave_loading,
+    weekly_set_targets,
+)
+```
+
+  and insert into `__all__`, keeping it sorted: `"TopSetBackoff"` after
+  `"ProgressionDecision"`, `"WaveStep"` after `"UndulatingSession"`, `"rir_from_rpe"` after
+  `"riegel_predict"`, and `"top_set_backoff"` then `"wave_loading"` after `"tdee_from_bmr"`.
+
+- [ ] In `src/performance_agent/server/engine_tools.py`, extend the main
+  `from performance_agent.engine import (...)` block with (keep sorted): `TopSetBackoff`,
+  `WaveStep`, `rir_from_rpe`, `top_set_backoff`, `wave_loading`.
+
+- [ ] Add the TypedDicts after `BmrTdee`:
+
+```python
+class WaveLoadingPlan(TypedDict):
+    """Ordered wave-loading sets (wave and step are 1-indexed)."""
+
+    steps: list[WaveStep]
+
+
+class RirValue(TypedDict):
+    """Reps in reserve equivalent to a session RPE."""
+
+    rir: float
+```
+
+- [ ] Add the three tools after `prescribe_nutrition_targets`:
+
+```python
+def prescribe_top_set_backoff(
+    one_rm_kg: float, top_percentage: float, backoff_drop: float, backoff_sets: int
+) -> TopSetBackoff:
+    """Prescribe a top-set/back-off strength session from a 1RM.
+
+    One top set at top_percentage of 1RM (in (0, 1.3]), then backoff_sets
+    sets (whole number 1-10) at top_percentage - backoff_drop. backoff_drop
+    is a fraction of 1RM in (0, 0.5] — drops beyond 50% stop being training
+    weight — and must leave a positive back-off percentage. Loads in kg.
+    """
+    return top_set_backoff(one_rm_kg, top_percentage, backoff_drop, backoff_sets)
+
+
+def prescribe_wave_loading(
+    one_rm_kg: float,
+    base_percentage: float,
+    step_increment: float,
+    steps_per_wave: int,
+    waves: int,
+    inter_wave_increment: float,
+) -> WaveLoadingPlan:
+    """Generate a wave-loading set sequence for one strength session.
+
+    Each wave climbs from base_percentage (in (0, 1]) in step_increment
+    jumps (in (0, 0.1]) for steps_per_wave sets (2-5); the next wave
+    restarts inter_wave_increment above the previous wave's base (1-4
+    waves). inter_wave_increment must stay strictly below step_increment so
+    waves OVERLAP — each wave starts below where the previous one ended;
+    that overlap is the defining property of wave loading. The peak
+    percentage (base + (steps_per_wave-1)*step_increment +
+    (waves-1)*inter_wave_increment) is REFUSED above 1.3, the supra-maximal
+    cap — relay that refusal, do not work around it. Loads in kg.
+    """
+    return WaveLoadingPlan(
+        steps=wave_loading(
+            one_rm_kg,
+            base_percentage,
+            step_increment,
+            steps_per_wave,
+            waves,
+            inter_wave_increment,
+        )
+    )
+
+
+def convert_rpe_to_rir(rpe: float) -> RirValue:
+    """Convert a session RPE (1-10, half points allowed) to reps in reserve.
+
+    RIR = 10 - RPE (e.g. RPE 8.5 -> 1.5 RIR). Use this when the athlete or
+    a source speaks RPE; the prescription tools (prescribe_reps_load) take
+    RIR. Quarter-point RPEs are refused — the scale is half-point.
+    """
+    return RirValue(rir=rir_from_rpe(rpe))
+```
+
+- [ ] Extend `register()` by appending the three tools after `prescribe_nutrition_targets`
+  in the loop tuple:
+
+```python
+        prescribe_top_set_backoff,
+        prescribe_wave_loading,
+        convert_rpe_to_rir,
+```
+
+### Step 4 — run tests, expect PASS
+
+- [ ] `uv run pytest tests/engine/test_strength.py tests/engine/test_properties.py tests/server/test_engine_tools.py tests/engine/test_engine_purity.py -q` — all pass, including every pre-existing strength and property test.
+
+### Step 5 — lint, typecheck, commit the code
+
+- [ ] `uv run ruff format . && uv run ruff check . && uv run ty check && uv run pytest -q`
+- [ ] `git add src/performance_agent/engine/strength.py src/performance_agent/engine/__init__.py src/performance_agent/server/engine_tools.py tests/engine/test_strength.py tests/engine/test_properties.py tests/server/test_engine_tools.py && git commit -m "Add top-set/back-off, wave loading and RPE conversion" -m "Completes spec §4.2 progression schemes (double progression landed in phase 2a)."`
+
+### Step 6 — docs tool count (38 → 41)
+
+The server now exposes 41 tools (24 engine + 10 memory + 6 evidence + 1 report). The old
+strings below are exactly what Task 6's Step 6 leaves behind.
+
+- [ ] Verify the post-Task-6 strings exist: `rg -n "38 tools" docs/installing.md README.md` and `rg -n "21 tools" README.md` — all three must hit. If not, STOP and report (Task 6 has not landed or the wording drifted).
+- [ ] In `docs/installing.md`, replace exactly:
+
+```
+Ask your agent: *"List the performance-agent tools."* You should see 38 tools (21
+engine + 10 memory + 6 evidence + 1 report: assess_endurance_goal, read_athlete,
+```
+
+with:
+
+```
+Ask your agent: *"List the performance-agent tools."* You should see 41 tools (24
+engine + 10 memory + 6 evidence + 1 report: assess_endurance_goal, read_athlete,
+```
+
+- [ ] In `README.md`, replace exactly:
+
+```
+You should see 38 tools. Then ask:
+```
+
+with:
+
+```
+You should see 41 tools. Then ask:
+```
+
+- [ ] In `README.md`, replace exactly:
+
+```
+- ✅ MCP server exposing the engine as 21 tools — see [docs/installing.md](docs/installing.md)
+```
+
+with:
+
+```
+- ✅ MCP server exposing the engine as 24 tools — see [docs/installing.md](docs/installing.md)
+```
+
+### Step 7 — full verification sweep
+
+- [ ] `uv run pytest -q` — full suite, including `tests/engine/test_engine_purity.py` (strength.py's new imports are `math`, `dataclasses` and `_validation`, all allowlisted).
+- [ ] `uv run pytest tests/skills -q` — skills declare tool subsets; adding tools must not break the harness. **If this fails, STOP and report — do not edit skill files.**
+- [ ] `uv run ruff format . && uv run ruff check . && uv run ty check` — clean.
+
+### Step 8 — commit the docs
+
+- [ ] `git add docs/installing.md README.md && git commit -m "Update documented tool count to 41"`
+
+---
+
 ## Final verification checklist
 
 - [ ] `uv run pytest -q` — entire suite green, including `tests/engine/test_engine_purity.py` and `tests/skills`.
 - [ ] `uv run ruff format . && uv run ruff check . && uv run ty check` — zero warnings.
-- [ ] Server lists 21 engine tools; docs say 38 total (21 engine + 10 memory + 6 evidence + 1 report).
-- [ ] All safety guards proven by tests: block < 6 weeks refused, 0/3+ match weeks refused, peaking > 3 weeks refused, underweight cut refused, rate caps enforced, caloric floor clamps with `clamped_to_floor=True`, youth BMR refused.
-- [ ] 7 commits, one logical change each, imperative subjects; `git log --oneline -7` matches the plan's commit messages.
+- [ ] Server lists 24 engine tools; docs say 41 total (24 engine + 10 memory + 6 evidence + 1 report).
+- [ ] All safety guards proven by tests: block < 6 weeks refused, 0/3+ match weeks refused, peaking > 3 weeks refused, underweight cut refused, rate caps enforced, caloric floor clamps with `clamped_to_floor=True`, youth BMR refused, back-off drop beyond 50% refused, no-load back-off refused, non-overlapping waves refused, wave peak above 1.3 refused, quarter-point RPEs refused.
+- [ ] 9 commits, one logical change each, imperative subjects; `git log --oneline -9` matches the plan's commit messages.
