@@ -53,7 +53,10 @@ when the goal itself must move). Recompute affected loads/paces with the engine
 tools (`prescribe_load` from a fresh `estimate_1rm` for strength; the pace tools for
 endurance) — never carry stale numbers forward. If you rebuild waves via
 `build_periodization_waves`, apply the factors to the recomputed loads/paces — a
-wave you don't apply is decoration (see program-generation §2).
+wave you don't apply is decoration (see program-planning §3). Session-level
+rebuilds follow program-optimization's load and formatting rules; if the
+STRUCTURE itself must change (new periodization model, changed calendar),
+route through program-planning instead of patching sessions in place.
 
 - Citation repair: when a render was refused for unknown references, locate the
   offending claims, replace each with a `search_evidence`-backed citation rendered

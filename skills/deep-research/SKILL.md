@@ -100,4 +100,5 @@ Run `check_citations` over the full dossier text; fix anything flagged. Then
 `save_research_dossier` (markdown body; goal_id; v1 needs no reason, re-research
 requires one). Quote the saved version and path, summarize coverage (facets
 covered vs thin, studies saved, languages searched), then route onward: dossier
-saved → program-generation.
+saved → program-planning (le Planificateur builds the skeleton on the dossier
+you just saved).

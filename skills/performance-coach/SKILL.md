@@ -59,21 +59,24 @@ At session start:
 - New or changed goal → needs-analysis (ALWAYS analyze and assess before generating)
 - Returning athlete with a program → training-checkin
 - Goal analyzed and accepted, but no research dossier → deep-research
-- Analysis and dossier done, but no saved program → program-generation
-- Athlete explicitly declines deep research → program-generation anyway (its
-  fallback handles the no-dossier state); record the decline in the conversation
-  and do not re-offer deep-research this session.
+- Analysis and dossier done, but no saved program → program-planning (it hands
+  the skeleton to program-optimization, and routes to nutrition-planning first
+  when the goal touches body composition)
+- Athlete explicitly declines deep research → program-planning anyway (its
+  degraded corpus-only branch handles the no-dossier state); record the decline
+  in the conversation and do not re-offer deep-research this session.
 
 After a skill hands back:
 
 - Accepted goal, no dossier → deep-research
-- Dossier saved, no program → program-generation
+- Dossier saved, no program → program-planning
+- Skeleton handed over by program-planning → program-optimization
 - Check-in shows poor adherence, plateau, pain, or schedule change → program-adaptation
 
 Re-evaluate routing after each skill completes.
 
 ## Modes
 
-- Mode A (one-shot): onboarding → needs analysis → deep research → generation →
-  deliver. Still save everything through the memory tools.
+- Mode A (one-shot): onboarding → needs analysis → deep research → planning →
+  optimization → deliver. Still save everything through the memory tools.
 - Mode B (ongoing coach): all of Mode A plus check-ins and adaptation over time.

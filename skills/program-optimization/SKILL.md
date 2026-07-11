@@ -30,8 +30,10 @@ render any corpus id you quote with `get_citation`.
 
 ## 2. Loads are computed, never guessed
 
-- **Strength sets** are sets×reps @ RIR or %1RM. RIR path: `prescribe_reps_load`
-  from the lift's 1RM in lift_inventory. %1RM path: `prescribe_load`. Only a
+- **Strength sets** are sets×reps @ RIR or %1RM — the skeleton's intensity
+  prescription for the cycle picks which path you follow, not a free choice
+  made per exercise. RIR path: `prescribe_reps_load` from the lift's 1RM in
+  lift_inventory. %1RM path: `prescribe_load`. Only a
   recent heavy set on file? `estimate_1rm` first (one formula per athlete and
   lift, stay consistent). The athlete speaks RPE? `convert_rpe_to_rir` before
   prescribing — the prescription tools take RIR.
@@ -88,7 +90,10 @@ render any corpus id you quote with `get_citation`.
 Present the draft week by week and ASK. Adjust exercises, days, and volumes with
 the athlete inside the skeleton's targets; a change that breaks the skeleton's
 structure (model, phases, weekly targets) goes back to program-planning instead.
-Do not save until the athlete validates the layout.
+Do not save until the athlete validates the layout. Stalemate exit: after three
+revision rounds on the same session with no resolution, stop looping — name the
+disagreement plainly and hand back to performance-coach instead of iterating a
+fourth time.
 
 ## 5. Save and deliver
 

@@ -8,7 +8,7 @@ description: Use after the research dossier is saved (or the athlete has explici
 tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         search_evidence, get_citation, check_citations, build_periodization_waves,
         build_block_cycle, build_undulating_sessions, build_inseason_maintenance,
-        build_peaking_block, weekly_set_targets_for]
+        build_peaking_block, weekly_set_targets_for, read_nutrition_frame]
 ---
 
 # Program Planning — le Planificateur
@@ -49,7 +49,11 @@ The choice follows calendar_type + goal + what the dossier says:
   `build_periodization_waves` (generic ramp with deloads and taper) instead.
 - **recurring_fixtures** → `build_inseason_maintenance` per typical week (1 or
   2 matches). It REFUSES 0 matches (use a normal building week) and 3+ (rest is
-  the prescription) — relay refusals, never work around them.
+  the prescription) — relay refusals, never work around them. A decisive
+  late-season date (cup final, playoffs) may still get a short
+  `build_peaking_block` appended before it, on top of the in-season weeks —
+  justify that hybrid the same way as any other model choice, cited from the
+  dossier or labeled coaching judgment.
 - **open_ended**, or concurrent qualities with no deadline pressure →
   `build_undulating_sessions` to structure intensity within the week, and/or
   `build_periodization_waves` across weeks.
@@ -93,8 +97,11 @@ finishes. It carries:
 ## 5. Hand off
 
 - Run `check_citations` over the skeleton text; fix anything flagged.
-- Goal touches body composition (cut, gain, recomp) and `read_athlete`'s
-  nutrition_frame_version is null → route to nutrition-planning FIRST: the
-  frame must exist before sessions are finalized, so training and deficit are
-  synchronized (no aggressive deficit during an intensification block).
+- Goal touches body composition (cut, gain, recomp): route to nutrition-planning
+  FIRST when `read_athlete`'s nutrition_frame_version is null, OR when a frame
+  already exists but `read_nutrition_frame`'s goal_id does not match the
+  current goal — a frame left over from a previous goal is stale, not a
+  synchronization. The frame must exist (and match) before sessions are
+  finalized, so training and deficit are synchronized (no aggressive deficit
+  during an intensification block).
 - Then route onward to program-optimization, skeleton in the conversation.

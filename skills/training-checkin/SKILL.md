@@ -35,4 +35,4 @@ a coach's five minutes, not an interrogation. Confirm profile facts via
      program-adaptation.
    - All green → encourage, preview the next block (read_program), done. If
      `read_athlete`'s program_version is null there is no program to preview —
-     route to program-generation instead.
+     route to program-planning instead.

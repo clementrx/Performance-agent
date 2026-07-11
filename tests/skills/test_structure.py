@@ -4,14 +4,13 @@ EXPECTED_SKILLS = {
     "performance-coach",
     "athlete-onboarding",
     "needs-analysis",
-    "program-generation",
     "program-planning",
     "program-optimization",
+    "nutrition-planning",
     "training-checkin",
     "program-adaptation",
     "program-report",
     "deep-research",
-    "nutrition-planning",
 }
 
 
@@ -46,6 +45,9 @@ def test_coach_skill_carries_the_global_rules(skills):
         "never compute dates",
         "needs-analysis",
         "deep-research",
+        "program-planning",
+        "program-optimization",
+        "nutrition-planning",
     ):
         assert needle in body, f"coach skill lost the rule: {needle}"
 
@@ -85,22 +87,6 @@ def test_needs_analysis_skill_protocol(skills):
         "research questions",
     ):
         assert needle in body, f"needs-analysis skill lost: {needle}"
-
-
-def test_generation_skill_protocol(skills):
-    generation = next(s for s in skills if s.frontmatter["name"] == "program-generation")
-    body = generation.body.casefold()
-    for needle in (
-        "search_evidence",
-        "build_periodization_waves",
-        "prescribe_load",
-        "save_program",
-        "check_citations",
-        "read_research_dossier",
-        "stars",
-        "purpose",
-    ):
-        assert needle in body, f"generation skill lost: {needle}"
 
 
 def test_planning_skill_protocol(skills):
@@ -214,8 +200,8 @@ def test_nutrition_skill_protocol(skills):
         "protein",
         "activity factor",
         "not medical advice",
-        "refer",
-        "relay",
+        "refer out",
+        "stop prescribing",
         "review_trigger",
         "intensification",
     ):

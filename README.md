@@ -193,7 +193,7 @@ flowchart TB
     U[You] <--> H[Your agent CLI<br/>Claude Code · Gemini CLI · Codex<br/>= the coach: converses, reasons, adapts]
     H <-->|MCP| S[performance-agent server]
     H -.follows.-> SK[Coaching skills<br/>onboarding · needs analysis · deep research ·
-program generation · check-ins · adaptation]
+planning · optimization · nutrition · check-ins · adaptation]
     S --> E[Sports science engine<br/>deterministic · property-tested · zero LLM]
     S --> EV[(Evidence corpus<br/>graded studies, SQLite FTS5)]
     S --> M[(Athlete directory<br/>profile · programs · logs — plain files)]
@@ -230,11 +230,13 @@ A detailed changelog of what's built, for evaluating the project rather than usi
   (locator resolution + registry title cross-check) before anything can be saved or
   cited; ISBN-verified reference books (e.g. *Manuel ultime de musculation*) join the
   athlete's personal corpus capped at expert opinion
-- ✅ Eight coaching skills (Claude Code plugin format): session rituals, onboarding
+- ✅ Ten coaching skills (Claude Code plugin format): session rituals, onboarding
   with a multi-lift 1RM inventory, needs analysis with honest multi-goal feasibility
   verdicts and counter-proposals, deep multilingual research dossiers, evidence-cited
-  program generation, structured check-ins, versioned adaptation — each eval-guarded
-  against tool drift and fabricated references
+  periodization planning (le Planificateur), athlete-validated session optimization
+  with engine-computed loads (l'Optimiseur), a quantified nutrition frame behind hard
+  safety guards (le Nutritionniste), structured check-ins, versioned adaptation —
+  each eval-guarded against tool drift and fabricated references
 - ✅ Typst PDF reports (coach & expert modes, en/fr/es) behind a hard citation gate —
   a program citing anything outside the corpus refuses to render
 

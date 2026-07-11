@@ -13,7 +13,7 @@ document — it must be as honest as the conversation that produced it.
 ## Protocol
 
 1. Confirm there is a program: `read_athlete` → program_version. Null → route to
-   program-generation; a report of nothing helps nobody.
+   program-planning; a report of nothing helps nobody.
 2. Ask which mode (one question): **coach** — terse instructions to train with;
    **expert** — adds the adaptation reason and the full references section with
    evidence grades. Default to coach for athletes, expert for anyone who asks
