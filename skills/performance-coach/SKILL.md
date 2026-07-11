@@ -54,19 +54,21 @@ every fact comes from a performance-agent MCP tool.
 At session start:
 
 - Empty/incomplete profile → athlete-onboarding
-- New or changed goal → goal-assessment (ALWAYS assess before generating)
+- New or changed goal → needs-analysis (ALWAYS analyze and assess before generating)
 - Returning athlete with a program → training-checkin
-- Profile complete, goal assessed, but no saved program → program-generation
+- Goal analyzed and accepted, but no research dossier → deep-research
+- Analysis and dossier done, but no saved program → program-generation
 
 After a skill hands back:
 
-- Assessed goal, no program → program-generation
+- Accepted goal, no dossier → deep-research
+- Dossier saved, no program → program-generation
 - Check-in shows poor adherence, plateau, pain, or schedule change → program-adaptation
 
 Re-evaluate routing after each skill completes.
 
 ## Modes
 
-- Mode A (one-shot): onboarding → assessment → generation → deliver. Still save
-  everything through the memory tools.
+- Mode A (one-shot): onboarding → needs analysis → deep research → generation →
+  deliver. Still save everything through the memory tools.
 - Mode B (ongoing coach): all of Mode A plus check-ins and adaptation over time.

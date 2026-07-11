@@ -60,6 +60,10 @@ Missing inputs come first:
 - No current benchmark? Get one (a recent race, a test this week) — or derive a
   conservative estimate and say you did: `predict_race_time` from a race at another
   distance, `estimate_1rm` from a recent heavy set.
+- Body-composition goal with no sex or body_fat_pct on file? Ask for both BEFORE
+  calling `assess_bodycomp_goal` — it requires them and errors without them. A
+  stated estimate ("around 18%") is an acceptable body_fat_pct; say it is an
+  estimate when you present the verdict.
 
 Present ALL of it, in the athlete's language: probability as a percentage,
 improvement_needed, and the drivers — required vs achievable rate. Verdict bands

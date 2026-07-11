@@ -41,6 +41,8 @@ def test_coach_skill_carries_the_global_rules(skills):
         "not medical advice",
         "locale",
         "never compute dates",
+        "needs-analysis",
+        "deep-research",
     ):
         assert needle in body, f"coach skill lost the rule: {needle}"
 
@@ -91,6 +93,7 @@ def test_generation_skill_protocol(skills):
         "prescribe_load",
         "save_program",
         "check_citations",
+        "read_research_dossier",
         "stars",
         "purpose",
     ):

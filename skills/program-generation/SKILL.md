@@ -5,8 +5,8 @@ description: Use after a goal has been assessed as accepted. Builds the periodiz
   constraints, and saves it through the versioned program store.
 tools: [read_athlete, get_time_context, search_evidence, search_evidence_live,
         save_evidence, verify_reference, get_citation, check_citations,
-        build_periodization_waves, prescribe_load, estimate_1rm,
-        predict_race_time, compute_pace, save_program, log_session]
+        read_research_dossier, build_periodization_waves, prescribe_load,
+        estimate_1rm, predict_race_time, compute_pace, save_program, log_session]
 ---
 
 # Program Generation
@@ -17,19 +17,27 @@ constraints (equipment, injuries, availability) come from `read_athlete`.
 
 ## 1. Evidence pack
 
-Query `search_evidence` (in ENGLISH, whatever the athlete's language) for the goal's
-key training questions — e.g. for a 10K goal: strength training and running economy,
-interval vs continuous work, tapering; for barbell strength: volume and frequency
-dose-response, progression models. Collect the ids, stars, and conclusions you will
-build on. Render the full citation string for any id you plan to quote with
-`get_citation`. If a question returns nothing from `search_evidence`, run
-`search_evidence_live` with translated `language_terms` (en, fr, es, de, ru, no, sv,
-it, zh) before concluding the corpus has no entry. Classify and `save_evidence` any
-verified candidate worth citing — `suggested_study_type` if set, otherwise your own
-abstract-based proposal (grading ceiling still enforced). Still nothing? Fall back
-to a web search per language, `verify_reference` anything with a locator before
-proposing `save_evidence`, and if that also comes up empty, label that part of the
-plan as coaching judgment rather than force a citation.
+le Chercheur (deep-research) normally ran before you: call `read_research_dossier`
+and build on its per-facet synthesis. The studies it retained are already in the
+corpus — `search_evidence` returns them by id; render the full citation string for
+any id you plan to quote with `get_citation`. Respect the dossier's stated
+confidence levels and contradictions: a facet it marked "thin evidence — coaching
+judgment" stays coaching judgment in the program, and where it shows a live
+disagreement, say which camp the program follows and why.
+
+**Fallback — no dossier exists** (`read_research_dossier` errors: legacy athlete,
+or the athlete explicitly declined the deep research): build your own evidence
+pack. Query `search_evidence` (in ENGLISH, whatever the athlete's language) for the
+goal's key training questions — e.g. for a 10K goal: strength training and running
+economy, interval vs continuous work, tapering; for barbell strength: volume and
+frequency dose-response, progression models. If a question returns nothing, run
+`search_evidence_live` with translated `language_terms` (en, fr, es, de, ru, no,
+sv, it, zh) before concluding the corpus has no entry. Classify and `save_evidence`
+any verified candidate worth citing — `suggested_study_type` if set, otherwise your
+own abstract-based proposal (grading ceiling still enforced). Still nothing? Fall
+back to a web search per language, `verify_reference` anything with a locator
+before proposing `save_evidence`, and if that also comes up empty, label that part
+of the plan as coaching judgment rather than force a citation.
 
 ## 2. Structure
 

@@ -12,8 +12,10 @@ tools: [read_athlete, read_analysis, search_evidence, search_evidence_live,
 
 The core of the premium promise: dozens of queries, several languages, minutes of
 work, run live for this athlete — never a single shallow pass. Follow
-performance-coach global rules. Narrate progress as you go ("wave 2 — periodization
-facet still thin") — the athlete should see the work.
+performance-coach global rules. Before launching wave 1, tell the athlete upfront
+that this research will take several minutes — set the expectation, don't leave
+them wondering why the coach has gone quiet. Narrate progress as you go ("wave 2 —
+periodization facet still thin") — the athlete should see the work.
 
 ## 1. Read the brief
 
@@ -42,9 +44,11 @@ Add one facet per research question the analysis lists.
 
 Per facet: check the corpus first (`search_evidence`), then run
 `search_evidence_live` with 3-5 distinct queries (synonyms, competing
-terminologies), each carrying a language_terms dict translated into several
-languages (en, fr, es, de, pt, ru, it, zh, … — skip any you cannot translate
-confidently). Use the filters: prefer publication_types ["meta_analysis",
+terminologies), each carrying a language_terms dict. Language minimum per facet:
+English + the athlete's stored locale + at least two other languages (from fr, es,
+de, pt, ru, it, zh, no, sv, … — skip any of the "other" languages you cannot
+translate confidently; the English and locale terms are never skipped). Use the
+filters: prefer publication_types ["meta_analysis",
 "systematic_review"] on a first pass, widen to "rct" or no filter when a facet is
 thin; use year_from for fast-moving questions. Candidates arrive evidence-tier
 ordered (meta-analyses → reviews → RCTs → the rest, most recent first within a
@@ -55,9 +59,11 @@ tier) and PubMed candidates carry full abstracts — read them before grading.
 After each wave, go through the facet list and mark each facet covered (at least
 two independent relevant sources, ideally including a meta-analysis or review) or
 thin. For every thin facet: reformulate (different terminology, adjacent
-population, broader question), drop filters, add languages, relaunch. Repeat until
-every facet is covered or reformulations are honestly exhausted. A facet abandoned
-while thin is recorded as thin in the dossier — never silently dropped.
+population, broader question), drop filters, add languages, relaunch. Exhaustion is
+mechanical, not a judgment call: run AT LEAST TWO reformulation waves on every
+thin facet before you may declare it exhausted — a single retry is never enough. A
+facet abandoned while thin after those two waves is recorded as thin in the
+dossier — never silently dropped.
 
 ## 5. Persist everything you keep
 

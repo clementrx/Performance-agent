@@ -5,7 +5,8 @@ description: Use when a check-in fires a trigger (missed sessions, high fatigue,
   program version with an explicit reason.
 tools: [read_athlete, get_time_context, read_program, read_sessions, read_checkins,
         compute_session_load, compute_weekly_loads, compute_acwr,
-        assess_endurance_goal, prescribe_load, estimate_1rm,
+        assess_endurance_goal, assess_strength_goal, assess_hypertrophy_goal,
+        assess_bodycomp_goal, prescribe_load, estimate_1rm,
         build_periodization_waves, search_evidence, search_evidence_live,
         save_evidence, verify_reference, get_citation, check_citations, save_program]
 ---
@@ -30,11 +31,15 @@ every one carries a reason the athlete (and future you) can audit.
   gives a wrong-but-plausible number with no error. Present ACWR as a descriptive
   trend only — its injury-prediction validity is contested; never present it as an
   injury probability.
+- Use the RIGHT feasibility tool for the goal type — `assess_endurance_goal` for a
+  race/distance goal, `assess_strength_goal` for a lift target, `assess_hypertrophy_goal`
+  for a muscle-growth goal, `assess_bodycomp_goal` for a weight/body-fat goal. Never
+  default to the endurance tool for a non-endurance goal.
 - If `get_time_context` shows the deadline already passed (negative
-  days_remaining), do NOT call `assess_endurance_goal` (it errors on non-positive
+  days_remaining), do NOT call the assessment tool (it errors on non-positive
   weeks); route to needs-analysis to renegotiate the deadline first.
-- Re-run `assess_endurance_goal` with today's numbers if the goal's feasibility may
-  have moved (quote the new drivers vs the old ones).
+- Re-run the goal-type-matched assessment tool with today's numbers if the goal's
+  feasibility may have moved (quote the new drivers vs the old ones).
 - Name the diagnosis in one sentence: under-recovery / under-stimulus / interrupted
   training / life-constraint change / pain-driven (map check-in triggers loosely:
   fatigue ≥ 8 → under-recovery; adherence < 70% → interrupted training; but
