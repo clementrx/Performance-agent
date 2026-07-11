@@ -20,6 +20,7 @@ from performance_agent.engine import (
     weekly_set_targets,
 )
 from performance_agent.engine.feasibility import TrainingAge
+from performance_agent.engine.periodization import build_block_periodization
 
 loads = st.floats(min_value=1, max_value=500, allow_nan=False)
 times = st.floats(min_value=60, max_value=36000, allow_nan=False)
@@ -160,3 +161,11 @@ def test_weekly_set_targets_invariant_ordering(age):
         < targets.optimal_high_sets
         < targets.maximum_adaptive_sets
     )
+
+
+@given(total_weeks=st.integers(min_value=6, max_value=52))
+def test_block_periodization_covers_every_week_with_all_three_phases(total_weeks):
+    weeks = build_block_periodization(total_weeks)
+    assert [w.week for w in weeks] == list(range(1, total_weeks + 1))
+    for phase in ("accumulation", "intensification", "realization"):
+        assert sum(1 for w in weeks if w.phase == phase) >= 1

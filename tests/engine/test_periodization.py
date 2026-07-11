@@ -1,6 +1,17 @@
 import pytest
 
-from performance_agent.engine.periodization import WeekLoad, build_weekly_waves
+from performance_agent.engine.periodization import (
+    ACCUMULATION_INTENSITY,
+    ACCUMULATION_VOLUME,
+    INTENSIFICATION_INTENSITY,
+    INTENSIFICATION_VOLUME,
+    REALIZATION_INTENSITY,
+    REALIZATION_VOLUME,
+    BlockWeek,
+    WeekLoad,
+    build_block_periodization,
+    build_weekly_waves,
+)
 
 
 def test_eight_week_block_shape():
@@ -87,3 +98,44 @@ def test_non_integer_params_rejected(total_weeks, deload_every, taper_weeks):
         build_weekly_waves(
             total_weeks=total_weeks, deload_every=deload_every, taper_weeks=taper_weeks
         )
+
+
+def test_block_twelve_weeks_splits_six_four_two():
+    # round(12*0.50)=6, round(12*0.35)=4, 12-10=2
+    weeks = build_block_periodization(total_weeks=12)
+    phases = [w.phase for w in weeks]
+    assert phases == ["accumulation"] * 6 + ["intensification"] * 4 + ["realization"] * 2
+    assert [w.week for w in weeks] == list(range(1, 13))
+
+
+def test_block_factors_match_phase_constants():
+    weeks = build_block_periodization(total_weeks=12)
+    assert weeks[0].volume_factor == pytest.approx(ACCUMULATION_VOLUME)
+    assert weeks[0].intensity_factor == pytest.approx(ACCUMULATION_INTENSITY)
+    assert weeks[6].volume_factor == pytest.approx(INTENSIFICATION_VOLUME)
+    assert weeks[6].intensity_factor == pytest.approx(INTENSIFICATION_INTENSITY)
+    assert weeks[10].volume_factor == pytest.approx(REALIZATION_VOLUME)
+    assert weeks[10].intensity_factor == pytest.approx(REALIZATION_INTENSITY)
+
+
+def test_block_six_weeks_keeps_one_week_per_phase():
+    weeks = build_block_periodization(total_weeks=6)
+    phases = [w.phase for w in weeks]
+    assert phases == ["accumulation"] * 3 + ["intensification"] * 2 + ["realization"]
+
+
+def test_block_rejects_fewer_than_six_weeks():
+    with pytest.raises(ValueError, match="degenerate"):
+        build_block_periodization(total_weeks=5)
+
+
+@pytest.mark.parametrize("total_weeks", [12.0, True])
+def test_block_rejects_non_whole_weeks(total_weeks):
+    with pytest.raises(ValueError, match="whole number"):
+        build_block_periodization(total_weeks=total_weeks)
+
+
+def test_block_weeks_are_frozen_value_objects():
+    week = BlockWeek(week=1, phase="accumulation", volume_factor=1.10, intensity_factor=0.85)
+    with pytest.raises(AttributeError):
+        week.volume_factor = 2.0  # ty: ignore[invalid-assignment]
