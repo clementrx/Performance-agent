@@ -128,15 +128,129 @@ async def test_build_periodization_waves(client):
 
 
 @pytest.mark.anyio
+async def test_assess_strength_goal(client):
+    result = await client.call_tool(
+        "assess_strength_goal",
+        {
+            "current_one_rm_kg": 100.0,
+            "target_one_rm_kg": 110.0,
+            "weeks": 20,
+            "training_age": "intermediate",
+        },
+    )
+    assert not result.isError
+    verdict = result.structuredContent
+    assert verdict["improvement_needed"] == pytest.approx(0.10)
+    assert verdict["required_weekly_rate"] == pytest.approx(0.005)
+    assert verdict["achievable_weekly_rate"] == pytest.approx(0.0035)
+    assert verdict["probability"] == pytest.approx(0.2166, abs=0.001)
+
+
+@pytest.mark.anyio
+async def test_assess_hypertrophy_goal(client):
+    result = await client.call_tool(
+        "assess_hypertrophy_goal",
+        {"target_lean_gain_kg": 5.0, "weeks": 26, "training_age": "beginner"},
+    )
+    assert not result.isError
+    verdict = result.structuredContent
+    assert verdict["required_weekly_rate"] == pytest.approx(5 / 26)
+    assert verdict["achievable_weekly_rate"] == pytest.approx(0.23)
+    assert verdict["probability"] == pytest.approx(0.6205, abs=0.001)
+
+
+@pytest.mark.anyio
+async def test_assess_bodycomp_goal(client):
+    result = await client.call_tool(
+        "assess_bodycomp_goal",
+        {
+            "current_weight_kg": 80.0,
+            "current_body_fat_pct": 20.0,
+            "target_body_fat_pct": 12.0,
+            "weeks": 16,
+            "sex": "male",
+        },
+    )
+    assert not result.isError
+    verdict = result.structuredContent
+    assert verdict["fat_mass_to_lose_kg"] == pytest.approx(7.2727, abs=0.001)
+    assert verdict["probability"] == pytest.approx(0.6742, abs=0.001)
+    assert verdict["exceeds_safe_rate"] is False
+
+
+@pytest.mark.anyio
+async def test_assess_bodycomp_goal_refuses_sub_healthy_target(client):
+    result = await client.call_tool(
+        "assess_bodycomp_goal",
+        {
+            "current_weight_kg": 80.0,
+            "current_body_fat_pct": 15.0,
+            "target_body_fat_pct": 4.0,
+            "weeks": 16,
+            "sex": "male",
+        },
+    )
+    assert result.isError
+    assert "healthy minimum" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_prescribe_reps_load(client):
+    result = await client.call_tool(
+        "prescribe_reps_load", {"one_rm_kg": 100.0, "reps": 5, "rir": 2}
+    )
+    assert not result.isError
+    prescription = result.structuredContent
+    assert prescription["percentage"] == pytest.approx(30 / 37)
+    assert prescription["load_kg"] == pytest.approx(100 * 30 / 37)
+
+
+@pytest.mark.anyio
+async def test_weekly_set_targets_for(client):
+    result = await client.call_tool("weekly_set_targets_for", {"training_age": "intermediate"})
+    assert not result.isError
+    targets = result.structuredContent
+    assert targets["minimum_effective_sets"] == 8
+    assert targets["optimal_low_sets"] == 10
+    assert targets["optimal_high_sets"] == 16
+    assert targets["maximum_adaptive_sets"] == 20
+
+
+@pytest.mark.anyio
+async def test_progress_double_progression(client):
+    result = await client.call_tool(
+        "progress_double_progression",
+        {
+            "reps_achieved": [12, 12, 12],
+            "load_kg": 60.0,
+            "rep_range_low": 8,
+            "rep_range_high": 12,
+            "increment_kg": 2.5,
+        },
+    )
+    assert not result.isError
+    decision = result.structuredContent
+    assert decision["next_load_kg"] == pytest.approx(62.5)
+    assert decision["next_target_reps"] == 8
+    assert decision["load_increased"] is True
+
+
+@pytest.mark.anyio
 async def test_all_engine_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}
     assert {
         "assess_endurance_goal",
+        "assess_strength_goal",
+        "assess_hypertrophy_goal",
+        "assess_bodycomp_goal",
         "predict_race_time",
         "compute_pace",
         "estimate_1rm",
         "prescribe_load",
+        "prescribe_reps_load",
+        "weekly_set_targets_for",
+        "progress_double_progression",
         "compute_session_load",
         "compute_weekly_loads",
         "compute_acwr",

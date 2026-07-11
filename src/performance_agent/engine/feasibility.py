@@ -292,6 +292,9 @@ def bodycomp_feasibility(
             "body-fat GAIN goals are not modelled; treat as hypertrophy"
         )
         raise ValueError(msg)
+    if sex not in MIN_HEALTHY_BODY_FAT_PCT:
+        msg = f"sex must be 'male' or 'female', got {sex!r}"
+        raise ValueError(msg)
     healthy_floor = MIN_HEALTHY_BODY_FAT_PCT[sex]
     if target_body_fat_pct < healthy_floor:
         msg = (

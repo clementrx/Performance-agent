@@ -10,22 +10,31 @@ from typing import Literal, TypedDict
 from mcp.server.fastmcp import FastMCP
 
 from performance_agent.engine import (
+    BodycompFeasibility,
     FeasibilityResult,
+    ProgressionDecision,
     TrainingAge,
     WeekLoad,
+    WeeklySetTargets,
     acute_chronic_ratio,
+    bodycomp_feasibility,
     build_weekly_waves,
+    double_progression,
     endurance_feasibility,
+    hypertrophy_feasibility,
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
     one_rm_lombardi,
     one_rm_wathan,
     pace_s_per_km,
+    percentage_for_reps_rir,
     riegel_predict,
     session_rpe_load,
+    strength_feasibility,
     weekly_loads,
 )
+from performance_agent.engine import weekly_set_targets as engine_weekly_set_targets
 
 _ONE_RM_FORMULAS = {
     "brzycki": one_rm_brzycki,
@@ -58,6 +67,13 @@ class OneRmEstimate(TypedDict):
 class LoadPrescription(TypedDict):
     """Absolute load for a percentage of 1RM."""
 
+    load_kg: float
+
+
+class RepsLoadPrescription(TypedDict):
+    """Percentage of 1RM and absolute load for a reps-at-RIR prescription."""
+
+    percentage: float
     load_kg: float
 
 
@@ -99,6 +115,103 @@ def assess_endurance_goal(
     return endurance_feasibility(current_time_s, target_time_s, weeks, training_age)
 
 
+def assess_strength_goal(
+    current_one_rm_kg: float, target_one_rm_kg: float, weeks: int, training_age: TrainingAge
+) -> FeasibilityResult:
+    """Score the feasibility of a strength (1RM) goal (honest-coach verdict).
+
+    Both loads are in kg for the same lift; training_age is one of beginner,
+    intermediate, advanced. Sign convention: improvement_needed is positive
+    when the target is above the current 1RM. Returns the success
+    probability (0-1) with the drivers behind it (improvement_needed,
+    required vs achievable weekly rates as fractions of current 1RM, their
+    ratio). Always present the drivers alongside the probability, never the
+    bare number.
+    """
+    return strength_feasibility(current_one_rm_kg, target_one_rm_kg, weeks, training_age)
+
+
+def assess_hypertrophy_goal(
+    target_lean_gain_kg: float, weeks: int, training_age: TrainingAge
+) -> FeasibilityResult:
+    """Score the feasibility of a lean-mass gain goal (honest-coach verdict).
+
+    target_lean_gain_kg is lean mass in kg (positive); rates are ABSOLUTE
+    kg/week, not fractions — improvement_needed carries the target gain in
+    kg. Returns the success probability (0-1) with the drivers behind it
+    (required vs achievable kg/week, their ratio). Always present the
+    drivers alongside the probability, never the bare number.
+    """
+    return hypertrophy_feasibility(target_lean_gain_kg, weeks, training_age)
+
+
+def assess_bodycomp_goal(
+    current_weight_kg: float,
+    current_body_fat_pct: float,
+    target_body_fat_pct: float,
+    weeks: int,
+    sex: Literal["male", "female"],
+) -> BodycompFeasibility:
+    """Score the feasibility of a fat-loss goal (honest-coach verdict).
+
+    Weight in kg; body-fat percentages in (3, 60) with target below current.
+    REFUSES targets below the healthy minimum for the athlete's sex (5% male,
+    12% female) with an error telling you to refer to a health professional —
+    relay that refusal, do not work around it. exceeds_safe_rate=True means
+    the deadline demands more than 1% bodyweight/week and risks muscle loss;
+    say so explicitly. Always present the drivers (fat_mass_to_lose_kg,
+    required vs achievable weekly loss as fractions of bodyweight, their
+    ratio) alongside the probability, never the bare number.
+    """
+    return bodycomp_feasibility(
+        current_weight_kg, current_body_fat_pct, target_body_fat_pct, weeks, sex
+    )
+
+
+def prescribe_reps_load(one_rm_kg: float, reps: int, rir: int) -> RepsLoadPrescription:
+    """Prescribe the %1RM and absolute load for a reps-at-RIR target.
+
+    Epley-based: percentage = 1 / (1 + (reps + rir) / 30). Effective reps
+    (reps + rir) are capped at 18, and the model is only validated to ~12 —
+    when reps + rir is 13-18, label the prescription as carrying extra
+    uncertainty. Returns the fraction of 1RM and the load in kg.
+    """
+    percentage = percentage_for_reps_rir(reps, rir)
+    return RepsLoadPrescription(
+        percentage=percentage, load_kg=load_for_percentage(one_rm_kg, percentage)
+    )
+
+
+def weekly_set_targets_for(training_age: TrainingAge) -> WeeklySetTargets:
+    """Weekly hard-set targets per muscle group for a training-age bucket.
+
+    Returns minimum_effective_sets, optimal_low_sets-optimal_high_sets (the
+    range to program), and maximum_adaptive_sets (do not exceed), all in
+    weekly hard sets per muscle group. Anchored on the volume dose-response
+    meta-analysis in the corpus; the training-age spread is a team-chosen
+    prior.
+    """
+    return engine_weekly_set_targets(training_age)
+
+
+def progress_double_progression(
+    reps_achieved: list[int],
+    load_kg: float,
+    rep_range_low: int,
+    rep_range_high: int,
+    increment_kg: float,
+) -> ProgressionDecision:
+    """Decide the next session's load and rep target by double progression.
+
+    Fill the rep range first, then add load: when every set reached
+    rep_range_high, the load goes up by increment_kg and the target resets
+    to rep_range_low; otherwise the load holds and the target is one rep
+    above the lowest achieved set, capped at rep_range_high. Loads in kg;
+    rep range must satisfy 1 <= low < high <= 18.
+    """
+    return double_progression(reps_achieved, load_kg, rep_range_low, rep_range_high, increment_kg)
+
+
 def predict_race_time(
     known_distance_m: float, known_time_s: float, target_distance_m: float
 ) -> RacePrediction:
@@ -129,8 +242,10 @@ def estimate_1rm(
 ) -> OneRmEstimate:
     """Estimate a one-rep max in kg from a submaximal set (1-12 reps).
 
-    Pick one formula per athlete and lift and stay consistent; do not average
-    them.
+    Epley is the general default; Brzycki is more conservative near the top
+    of the rep range; Lombardi gives the flattest (lowest) estimates at
+    moderate reps; Wathan the highest. Pick one formula per athlete and lift
+    and stay consistent; do not average them.
     """
     return OneRmEstimate(one_rm_kg=_ONE_RM_FORMULAS[formula](load_kg, reps), formula=formula)
 
@@ -193,10 +308,16 @@ def register(mcp: FastMCP) -> None:
     """Register every engine tool on the server."""
     for tool in (
         assess_endurance_goal,
+        assess_strength_goal,
+        assess_hypertrophy_goal,
+        assess_bodycomp_goal,
         predict_race_time,
         compute_pace,
         estimate_1rm,
         prescribe_load,
+        prescribe_reps_load,
+        weekly_set_targets_for,
+        progress_double_progression,
         compute_session_load,
         compute_weekly_loads,
         compute_acwr,

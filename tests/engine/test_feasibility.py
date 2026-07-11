@@ -344,6 +344,17 @@ def test_bodycomp_refuses_sub_healthy_target():
         )
 
 
+def test_bodycomp_rejects_unknown_sex():
+    with pytest.raises(ValueError, match="sex must be 'male' or 'female', got 'Male'"):
+        bodycomp_feasibility(
+            current_weight_kg=80.0,
+            current_body_fat_pct=20.0,
+            target_body_fat_pct=12.0,
+            weeks=16,
+            sex="Male",  # ty: ignore[invalid-argument-type]  # the MCP boundary can pass this
+        )
+
+
 def test_bodycomp_refuses_gain_direction():
     with pytest.raises(ValueError, match="not modelled; treat as hypertrophy"):
         bodycomp_feasibility(

@@ -1,6 +1,6 @@
 """Strength math: 1RM estimation and percentage-based load prescription.
 
-Formulas are only validated for 1-12 repetitions; both Epley and Brzycki
+Formulas are only validated for 1-12 repetitions; these estimation formulas
 degrade badly beyond ~10 reps, so higher inputs are rejected. The
 percentage_for_reps_rir/reps_for_percentage_rir pair extends this to 18
 effective reps (reps + RIR), with 13-18 carrying the extra uncertainty
