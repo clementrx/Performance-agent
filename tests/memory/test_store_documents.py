@@ -4,9 +4,11 @@ import pytest
 
 from performance_agent.memory.store import (
     read_analysis,
+    read_nutrition_frame,
     read_program,
     read_research_dossier,
     save_analysis,
+    save_nutrition_frame,
     save_program,
     save_research_dossier,
 )
@@ -18,6 +20,7 @@ DOC_KINDS = [
     pytest.param(
         save_research_dossier, read_research_dossier, "research", "dossier", id="research"
     ),
+    pytest.param(save_nutrition_frame, read_nutrition_frame, "nutrition", "frame", id="nutrition"),
 ]
 
 
@@ -72,6 +75,7 @@ def test_document_families_version_independently(tmp_path):
     save_program(tmp_path, "program", "squat-160", today=TODAY)
     save_analysis(tmp_path, "analysis", "squat-160", today=TODAY)
     save_research_dossier(tmp_path, "dossier", "squat-160", today=TODAY)
+    save_nutrition_frame(tmp_path, "frame", "squat-160", today=TODAY)
     # Each family has its own v1 counter — a program does not bump the analysis.
     path, version = save_analysis(
         tmp_path, "analysis v2", "squat-160", reason="verdict changed", today=TODAY
@@ -81,3 +85,6 @@ def test_document_families_version_independently(tmp_path):
     result = read_program(tmp_path)
     assert result is not None
     assert result[0]["version"] == 1
+    frame = read_nutrition_frame(tmp_path)
+    assert frame is not None
+    assert frame[0]["version"] == 1

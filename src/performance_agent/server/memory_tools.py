@@ -19,8 +19,9 @@ from performance_agent.memory.time_context import TimeContext, build_time_contex
 class AthleteSnapshot(TypedDict):
     """Everything stored about the athlete, in one read.
 
-    The three version fields tell you where the athlete is in the pipeline:
-    analysis but no dossier means the deep research has not run yet.
+    The four version fields tell you where the athlete is in the pipeline:
+    analysis but no dossier means the deep research has not run yet;
+    nutrition_frame_version is null unless the Nutritionist has run.
     """
 
     athlete_dir: str
@@ -29,6 +30,7 @@ class AthleteSnapshot(TypedDict):
     program_version: int | None
     analysis_version: int | None
     dossier_version: int | None
+    nutrition_frame_version: int | None
 
 
 class WrittenFile(TypedDict):
@@ -93,6 +95,7 @@ def read_athlete() -> AthleteSnapshot:
         program_version=store.latest_program_version(base),
         analysis_version=store.latest_analysis_version(base),
         dossier_version=store.latest_research_dossier_version(base),
+        nutrition_frame_version=store.latest_nutrition_frame_version(base),
     )
 
 
@@ -247,6 +250,36 @@ def read_research_dossier(version: int | None = None) -> VersionedDocView:
     )
 
 
+def save_nutrition_frame(
+    markdown_body: str, goal_id: str, reason: str | None = None
+) -> VersionedDocSaved:
+    """Write the NEXT nutrition-frame version (immutable audit trail).
+
+    The frame is the Nutritionist's output: a fenced yaml block carrying the
+    engine-computed numbers (goal, daily_kcal, protein_g_per_day,
+    weekly_change_kg, clamped_to_floor, review_trigger) plus prose explaining
+    them and the training phase the frame assumes. Version 1 needs no reason;
+    every recalculation (v2+ — weight change, phase change) requires a
+    reason. Existing versions are never overwritten.
+    """
+    path, version = store.save_nutrition_frame(
+        resolve_athlete_dir(), markdown_body, goal_id, reason
+    )
+    return VersionedDocSaved(path=str(path), version=version)
+
+
+def read_nutrition_frame(version: int | None = None) -> VersionedDocView:
+    """Return the latest (or a specific) nutrition-frame version.
+
+    Raises a readable error when no frame has been saved yet — run the
+    nutrition-planning skill (which ends with save_nutrition_frame) first.
+    """
+    return _doc_view(
+        store.read_nutrition_frame(resolve_athlete_dir(), version),
+        "no nutrition frame has been saved yet; call save_nutrition_frame first",
+    )
+
+
 def get_time_context() -> TimeContext:
     """Current date plus days-since deltas and goal countdowns.
 
@@ -273,6 +306,8 @@ def register(mcp: FastMCP) -> None:
         read_analysis,
         save_research_dossier,
         read_research_dossier,
+        save_nutrition_frame,
+        read_nutrition_frame,
         get_time_context,
     ):
         mcp.tool()(tool)

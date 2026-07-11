@@ -19,6 +19,7 @@ async def test_read_athlete_on_fresh_directory(client):
     assert snapshot["program_version"] is None
     assert snapshot["analysis_version"] is None
     assert snapshot["dossier_version"] is None
+    assert snapshot["nutrition_frame_version"] is None
 
 
 @pytest.mark.anyio
@@ -220,6 +221,8 @@ async def test_memory_tools_are_listed(client):
         "read_analysis",
         "save_research_dossier",
         "read_research_dossier",
+        "save_nutrition_frame",
+        "read_nutrition_frame",
     } <= names
 
 
@@ -263,6 +266,35 @@ async def test_research_dossier_lifecycle(client, athlete_home):
 
 
 @pytest.mark.anyio
+async def test_nutrition_frame_lifecycle(client, athlete_home):
+    saved = await client.call_tool(
+        "save_nutrition_frame", {"markdown_body": "# Frame", "goal_id": "cut-15pct"}
+    )
+    assert not saved.isError
+    assert saved.structuredContent["version"] == 1
+    assert (athlete_home / "nutrition" / "frame-v1.md").exists()
+
+    read_back = await client.call_tool("read_nutrition_frame", {})
+    assert read_back.structuredContent["goal_id"] == "cut-15pct"
+    assert read_back.structuredContent["body"] == "# Frame"
+
+    unreasoned = await client.call_tool(
+        "save_nutrition_frame", {"markdown_body": "v2", "goal_id": "cut-15pct"}
+    )
+    assert unreasoned.isError
+    assert "reason" in unreasoned.content[0].text
+
+
+@pytest.mark.anyio
+async def test_read_athlete_reports_nutrition_frame_version(client):
+    await client.call_tool(
+        "save_nutrition_frame", {"markdown_body": "# Frame", "goal_id": "cut-15pct"}
+    )
+    result = await client.call_tool("read_athlete", {})
+    assert result.structuredContent["nutrition_frame_version"] == 1
+
+
+@pytest.mark.anyio
 async def test_reading_unsaved_documents_errors_readably(client):
     analysis = await client.call_tool("read_analysis", {})
     assert analysis.isError
@@ -270,6 +302,9 @@ async def test_reading_unsaved_documents_errors_readably(client):
     dossier = await client.call_tool("read_research_dossier", {})
     assert dossier.isError
     assert "save_research_dossier" in dossier.content[0].text
+    frame = await client.call_tool("read_nutrition_frame", {})
+    assert frame.isError
+    assert "save_nutrition_frame" in frame.content[0].text
 
 
 @pytest.mark.anyio

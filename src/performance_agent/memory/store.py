@@ -21,6 +21,7 @@ CHECKINS_FILE = "checkins.jsonl"
 PROGRAMS_DIR = "programs"
 ANALYSIS_DIR = "analysis"
 RESEARCH_DIR = "research"
+NUTRITION_DIR = "nutrition"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -242,6 +243,11 @@ def latest_research_dossier_version(base_dir: Path) -> int | None:
     return _latest_doc_version(base_dir, RESEARCH_DIR, "dossier")
 
 
+def latest_nutrition_frame_version(base_dir: Path) -> int | None:
+    """Return the highest existing nutrition-frame version, or None."""
+    return _latest_doc_version(base_dir, NUTRITION_DIR, "frame")
+
+
 def save_program(
     base_dir: Path,
     markdown_body: str,
@@ -343,5 +349,43 @@ def read_research_dossier(
         subdir=RESEARCH_DIR,
         prefix="dossier",
         label="research dossier",
+        version=version,
+    )
+
+
+def save_nutrition_frame(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next nutrition-frame version; recalculation requires a reason.
+
+    Same immutable-version audit trail as programs; lives in nutrition/. The
+    body is markdown with the engine-computed numbers in a fenced yaml block
+    (store uniformity over the spec's frame-v1.yaml sketch — deliberate).
+    """
+    return _save_versioned_doc(
+        base_dir,
+        markdown_body,
+        goal_id,
+        subdir=NUTRITION_DIR,
+        prefix="frame",
+        label="nutrition frame",
+        reason=reason,
+        today=today,
+    )
+
+
+def read_nutrition_frame(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest frame; None when empty."""
+    return _read_versioned_doc(
+        base_dir,
+        subdir=NUTRITION_DIR,
+        prefix="frame",
+        label="nutrition frame",
         version=version,
     )

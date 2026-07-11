@@ -106,7 +106,7 @@ pick it up).
 > List the performance-agent tools.
 ```
 
-You should see 45 tools. Then ask:
+You should see 47 tools. Then ask:
 
 ```
 > What does your performance-coach skill do at the start of a session?
