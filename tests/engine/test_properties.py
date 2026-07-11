@@ -22,6 +22,7 @@ from performance_agent.engine import (
     weekly_set_targets,
 )
 from performance_agent.engine.feasibility import TrainingAge
+from performance_agent.engine.nutrition import CALORIC_FLOOR_KCAL, prescribe_energy_target
 from performance_agent.engine.periodization import (
     build_block_periodization,
     build_strength_peaking,
@@ -195,3 +196,17 @@ def test_peaking_volume_falls_while_intensity_climbs(weeks):
     assert all(a < b for a, b in itertools.pairwise(intensities))
     assert taper[-1].is_test_week
     assert not any(w.is_test_week for w in taper[:-1])
+
+
+@given(
+    tdee=st.floats(min_value=1300, max_value=5000, allow_nan=False),
+    rate=st.floats(min_value=0.001, max_value=0.010, allow_nan=False),
+    weight=st.floats(min_value=45, max_value=150, allow_nan=False),
+    height=st.floats(min_value=140, max_value=210, allow_nan=False),
+    sex=st.sampled_from(["male", "female"]),
+)
+def test_cut_prescription_never_goes_below_the_floor(tdee, rate, weight, height, sex):
+    assume(weight / (height / 100) ** 2 >= 18.5)
+    target = prescribe_energy_target(tdee, "cut", rate, weight, height, sex)
+    assert target.daily_kcal >= CALORIC_FLOOR_KCAL[sex]
+    assert target.protein_g_per_day > 0
