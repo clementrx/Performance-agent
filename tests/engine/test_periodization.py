@@ -7,12 +7,14 @@ from performance_agent.engine.periodization import (
     INTENSIFICATION_VOLUME,
     REALIZATION_INTENSITY,
     REALIZATION_VOLUME,
+    UNDULATION_ZONES,
     BlockWeek,
     WeekLoad,
     build_block_periodization,
     build_undulating_week,
     build_weekly_waves,
 )
+from performance_agent.engine.strength import reps_for_percentage_rir
 
 
 def test_eight_week_block_shape():
@@ -148,7 +150,7 @@ def test_undulating_three_sessions_heavy_light_moderate():
     assert [s.emphasis for s in sessions] == ["heavy", "light", "moderate"]
     assert sessions[0].intensity_low == pytest.approx(0.85)
     assert sessions[0].intensity_high == pytest.approx(0.925)
-    assert sessions[1].intensity_low == pytest.approx(0.60)
+    assert sessions[1].intensity_low == pytest.approx(0.625)
     assert sessions[1].intensity_high == pytest.approx(0.70)
     assert sessions[2].intensity_low == pytest.approx(0.725)
     assert sessions[2].intensity_high == pytest.approx(0.80)
@@ -168,3 +170,22 @@ def test_undulating_rejects_out_of_range_sessions(sessions_per_week):
 def test_undulating_rejects_non_whole_sessions():
     with pytest.raises(ValueError, match="whole number"):
         build_undulating_week(sessions_per_week=3.0)  # ty: ignore[invalid-argument-type]
+
+
+@pytest.mark.parametrize(
+    ("sessions_per_week", "expected"),
+    [
+        (2, ["heavy", "light"]),
+        (7, ["heavy", "light", "moderate", "heavy", "light", "moderate", "heavy"]),
+    ],
+)
+def test_undulating_emphasis_sequences(sessions_per_week, expected):
+    sessions = build_undulating_week(sessions_per_week=sessions_per_week)
+    assert [s.emphasis for s in sessions] == expected
+
+
+@pytest.mark.parametrize("emphasis", sorted(UNDULATION_ZONES))
+def test_undulating_zone_bounds_are_valid_rir_percentages(emphasis):
+    low, high = UNDULATION_ZONES[emphasis]
+    assert reps_for_percentage_rir(low, 0) >= 1
+    assert reps_for_percentage_rir(high, 0) >= 1

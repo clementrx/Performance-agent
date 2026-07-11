@@ -47,12 +47,15 @@ _BLOCK_PHASE_FACTORS: dict[BlockPhase, tuple[float, float]] = {
 
 SessionEmphasis = Literal["heavy", "moderate", "light"]
 
-# Daily-undulating intensity zones as fractions of 1RM (low, high) with the
-# rep quality they serve. Team-chosen priors consistent with common DUP schemes.
+# Daily-undulating intensity zones as fractions of 1RM (low, high).
+# Team-chosen priors consistent with common DUP schemes. The light floor is
+# 0.625 because that is the minimum percentage reps_for_percentage_rir accepts
+# (MAX_EFFECTIVE_REPS = 18), so every emitted zone bound is a valid input to
+# the engine's own RIR primitives.
 UNDULATION_ZONES: dict[SessionEmphasis, tuple[float, float]] = {
     "heavy": (0.85, 0.925),
     "moderate": (0.725, 0.80),
-    "light": (0.60, 0.70),
+    "light": (0.625, 0.70),
 }
 # Heavy-then-light adjacency is deliberate: the light day buys recovery
 # after the heaviest stimulus before quality moderate work.
@@ -190,7 +193,9 @@ def build_undulating_week(sessions_per_week: int) -> list[UndulatingSession]:
 
     Sessions cycle heavy -> light -> moderate (heavy-then-light adjacency is
     deliberate recovery spacing). Zone bounds are fractions of 1RM from
-    UNDULATION_ZONES.
+    UNDULATION_ZONES. The cycle restarts each week, so at frequencies where
+    ``sessions_per_week % 3 == 1`` (4, 7) the last and first slots are both
+    heavy — spacing those across the week boundary is the scheduler's job.
     """
     validate_whole_number("sessions_per_week", sessions_per_week)
     if not MIN_UNDULATING_SESSIONS <= sessions_per_week <= MAX_UNDULATING_SESSIONS:
