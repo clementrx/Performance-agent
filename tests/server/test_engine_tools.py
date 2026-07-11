@@ -236,6 +236,113 @@ async def test_progress_double_progression(client):
 
 
 @pytest.mark.anyio
+async def test_build_block_cycle(client):
+    result = await client.call_tool("build_block_cycle", {"total_weeks": 12})
+    assert not result.isError
+    weeks = result.structuredContent["weeks"]
+    assert len(weeks) == 12
+    assert [w["phase"] for w in weeks[:7]] == ["accumulation"] * 6 + ["intensification"]
+    assert weeks[0]["volume_factor"] == pytest.approx(1.10)
+    assert weeks[0]["intensity_factor"] == pytest.approx(0.85)
+    assert weeks[11]["phase"] == "realization"
+    assert weeks[11]["intensity_factor"] == pytest.approx(1.10)
+
+
+@pytest.mark.anyio
+async def test_build_undulating_sessions(client):
+    result = await client.call_tool("build_undulating_sessions", {"sessions_per_week": 3})
+    assert not result.isError
+    sessions = result.structuredContent["sessions"]
+    assert [s["emphasis"] for s in sessions] == ["heavy", "light", "moderate"]
+    assert sessions[0]["intensity_low"] == pytest.approx(0.85)
+    assert sessions[0]["intensity_high"] == pytest.approx(0.925)
+
+
+@pytest.mark.anyio
+async def test_build_inseason_maintenance(client):
+    result = await client.call_tool("build_inseason_maintenance", {"matches_this_week": 1})
+    assert not result.isError
+    week = result.structuredContent
+    assert week["strength_sessions"] == 2
+    assert week["volume_factor"] == pytest.approx(0.50)
+    assert week["min_intensity_factor"] == pytest.approx(0.80)
+
+
+@pytest.mark.anyio
+async def test_build_inseason_maintenance_refuses_congested_week(client):
+    result = await client.call_tool("build_inseason_maintenance", {"matches_this_week": 3})
+    assert result.isError
+    assert "rest is the prescription" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_build_peaking_block(client):
+    result = await client.call_tool("build_peaking_block", {"weeks": 2})
+    assert not result.isError
+    weeks = result.structuredContent["weeks"]
+    assert weeks[0]["volume_factor"] == pytest.approx(0.55)
+    assert weeks[0]["is_test_week"] is False
+    assert weeks[1]["intensity_factor"] == pytest.approx(1.025)
+    assert weeks[1]["is_test_week"] is True
+
+
+@pytest.mark.anyio
+async def test_compute_bmr_tdee(client):
+    result = await client.call_tool(
+        "compute_bmr_tdee",
+        {
+            "sex": "male",
+            "weight_kg": 80.0,
+            "height_cm": 180.0,
+            "age_years": 30,
+            "activity_factor": 1.55,
+        },
+    )
+    assert not result.isError
+    energy = result.structuredContent
+    assert energy["bmr_kcal"] == pytest.approx(1780.0)
+    assert energy["tdee_kcal"] == pytest.approx(2759.0)
+
+
+@pytest.mark.anyio
+async def test_prescribe_nutrition_targets(client):
+    result = await client.call_tool(
+        "prescribe_nutrition_targets",
+        {
+            "tdee_kcal": 2600.0,
+            "goal": "cut",
+            "weekly_change_pct_bw": 0.0075,
+            "weight_kg": 80.0,
+            "height_cm": 180.0,
+            "sex": "male",
+        },
+    )
+    assert not result.isError
+    target = result.structuredContent
+    assert target["daily_kcal"] == pytest.approx(1940.0)
+    assert target["protein_g_per_day"] == pytest.approx(176.0)
+    assert target["weekly_weight_change_kg"] == pytest.approx(-0.6)
+    assert target["clamped_to_floor"] is False
+
+
+@pytest.mark.anyio
+async def test_prescribe_nutrition_targets_refuses_underweight_cut(client):
+    result = await client.call_tool(
+        "prescribe_nutrition_targets",
+        {
+            "tdee_kcal": 2200.0,
+            "goal": "cut",
+            "weekly_change_pct_bw": 0.005,
+            "weight_kg": 50.0,
+            "height_cm": 175.0,
+            "sex": "male",
+        },
+    )
+    assert result.isError
+    assert "below the healthy minimum" in result.content[0].text
+
+
+@pytest.mark.anyio
 async def test_all_engine_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}
@@ -255,4 +362,10 @@ async def test_all_engine_tools_are_listed(client):
         "compute_weekly_loads",
         "compute_acwr",
         "build_periodization_waves",
+        "build_block_cycle",
+        "build_undulating_sessions",
+        "build_inseason_maintenance",
+        "build_peaking_block",
+        "compute_bmr_tdee",
+        "prescribe_nutrition_targets",
     } <= names

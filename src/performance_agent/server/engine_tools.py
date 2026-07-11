@@ -10,14 +10,24 @@ from typing import Literal, TypedDict
 from mcp.server.fastmcp import FastMCP
 
 from performance_agent.engine import (
+    BlockWeek,
     BodycompFeasibility,
+    EnergyTarget,
     FeasibilityResult,
+    InseasonWeek,
+    PeakingWeek,
     ProgressionDecision,
     TrainingAge,
+    UndulatingSession,
     WeekLoad,
     WeeklySetTargets,
     acute_chronic_ratio,
+    bmr_mifflin_st_jeor,
     bodycomp_feasibility,
+    build_block_periodization,
+    build_inseason_week,
+    build_strength_peaking,
+    build_undulating_week,
     build_weekly_waves,
     double_progression,
     endurance_feasibility,
@@ -29,9 +39,11 @@ from performance_agent.engine import (
     one_rm_wathan,
     pace_s_per_km,
     percentage_for_reps_rir,
+    prescribe_energy_target,
     riegel_predict,
     session_rpe_load,
     strength_feasibility,
+    tdee_from_bmr,
     weekly_loads,
 )
 from performance_agent.engine import weekly_set_targets as engine_weekly_set_targets
@@ -99,6 +111,31 @@ class PeriodizationWaves(TypedDict):
     """Week-by-week volume/intensity multipliers."""
 
     weeks: list[WeekLoad]
+
+
+class BlockCycle(TypedDict):
+    """Accumulation/intensification/realization weeks of a block cycle."""
+
+    weeks: list[BlockWeek]
+
+
+class UndulatingWeekPlan(TypedDict):
+    """Session-by-session emphases for a daily-undulating week."""
+
+    sessions: list[UndulatingSession]
+
+
+class PeakingBlock(TypedDict):
+    """Week-by-week taper toward a 1RM test."""
+
+    weeks: list[PeakingWeek]
+
+
+class BmrTdee(TypedDict):
+    """Basal and total daily energy expenditure, in kcal/day."""
+
+    bmr_kcal: float
+    tdee_kcal: float
 
 
 def assess_endurance_goal(
@@ -309,6 +346,102 @@ def build_periodization_waves(
     return PeriodizationWaves(weeks=waves)
 
 
+def build_block_cycle(total_weeks: int) -> BlockCycle:
+    """Split a training cycle into accumulation/intensification/realization blocks.
+
+    Use this when a single deadline goal is 6+ weeks out and benefits from
+    distinct sequential emphases (build_periodization_waves is the generic
+    ramp, build_peaking_block covers the final 1-3 weeks before a 1RM test,
+    build_inseason_maintenance covers weeks with competitive fixtures).
+    Phase split is ~50/35/15% of total_weeks with at least 1 week per phase;
+    accumulation is 1.10 volume at 0.85 intensity, intensification 0.90 at
+    1.05, realization 0.55 at 1.10 — multipliers against a baseline week.
+    total_weeks must be a whole number >= 6.
+    """
+    return BlockCycle(weeks=build_block_periodization(total_weeks))
+
+
+def build_undulating_sessions(sessions_per_week: int) -> UndulatingWeekPlan:
+    """Assign daily-undulating (DUP) emphases to a week's strength sessions.
+
+    Use this to structure intensity WITHIN a training week (2-7 sessions)
+    when all qualities are trained concurrently — the block and peaking
+    tools structure across weeks instead. Sessions cycle heavy (0.85-0.925
+    of 1RM), light (0.60-0.70), moderate (0.725-0.80); heavy-then-light
+    adjacency is deliberate recovery spacing. A single weekly session cannot
+    undulate (error).
+    """
+    return UndulatingWeekPlan(sessions=build_undulating_week(sessions_per_week))
+
+
+def build_inseason_maintenance(matches_this_week: int) -> InseasonWeek:
+    """Prescribe in-season strength maintenance around this week's fixtures.
+
+    Use this when the athlete has 1 or 2 competitive matches this week and
+    strength work must shrink to the minimum effective dose. 1 match: 2
+    sessions at 0.50 of off-season volume; 2 matches: 1 session at 0.30 —
+    both holding intensity at or above 0.80 (intensity, not volume, retains
+    strength). REFUSES 0 matches (use a normal building week) and 3+ matches
+    (rest is the prescription) — relay those refusals, do not work around
+    them.
+    """
+    return build_inseason_week(matches_this_week)
+
+
+def build_peaking_block(weeks: int) -> PeakingBlock:
+    """Taper the final 1-3 weeks before a 1RM test day.
+
+    Use this only when a maximal strength test is scheduled: volume falls
+    week over week while intensity climbs to near-max, and the last week
+    (is_test_week=True) carries intensity above 1.0 for openers/heavy
+    singles — not a projected new max. Blocks longer than 3 weeks are
+    refused (they detrain; schedule a block cycle first).
+    """
+    return PeakingBlock(weeks=build_strength_peaking(weeks))
+
+
+def compute_bmr_tdee(
+    sex: Literal["male", "female"],
+    weight_kg: float,
+    height_cm: float,
+    age_years: int,
+    activity_factor: float,
+) -> BmrTdee:
+    """Estimate BMR (Mifflin-St Jeor) and TDEE, both in kcal/day.
+
+    weight_kg in (30, 250), height_cm in (100, 250), age_years a whole
+    number in (14, 90) — under-15s are refused (youth nutrition is out of
+    scope; relay the paediatric referral). activity_factor in [1.2, 2.4],
+    sedentary to extreme training loads.
+    """
+    bmr = bmr_mifflin_st_jeor(sex, weight_kg, height_cm, age_years)
+    return BmrTdee(bmr_kcal=bmr, tdee_kcal=tdee_from_bmr(bmr, activity_factor))
+
+
+def prescribe_nutrition_targets(  # noqa: PLR0913 -- plan-approved signature; all call sites use keywords
+    tdee_kcal: float,
+    goal: Literal["cut", "maintain", "gain"],
+    weekly_change_pct_bw: float,
+    weight_kg: float,
+    height_cm: float,
+    sex: Literal["male", "female"],
+) -> EnergyTarget:
+    """Prescribe daily kcal and protein for a cut, maintain or gain goal.
+
+    This is not medical advice; the guards are hard-coded and must be
+    relayed, never worked around. REFUSES a deficit for an underweight
+    athlete (BMI < 18.5) with a referral to a health professional. Caps the
+    weekly rate at 1% of bodyweight for a cut and 0.5% for a gain
+    (weekly_change_pct_bw is a fraction: 0.0075 = 0.75%/week; must be 0 for
+    maintain). Daily kcal for ANY goal (cut, maintain or gain) landing below
+    the caloric floor (1500 kcal male, 1200 female) is clamped to the floor
+    with clamped_to_floor=True — that flag means "extend the deadline,
+    never deepen the deficit". Protein is 2.2 g/kg on a cut, 1.6
+    maintaining, 1.8 gaining.
+    """
+    return prescribe_energy_target(tdee_kcal, goal, weekly_change_pct_bw, weight_kg, height_cm, sex)
+
+
 def register(mcp: FastMCP) -> None:
     """Register every engine tool on the server."""
     for tool in (
@@ -327,5 +460,11 @@ def register(mcp: FastMCP) -> None:
         compute_weekly_loads,
         compute_acwr,
         build_periodization_waves,
+        build_block_cycle,
+        build_undulating_sessions,
+        build_inseason_maintenance,
+        build_peaking_block,
+        compute_bmr_tdee,
+        prescribe_nutrition_targets,
     ):
         mcp.tool()(tool)

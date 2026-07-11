@@ -19,7 +19,24 @@ from performance_agent.engine.load import (
     session_rpe_load,
     weekly_loads,
 )
-from performance_agent.engine.periodization import WeekLoad, build_weekly_waves
+from performance_agent.engine.nutrition import (
+    EnergyTarget,
+    bmr_mifflin_st_jeor,
+    prescribe_energy_target,
+    tdee_from_bmr,
+)
+from performance_agent.engine.periodization import (
+    BlockWeek,
+    InseasonWeek,
+    PeakingWeek,
+    UndulatingSession,
+    WeekLoad,
+    build_block_periodization,
+    build_inseason_week,
+    build_strength_peaking,
+    build_undulating_week,
+    build_weekly_waves,
+)
 from performance_agent.engine.strength import (
     ProgressionDecision,
     WeeklySetTargets,
@@ -35,14 +52,24 @@ from performance_agent.engine.strength import (
 )
 
 __all__ = [
+    "BlockWeek",
     "BodycompFeasibility",
+    "EnergyTarget",
     "FeasibilityResult",
+    "InseasonWeek",
+    "PeakingWeek",
     "ProgressionDecision",
     "TrainingAge",
+    "UndulatingSession",
     "WeekLoad",
     "WeeklySetTargets",
     "acute_chronic_ratio",
+    "bmr_mifflin_st_jeor",
     "bodycomp_feasibility",
+    "build_block_periodization",
+    "build_inseason_week",
+    "build_strength_peaking",
+    "build_undulating_week",
     "build_weekly_waves",
     "double_progression",
     "endurance_feasibility",
@@ -54,10 +81,12 @@ __all__ = [
     "one_rm_wathan",
     "pace_s_per_km",
     "percentage_for_reps_rir",
+    "prescribe_energy_target",
     "reps_for_percentage_rir",
     "riegel_predict",
     "session_rpe_load",
     "strength_feasibility",
+    "tdee_from_bmr",
     "weekly_loads",
     "weekly_set_targets",
 ]
