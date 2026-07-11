@@ -1,4 +1,4 @@
-"""Live, verified evidence search across PubMed, Crossref and Semantic Scholar.
+"""Live, verified evidence search across PubMed, Crossref, Semantic Scholar and OpenAlex.
 
 PubMed candidates are hydrated with full abstracts via efetch. Every function
 here returns raw candidates; nothing is citable until run_live_search
@@ -95,6 +95,10 @@ def _pubmed_authors(article: ElementTree.Element) -> list[str]:
         initials = author.findtext("Initials")
         if last:
             authors.append(f"{last} {initials}".strip() if initials else last)
+            continue
+        collective = author.findtext("CollectiveName")
+        if collective:
+            authors.append(collective)
     return authors
 
 
@@ -231,10 +235,79 @@ def search_semantic_scholar(term: str, language: str) -> list[LiveCandidate]:
     return [c for c in candidates if c is not None]
 
 
+OPENALEX_URL = (
+    "https://api.openalex.org/works?search={term}&per-page={limit}"
+    "&mailto=performance-agent@users.noreply.github.com"
+)
+
+
+def _openalex_abstract(inverted_index: dict[str, list[int]] | None) -> str | None:
+    """Rebuild an abstract from OpenAlex's inverted index (word -> positions)."""
+    if not inverted_index:
+        return None
+    positions: dict[int, str] = {}
+    for word, indexes in inverted_index.items():
+        for index in indexes:
+            positions[index] = word
+    return " ".join(positions[index] for index in sorted(positions))
+
+
+def _openalex_doi(work: dict) -> str | None:
+    doi = work.get("doi")
+    if not doi:
+        return None
+    return doi.removeprefix("https://doi.org/")
+
+
+def _openalex_journal(work: dict) -> str | None:
+    source = (work.get("primary_location") or {}).get("source") or {}
+    return source.get("display_name")
+
+
+def _openalex_candidate(work: dict, language: str) -> LiveCandidate | None:
+    title = work.get("title")
+    doi = _openalex_doi(work)
+    if not title or not doi:
+        return None
+    authors = [
+        a.get("author", {}).get("display_name", "")
+        for a in work.get("authorships", [])
+        if a.get("author", {}).get("display_name")
+    ]
+    # OpenAlex `type` is deliberately NOT mapped to a StudyType: "review" lumps
+    # narrative and systematic reviews together and "article" says nothing about
+    # design, so any mapping would over-grade. The agent reads the abstract and
+    # proposes a type instead; the grading ceiling is enforced at save time.
+    return LiveCandidate(
+        title=title,
+        authors=authors or ["Unknown"],
+        year=work.get("publication_year"),
+        journal=_openalex_journal(work),
+        abstract=_openalex_abstract(work.get("abstract_inverted_index")),
+        doi=doi,
+        pmid=None,
+        suggested_study_type=None,
+        source="openalex",
+        found_via_language=language,
+    )
+
+
+def search_openalex(term: str, language: str) -> list[LiveCandidate]:
+    """Search OpenAlex for term, returning candidates that carry a DOI."""
+    url = OPENALEX_URL.format(term=quote(term), limit=_SEARCH_LIMIT)
+    payload = fetch_json(url)
+    if payload is None:
+        return []
+    works = payload.get("results", [])
+    candidates = [_openalex_candidate(work, language) for work in works]
+    return [c for c in candidates if c is not None]
+
+
 _SOURCES = (
     ("pubmed", search_pubmed),
     ("crossref", search_crossref),
     ("semantic_scholar", search_semantic_scholar),
+    ("openalex", search_openalex),
 )
 
 
@@ -279,7 +352,7 @@ class LiveSearchOutcome:
 
 
 def run_live_search(language_terms: dict[str, str]) -> LiveSearchOutcome:
-    """Fan out language/term pairs across PubMed, Crossref and Semantic Scholar.
+    """Fan out language/term pairs across PubMed, Crossref, Semantic Scholar and OpenAlex.
 
     One source/language failing does not blank out the others; failures are
     reported by name in the outcome instead of raising. Every surviving candidate

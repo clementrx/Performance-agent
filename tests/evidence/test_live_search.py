@@ -4,8 +4,10 @@ from performance_agent.evidence.live_search import (
     LiveSearchOutcome,
     _dedup,
     _map_pubmed_type,
+    _openalex_abstract,
     run_live_search,
     search_crossref,
+    search_openalex,
     search_pubmed,
     search_semantic_scholar,
 )
@@ -107,7 +109,17 @@ def test_search_pubmed_builds_candidates_from_efetch(monkeypatch):
     assert candidate.found_via_language == "en"
 
 
-def test_search_pubmed_keeps_candidate_without_year(monkeypatch):
+def test_search_pubmed_parses_year_from_medline_date(monkeypatch):
+    xml = _EFETCH_XML.replace("<Year>2021</Year>", "<MedlineDate>Winter 2020</MedlineDate>")
+    monkeypatch.setattr(
+        live_search_module, "fetch_json", lambda _url: {"esearchresult": {"idlist": ["111"]}}
+    )
+    monkeypatch.setattr(live_search_module, "fetch_text", lambda _url: xml)
+    candidates = search_pubmed("javelin throw", "en")
+    assert candidates[0].year == 2020
+
+
+def test_search_pubmed_year_is_none_without_year_or_medline_date(monkeypatch):
     xml = _EFETCH_XML.replace("<Year>2021</Year>", "")
     monkeypatch.setattr(
         live_search_module, "fetch_json", lambda _url: {"esearchresult": {"idlist": ["111"]}}
@@ -115,6 +127,30 @@ def test_search_pubmed_keeps_candidate_without_year(monkeypatch):
     monkeypatch.setattr(live_search_module, "fetch_text", lambda _url: xml)
     candidates = search_pubmed("javelin throw", "en")
     assert candidates[0].year is None
+
+
+def test_search_pubmed_falls_back_to_collective_name(monkeypatch):
+    xml = """<?xml version="1.0" ?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID Version="1">333</PMID>
+      <Article>
+        <ArticleTitle>Consortium javelin study</ArticleTitle>
+        <AuthorList>
+          <Author><CollectiveName>The Javelin Consortium</CollectiveName></Author>
+        </AuthorList>
+      </Article>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>
+"""
+    monkeypatch.setattr(
+        live_search_module, "fetch_json", lambda _url: {"esearchresult": {"idlist": ["333"]}}
+    )
+    monkeypatch.setattr(live_search_module, "fetch_text", lambda _url: xml)
+    candidates = search_pubmed("javelin", "en")
+    assert candidates[0].authors == ["The Javelin Consortium"]
 
 
 def test_search_pubmed_returns_empty_on_malformed_xml(monkeypatch):
@@ -313,6 +349,89 @@ def test_run_live_search_verifies_and_reports_failures(monkeypatch):
     assert len(outcome.candidates) == 1
     assert outcome.candidates[0].doi == "10.1000/found"
     assert outcome.failed_sources == ["crossref:en"]
+
+
+def test_openalex_abstract_reconstruction_places_words_at_positions():
+    inverted = {"training": [2], "Javelin": [0], "throw": [1], "works": [3, 5], "it": [4]}
+    assert _openalex_abstract(inverted) == "Javelin throw training works it works"
+
+
+def test_openalex_abstract_reconstruction_handles_missing_index():
+    assert _openalex_abstract(None) is None
+    assert _openalex_abstract({}) is None
+
+
+def test_search_openalex_builds_candidates(monkeypatch):
+    payload = {
+        "results": [
+            {
+                "title": "Lancer de javelot et biomécanique",
+                "doi": "https://doi.org/10.1000/javelot",
+                "publication_year": 2020,
+                "type": "review",
+                "abstract_inverted_index": {"Une": [0], "revue": [1]},
+                "authorships": [{"author": {"display_name": "Jean Dupont"}}],
+                "primary_location": {"source": {"display_name": "Science et Sport"}},
+            },
+            {
+                "title": None,  # no title -> dropped
+                "doi": "https://doi.org/10.1000/no-title",
+            },
+            {
+                "title": "No locator work",  # no DOI -> dropped
+                "doi": None,
+            },
+        ]
+    }
+
+    def fake_fetch_json(url: str) -> dict | None:
+        assert "api.openalex.org/works" in url
+        assert "mailto=performance-agent@users.noreply.github.com" in url
+        return payload
+
+    monkeypatch.setattr(live_search_module, "fetch_json", fake_fetch_json)
+
+    candidates = search_openalex("lancer de javelot", "fr")
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+    assert candidate.doi == "10.1000/javelot"
+    assert candidate.title == "Lancer de javelot et biomécanique"
+    assert candidate.year == 2020
+    assert candidate.abstract == "Une revue"
+    assert candidate.authors == ["Jean Dupont"]
+    assert candidate.journal == "Science et Sport"
+    # OpenAlex cannot distinguish systematic from narrative reviews: never mapped
+    assert candidate.suggested_study_type is None
+    assert candidate.source == "openalex"
+    assert candidate.found_via_language == "fr"
+
+
+def test_search_openalex_returns_empty_on_network_failure(monkeypatch):
+    monkeypatch.setattr(live_search_module, "fetch_json", lambda _url: None)
+    assert search_openalex("javelin", "en") == []
+
+
+def test_run_live_search_fans_out_to_four_sources(monkeypatch):
+    calls: list[str] = []
+
+    def fake_source(name):
+        def search(_term, language):
+            calls.append(f"{name}:{language}")
+            return []
+
+        return search
+
+    monkeypatch.setattr(
+        live_search_module,
+        "_SOURCES",
+        tuple((name, fake_source(name)) for name, _fn in live_search_module._SOURCES),
+    )
+    monkeypatch.setattr(live_search_module, "_POLITE_DELAY_S", 0)
+
+    run_live_search({"en": "javelin"})
+
+    assert calls == ["pubmed:en", "crossref:en", "semantic_scholar:en", "openalex:en"]
 
 
 def test_run_live_search_drops_unverified_candidates(monkeypatch):
