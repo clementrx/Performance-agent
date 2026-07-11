@@ -47,6 +47,26 @@ class Availability(BaseModel):
     minutes_per_session: int = Field(ge=10, le=480)
 
 
+class SetPerformed(BaseModel):
+    """One completed set. RIR = reps in reserve; None means not recorded."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reps: int = Field(ge=1, le=100)
+    load_kg: float = Field(ge=0, le=1000)
+    rir: int | None = Field(default=None, ge=0, le=10)
+
+
+class ExercisePerformed(BaseModel):
+    """One exercise within a session, with its sets in performed order."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    sets: list[SetPerformed] = Field(default_factory=list)
+    notes: str | None = None
+
+
 class Profile(BaseModel):
     """Athlete profile — structured facts only."""
 
@@ -91,6 +111,7 @@ class SessionEntry(BaseModel):
     kind: str | None = None
     rpe: int | None = Field(default=None, ge=1, le=10)
     duration_min: int | None = Field(default=None, ge=1)
+    exercises: list[ExercisePerformed] = Field(default_factory=list)
     notes: str | None = None
 
     _naive_performed_at = field_validator("performed_at")(staticmethod(_require_naive))

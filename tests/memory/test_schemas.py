@@ -6,10 +6,12 @@ from pydantic import ValidationError
 from performance_agent.engine import TrainingAge
 from performance_agent.memory.schemas import (
     CheckinEntry,
+    ExercisePerformed,
     Goal,
     Injury,
     Profile,
     SessionEntry,
+    SetPerformed,
 )
 
 
@@ -84,3 +86,41 @@ def test_checkin_entry_bounds():
     assert entry.pain_flags == []
     with pytest.raises(ValidationError):
         CheckinEntry(at=datetime(2026, 7, 10), adherence_pct=140)
+
+
+def test_session_entry_accepts_structured_exercises():
+    entry = SessionEntry(
+        performed_at=datetime(2026, 7, 11, 18, 0),
+        kind="strength",
+        exercises=[
+            ExercisePerformed(
+                name="back squat",
+                sets=[
+                    SetPerformed(reps=5, load_kg=100, rir=2),
+                    SetPerformed(reps=5, load_kg=100, rir=1),
+                ],
+            )
+        ],
+    )
+    assert entry.exercises[0].sets[1].rir == 1
+
+
+def test_session_entry_without_exercises_still_valid():
+    entry = SessionEntry(performed_at=datetime(2026, 7, 11, 7, 0), kind="easy run", rpe=4)
+    assert entry.exercises == []
+
+
+def test_set_performed_bounds():
+    with pytest.raises(ValidationError):
+        SetPerformed(reps=0, load_kg=100)
+    with pytest.raises(ValidationError):
+        SetPerformed(reps=5, load_kg=-1)
+    with pytest.raises(ValidationError):
+        SetPerformed(reps=5, load_kg=100, rir=11)
+
+
+def test_exercise_performed_requires_name_and_rejects_extras():
+    with pytest.raises(ValidationError):
+        ExercisePerformed(name="", sets=[])
+    with pytest.raises(ValidationError):
+        ExercisePerformed(name="bench press", sets=[], tempo="3010")  # ty: ignore[unknown-argument]
