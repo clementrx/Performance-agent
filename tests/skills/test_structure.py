@@ -47,7 +47,19 @@ def test_coach_skill_carries_the_global_rules(skills):
 def test_onboarding_skill_protocol(skills):
     onboarding = next(s for s in skills if s.frontmatter["name"] == "athlete-onboarding")
     body = onboarding.body.casefold()
-    for needle in ("write_profile", "upsert_goal", "one question", "equipment", "injur"):
+    for needle in (
+        "write_profile",
+        "upsert_goal",
+        "one question",
+        "equipment",
+        "injur",
+        "lift_inventory",
+        "estimate_1rm",
+        "calendar_type",
+        "body_fat_pct",
+        "bodyweight_kg",
+        "split_preferences",
+    ):
         assert needle in body, f"onboarding skill lost: {needle}"
 
 
