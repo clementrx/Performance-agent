@@ -1,7 +1,7 @@
 """Citation rendering and the anti-fabrication reference check.
 
 Citations are ALWAYS rendered from corpus entries — never from free text. The
-checker scans prose for DOI/PMID-shaped strings that are not in the corpus;
+checker scans prose for DOI/PMID/ISBN-shaped strings that are not in the corpus;
 anything it finds is a fabricated or unverifiable reference. Locator-free
 prose citations (e.g. 'Smith et al. 2019') are out of scope here; they are
 caught at render time by citation-ID validation.
@@ -16,7 +16,12 @@ _PMID_PATTERN = re.compile(r"\bPMID:?\s*(\d{6,9})\b", re.IGNORECASE)
 _PUBMED_URL_PATTERN = re.compile(
     r"(?:pubmed\.ncbi\.nlm\.nih\.gov/|ncbi\.nlm\.nih\.gov/pubmed/)(\d{6,9})", re.IGNORECASE
 )
+_ISBN_PATTERN = re.compile(r"\bISBN[:\s]*((?:97[89][\s-]?)?(?:\d[\s-]?){9}[\dXx])\b", re.IGNORECASE)
 _TRAILING_PUNCTUATION = ".,;:"
+
+
+def _normalized_isbn(isbn: str) -> str:
+    return re.sub(r"[\s-]", "", isbn).upper()
 
 
 def format_citation(entry: EvidenceEntry) -> str:
@@ -29,6 +34,8 @@ def format_citation(entry: EvidenceEntry) -> str:
         parts.append(f"DOI: {entry.doi}.")
     if entry.pmid:
         parts.append(f"PMID: {entry.pmid}.")
+    if entry.isbn:
+        parts.append(f"ISBN: {entry.isbn}.")
     return " ".join(parts)
 
 
@@ -62,4 +69,8 @@ def find_unknown_references(text: str, corpus: list[EvidenceEntry]) -> list[str]
         if pmid not in known_pmids and pmid not in seen_pmids:
             seen_pmids.add(pmid)
             unknown.append(f"PMID:{pmid}")
+    known_isbns = {_normalized_isbn(entry.isbn) for entry in corpus if entry.isbn}
+    for isbn in _ISBN_PATTERN.findall(text):
+        if _normalized_isbn(isbn) not in known_isbns:
+            unknown.append(f"ISBN:{isbn}")
     return unknown

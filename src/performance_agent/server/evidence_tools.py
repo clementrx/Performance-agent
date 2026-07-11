@@ -17,7 +17,7 @@ from performance_agent.evidence.index import EvidenceIndex
 from performance_agent.evidence.live_search import run_live_search
 from performance_agent.evidence.personal_corpus import append_entry
 from performance_agent.evidence.schemas import STARS, EvidenceEntry, EvidenceLevel, StudyType
-from performance_agent.evidence.verify import resolve_reference, titles_match
+from performance_agent.evidence.verify import resolve_isbn, resolve_reference, titles_match
 
 
 class EvidenceHit(TypedDict):
@@ -208,15 +208,16 @@ def search_evidence_live(
     )
 
 
-def verify_reference(doi: str | None = None, pmid: str | None = None) -> ReferenceResolution:
-    """Confirm a DOI or PMID found via general web search actually resolves.
+def verify_reference(
+    doi: str | None = None, pmid: str | None = None, isbn: str | None = None
+) -> ReferenceResolution:
+    """Confirm a DOI, PMID or ISBN found outside search_evidence_live actually resolves.
 
-    Call this before proposing save_evidence for anything found outside
-    search_evidence_live — e.g. a reference surfaced by a general web search for a
-    federation, thesis, or conference paper. Never save an entry whose locator did
-    not resolve here.
+    DOI/PMID resolve against Crossref/PubMed; an ISBN (reference books only)
+    resolves against Open Library with a Google Books fallback. Never save an
+    entry whose locator did not resolve here.
     """
-    resolved = resolve_reference(doi, pmid)
+    resolved = resolve_isbn(isbn) if isbn else resolve_reference(doi, pmid)
     return ReferenceResolution(ok=resolved.ok, title=resolved.title, detail=resolved.detail)
 
 
@@ -230,7 +231,10 @@ def save_evidence(entry: EvidenceEntry) -> WrittenFile:
     study as "strong". Once saved, the entry is immediately searchable via
     search_evidence.
     """
-    resolved = resolve_reference(entry.doi, entry.pmid)
+    if entry.study_type is StudyType.REFERENCE_BOOK:
+        resolved = resolve_isbn(entry.isbn or "")
+    else:
+        resolved = resolve_reference(entry.doi, entry.pmid)
     if not resolved.ok:
         msg = f"{entry.id}: could not verify before saving — {resolved.detail}"
         raise ValueError(msg)

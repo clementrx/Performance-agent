@@ -95,3 +95,58 @@ def test_stars_cover_every_level():
 def test_unknown_fields_rejected():
     with pytest.raises(ValidationError):
         EvidenceEntry.model_validate({**VALID, "impact_factor": 42})
+
+
+def test_reference_book_requires_isbn():
+    entry = EvidenceEntry(
+        id="book-manuel-ultime-musculation",
+        title="Manuel ultime de musculation — Connaissances scientifiques et méthodologie",
+        authors=["Pourcelot C", "Reiss D", "Caverne A", "Albignac T"],
+        year=2023,
+        journal="Éditions Amphora",
+        study_type=StudyType.REFERENCE_BOOK,
+        conclusions="Technique and pedagogy reference for strength training.",
+        evidence_level="expert",
+        isbn="978-2-7576-0546-2",
+    )
+    assert entry.isbn == "978-2-7576-0546-2"
+
+    with pytest.raises(ValidationError, match="ISBN"):
+        EvidenceEntry(
+            id="book-without-isbn",
+            title="A book",
+            authors=["Doe J"],
+            year=2023,
+            study_type=StudyType.REFERENCE_BOOK,
+            conclusions="x",
+            evidence_level="expert",
+        )
+
+
+def test_reference_book_ceiling_is_expert():
+    with pytest.raises(ValidationError, match="ceiling"):
+        EvidenceEntry(
+            id="book-overgraded",
+            title="A book",
+            authors=["Doe J"],
+            year=2023,
+            study_type=StudyType.REFERENCE_BOOK,
+            conclusions="x",
+            evidence_level="strong",
+            isbn="978-2-7576-0546-2",
+        )
+
+
+def test_non_book_entries_may_not_carry_isbn():
+    with pytest.raises(ValidationError, match="reference_book"):
+        EvidenceEntry(
+            id="study-with-isbn",
+            title="A study",
+            authors=["Doe J"],
+            year=2020,
+            study_type=StudyType.RCT,
+            conclusions="x",
+            evidence_level="moderate",
+            doi="10.1000/sample",
+            isbn="978-2-7576-0546-2",
+        )

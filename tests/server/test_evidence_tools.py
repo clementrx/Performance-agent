@@ -2,6 +2,7 @@
 
 import pytest
 
+import performance_agent.evidence.verify as verify_module
 import performance_agent.server.evidence_tools as evidence_tools_module
 from performance_agent.evidence.live_search import LiveCandidate, LiveSearchOutcome
 from performance_agent.evidence.schemas import StudyType
@@ -313,3 +314,67 @@ async def test_search_evidence_live_rejects_bad_publication_type(client):
     )
     assert result.isError
     assert "cohort" in result.content[0].text
+
+
+_MANUEL_ULTIME = {
+    "id": "book-manuel-ultime-musculation",
+    "title": "Manuel ultime de musculation — Connaissances scientifiques et méthodologie",
+    "authors": ["Pourcelot C", "Reiss D", "Caverne A", "Albignac T"],
+    "year": 2023,
+    "journal": "Éditions Amphora",
+    "study_type": "reference_book",
+    "conclusions": "Exercise-technique and pedagogy reference for strength training.",
+    "evidence_level": "expert",
+    "isbn": "978-2-7576-0546-2",
+}
+
+
+@pytest.mark.anyio
+async def test_save_evidence_accepts_isbn_verified_reference_book(client, monkeypatch):
+    def fake_fetch_json(url: str) -> dict | None:
+        assert "openlibrary.org/isbn/9782757605462.json" in url
+        return {"title": "Manuel ultime de musculation"}
+
+    monkeypatch.setattr(verify_module, "fetch_json", fake_fetch_json)
+
+    save_result = await client.call_tool("save_evidence", {"entry": _MANUEL_ULTIME})
+    assert not save_result.isError
+    assert save_result.structuredContent["path"].endswith("evidence_extra.yaml")
+
+    search_result = await client.call_tool("search_evidence", {"query": "musculation"})
+    ids = {hit["id"] for hit in search_result.structuredContent["hits"]}
+    assert "book-manuel-ultime-musculation" in ids
+
+    check = await client.call_tool(
+        "check_citations", {"text": "Voir le Manuel ultime (ISBN 978-2-7576-0546-2)."}
+    )
+    assert check.structuredContent["ok"] is True
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_book_with_mismatched_title(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_isbn",
+        lambda _isbn: ResolvedReference(
+            True, "Completely Different Book About Fish", "resolved via Open Library"
+        ),
+    )
+    result = await client.call_tool("save_evidence", {"entry": _MANUEL_ULTIME})
+    assert result.isError
+    assert "Completely Different Book About Fish" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_verify_reference_resolves_isbn(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_isbn",
+        lambda _isbn: ResolvedReference(
+            True, "Manuel ultime de musculation", "resolved via Open Library"
+        ),
+    )
+    result = await client.call_tool("verify_reference", {"isbn": "978-2-7576-0546-2"})
+    assert not result.isError
+    assert result.structuredContent["ok"] is True
+    assert result.structuredContent["title"] == "Manuel ultime de musculation"

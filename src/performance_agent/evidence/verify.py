@@ -143,6 +143,45 @@ def _title_result(
     return VerificationResult(entry.id, True, f"resolved via {source}", registry_title)
 
 
+OPENLIBRARY_ISBN_URL = "https://openlibrary.org/isbn/{isbn}.json"
+GOOGLE_BOOKS_ISBN_URL = "https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
+_ISBN_SHAPE = re.compile(r"\d{9}[\dXx]|\d{13}")
+
+
+def _normalized_isbn(isbn: str) -> str:
+    return re.sub(r"[\s-]", "", isbn)
+
+
+def _google_books_title(payload: dict) -> str | None:
+    for item in payload.get("items") or []:
+        info = item.get("volumeInfo", {})
+        title = info.get("title")
+        if title:
+            subtitle = info.get("subtitle")
+            return f"{title} {subtitle}".strip() if subtitle else title
+    return None
+
+
+def resolve_isbn(isbn: str) -> ResolvedReference:
+    """Resolve an ISBN against Open Library, falling back to Google Books.
+
+    The reference_book counterpart of resolve_reference: same anti-fabrication
+    principle, different registry. Both endpoints are keyless.
+    """
+    normalized = _normalized_isbn(isbn)
+    if not _ISBN_SHAPE.fullmatch(normalized):
+        return ResolvedReference(False, None, f"not a valid ISBN-10/ISBN-13 shape: {isbn}")
+    payload = fetch_json(OPENLIBRARY_ISBN_URL.format(isbn=normalized))
+    if payload is not None and payload.get("title"):
+        return ResolvedReference(True, payload["title"], "resolved via Open Library")
+    fallback = fetch_json(GOOGLE_BOOKS_ISBN_URL.format(isbn=normalized))
+    if fallback is not None:
+        title = _google_books_title(fallback)
+        if title is not None:
+            return ResolvedReference(True, title, "resolved via Google Books")
+    return ResolvedReference(False, None, f"ISBN did not resolve: {isbn}")
+
+
 def verify_entry(entry: EvidenceEntry) -> VerificationResult:
     """Resolve the entry's DOI (preferred) or PMID and assert its title matches the registry."""
     resolved = resolve_reference(entry.doi, entry.pmid)

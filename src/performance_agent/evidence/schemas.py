@@ -3,8 +3,12 @@
 The grading ceiling is the honesty rule of spec v2 §5: an entry's evidence
 level can never exceed what its study design can support.
 
-The corpus only admits journal-indexed work carrying a DOI or PMID; guideline
-documents without either are out of scope for now (deliberate, revisit if
+The corpus admits journal-indexed work carrying a DOI or PMID, plus
+reference books carrying an ISBN (capped at expert opinion — a book sources
+technique and pedagogy prose, never overrides a meta-analysis). Books live
+only in the athlete's personal corpus: they are a user-recommendation
+surface, so the bundled seed corpus stays studies-only. Guideline documents
+without any locator remain out of scope for now (deliberate, revisit if
 curation drops a candidate for this reason).
 """
 
@@ -24,6 +28,7 @@ class StudyType(StrEnum):
     CROSS_SECTIONAL = "cross_sectional"
     CONSENSUS = "consensus"
     EXPERT_OPINION = "expert_opinion"
+    REFERENCE_BOOK = "reference_book"
 
 
 class EvidenceLevel(StrEnum):
@@ -53,6 +58,7 @@ GRADING_CEILING: dict[StudyType, EvidenceLevel] = {
     StudyType.CROSS_SECTIONAL: EvidenceLevel.LIMITED,
     StudyType.CONSENSUS: EvidenceLevel.MODERATE,
     StudyType.EXPERT_OPINION: EvidenceLevel.EXPERT,
+    StudyType.REFERENCE_BOOK: EvidenceLevel.EXPERT,
 }
 
 STARS: dict[EvidenceLevel, str] = {
@@ -79,6 +85,7 @@ class EvidenceEntry(BaseModel):
     evidence_level: EvidenceLevel
     doi: str | None = None
     pmid: str | None = None
+    isbn: str | None = None
     verified: bool = False
 
     @model_validator(mode="after")
@@ -94,6 +101,14 @@ class EvidenceEntry(BaseModel):
 
     @model_validator(mode="after")
     def _require_locator(self) -> Self:
+        if self.study_type is StudyType.REFERENCE_BOOK:
+            if self.isbn is None:
+                msg = f"{self.id}: a reference_book entry needs an ISBN to be citable"
+                raise ValueError(msg)
+            return self
+        if self.isbn is not None:
+            msg = f"{self.id}: only reference_book entries may carry an ISBN"
+            raise ValueError(msg)
         if self.doi is None and self.pmid is None:
             msg = f"{self.id}: an entry needs a DOI or a PMID to be citable"
             raise ValueError(msg)

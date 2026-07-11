@@ -73,3 +73,37 @@ def test_same_unknown_pmid_in_both_forms_is_reported_once():
 def test_known_doi_cited_as_url_with_trailing_path_passes():
     text = "Full text at https://doi.org/10.1000/strength/full-text.html today."
     assert find_unknown_references(text, [ENTRY]) == []
+
+
+BOOK = EvidenceEntry(
+    id="book-manuel-ultime-musculation",
+    title="Manuel ultime de musculation — Connaissances scientifiques et méthodologie",
+    authors=["Pourcelot C", "Reiss D", "Caverne A", "Albignac T"],
+    year=2023,
+    journal="Éditions Amphora",
+    study_type="reference_book",
+    conclusions="Technique and pedagogy reference for strength training.",
+    evidence_level="expert",
+    isbn="978-2-7576-0546-2",
+)
+
+
+def test_format_citation_includes_isbn():
+    citation = format_citation(BOOK)
+    assert "ISBN: 978-2-7576-0546-2." in citation
+    assert "Éditions Amphora." in citation
+
+
+def test_known_isbn_reference_passes():
+    text = "Technique cues follow the Manuel ultime (ISBN 978-2-7576-0546-2)."
+    assert find_unknown_references(text, [BOOK]) == []
+
+
+def test_unknown_isbn_reference_is_flagged():
+    text = "As shown in some book (ISBN: 978-0-0000-0000-2)."
+    assert find_unknown_references(text, [BOOK]) == ["ISBN:978-0-0000-0000-2"]
+
+
+def test_isbn_matching_ignores_hyphenation():
+    text = "See ISBN 9782757605462 for details."
+    assert find_unknown_references(text, [BOOK]) == []

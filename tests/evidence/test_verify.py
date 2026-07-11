@@ -143,3 +143,41 @@ def test_titles_match_rejects_disjoint_titles():
     assert not verify_module.titles_match(
         "Javelin throw training review", "Completely Different Study About Fish"
     )
+
+
+def test_resolve_isbn_via_open_library(monkeypatch):
+    def fake_fetch_json(url: str) -> dict | None:
+        assert url == "https://openlibrary.org/isbn/9782757605462.json"
+        return {"title": "Manuel ultime de musculation"}
+
+    monkeypatch.setattr(verify_module, "fetch_json", fake_fetch_json)
+    resolved = verify_module.resolve_isbn("978-2-7576-0546-2")
+    assert resolved.ok
+    assert resolved.title == "Manuel ultime de musculation"
+    assert "Open Library" in resolved.detail
+
+
+def test_resolve_isbn_falls_back_to_google_books(monkeypatch):
+    def fake_fetch_json(url: str) -> dict | None:
+        if "openlibrary" in url:
+            return None
+        assert "googleapis.com/books/v1/volumes?q=isbn:9782757605462" in url
+        return {"items": [{"volumeInfo": {"title": "Manuel ultime de musculation"}}]}
+
+    monkeypatch.setattr(verify_module, "fetch_json", fake_fetch_json)
+    resolved = verify_module.resolve_isbn("9782757605462")
+    assert resolved.ok
+    assert "Google Books" in resolved.detail
+
+
+def test_resolve_isbn_rejects_malformed_isbn():
+    resolved = verify_module.resolve_isbn("not-an-isbn")
+    assert not resolved.ok
+    assert "ISBN" in resolved.detail
+
+
+def test_resolve_isbn_reports_unresolvable(monkeypatch):
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: None)
+    resolved = verify_module.resolve_isbn("978-2-7576-0546-2")
+    assert not resolved.ok
+    assert "did not resolve" in resolved.detail
