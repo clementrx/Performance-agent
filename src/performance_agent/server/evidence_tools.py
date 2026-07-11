@@ -62,7 +62,7 @@ class LiveSearchResults(TypedDict):
 
 
 class ReferenceResolution(TypedDict):
-    """Whether a bare DOI/PMID resolves against Crossref/PubMed, and its title."""
+    """Whether a bare DOI/PMID/ISBN resolves against its registry, and its title."""
 
     ok: bool
     title: str | None
@@ -152,7 +152,7 @@ def get_citation(evidence_id: str) -> CitationResult:
 
 
 def check_citations(text: str) -> CitationCheck:
-    """Scan prose for DOI/PMID references that are NOT in the corpus.
+    """Scan prose for DOI/PMID/ISBN references that are NOT in the corpus.
 
     Run this on any answer that mentions studies before presenting it. A
     non-empty unknown_references list means a fabricated or unverifiable

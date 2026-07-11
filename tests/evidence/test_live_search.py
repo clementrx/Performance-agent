@@ -606,7 +606,7 @@ def test_tier_rank_orders_designs():
     assert _tier_rank(_candidate(suggested_study_type=StudyType.SYSTEMATIC_REVIEW)) == 1
     assert _tier_rank(_candidate(suggested_study_type=StudyType.RCT)) == 2
     assert _tier_rank(_candidate(suggested_study_type=StudyType.COHORT)) == 3
-    assert _tier_rank(_candidate(suggested_study_type=None)) == 3
+    assert _tier_rank(_candidate(suggested_study_type=None)) == 4
 
 
 def test_run_live_search_orders_by_tier_then_year(monkeypatch):

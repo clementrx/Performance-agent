@@ -474,12 +474,13 @@ _TIER_ORDER: dict[StudyType, int] = {
     StudyType.META_ANALYSIS: 0,
     StudyType.SYSTEMATIC_REVIEW: 1,
     StudyType.RCT: 2,
+    StudyType.COHORT: 3,
 }
-_DEFAULT_TIER = 3
+_DEFAULT_TIER = 4
 
 
 def _tier_rank(candidate: LiveCandidate) -> int:
-    """Evidence tier: meta-analysis → systematic review → RCT → everything else."""
+    """Evidence tier: meta-analysis → systematic review → RCT → cohort → everything else."""
     if candidate.suggested_study_type is None:
         return _DEFAULT_TIER
     return _TIER_ORDER.get(candidate.suggested_study_type, _DEFAULT_TIER)
