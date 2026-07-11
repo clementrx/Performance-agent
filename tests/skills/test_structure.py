@@ -8,6 +8,7 @@ EXPECTED_SKILLS = {
     "training-checkin",
     "program-adaptation",
     "program-report",
+    "deep-research",
 }
 
 
@@ -130,3 +131,21 @@ def test_report_skill_protocol(skills):
     body = report.body.casefold()
     for needle in ("render_report", "check_citations", "coach", "expert", "mode"):
         assert needle in body, f"report skill lost: {needle}"
+
+
+def test_research_skill_protocol(skills):
+    research = next(s for s in skills if s.frontmatter["name"] == "deep-research")
+    body = research.body.casefold()
+    for needle in (
+        "read_analysis",
+        "search_evidence_live",
+        "save_evidence",
+        "save_research_dossier",
+        "facet",
+        "coverage",
+        "canonical",
+        "contradiction",
+        "thin evidence",
+        "failed",
+    ):
+        assert needle in body, f"deep-research skill lost: {needle}"
