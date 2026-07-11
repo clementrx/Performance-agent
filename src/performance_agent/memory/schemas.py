@@ -67,6 +67,20 @@ class ExercisePerformed(BaseModel):
     notes: str | None = None
 
 
+CalendarType = Literal["single_deadline", "recurring_fixtures", "open_ended"]
+
+
+class LiftRecord(BaseModel):
+    """A known 1RM for one lift; 'estimated' means derived via estimate_1rm, not tested."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lift: str = Field(min_length=1)
+    one_rm_kg: float = Field(gt=0, le=1000)
+    recorded_on: date
+    source: Literal["tested", "estimated"] = "tested"
+
+
 class Profile(BaseModel):
     """Athlete profile — structured facts only."""
 
@@ -84,6 +98,10 @@ class Profile(BaseModel):
     injuries: list[Injury] = Field(default_factory=list)
     equipment: list[str] = Field(default_factory=list)
     availability: Availability | None = None
+    lift_inventory: list[LiftRecord] = Field(default_factory=list)
+    body_fat_pct: float | None = Field(default=None, ge=3, le=60)
+    calendar_type: CalendarType | None = None
+    split_preferences: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 

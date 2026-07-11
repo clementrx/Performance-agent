@@ -9,6 +9,7 @@ from performance_agent.memory.schemas import (
     ExercisePerformed,
     Goal,
     Injury,
+    LiftRecord,
     Profile,
     SessionEntry,
     SetPerformed,
@@ -117,6 +118,10 @@ def test_set_performed_bounds():
         SetPerformed(reps=5, load_kg=-1)
     with pytest.raises(ValidationError):
         SetPerformed(reps=5, load_kg=100, rir=11)
+    with pytest.raises(ValidationError):
+        SetPerformed(reps=101, load_kg=100)
+    with pytest.raises(ValidationError):
+        SetPerformed(reps=5, load_kg=1001)
 
 
 def test_exercise_performed_requires_name_and_rejects_extras():
@@ -124,3 +129,38 @@ def test_exercise_performed_requires_name_and_rejects_extras():
         ExercisePerformed(name="", sets=[])
     with pytest.raises(ValidationError):
         ExercisePerformed(name="bench press", sets=[], tempo="3010")  # ty: ignore[unknown-argument]
+
+
+def test_profile_accepts_lift_inventory_and_bodycomp():
+    profile = Profile(
+        body_fat_pct=18.5,
+        calendar_type="single_deadline",
+        split_preferences=["upper/lower"],
+        lift_inventory=[
+            LiftRecord(lift="back squat", one_rm_kg=140, recorded_on=date(2026, 7, 1)),
+            LiftRecord(
+                lift="bench press",
+                one_rm_kg=100,
+                recorded_on=date(2026, 7, 1),
+                source="estimated",
+            ),
+        ],
+    )
+    assert profile.lift_inventory[1].source == "estimated"
+    assert profile.calendar_type == "single_deadline"
+
+
+def test_lift_record_defaults_to_tested_and_bounds():
+    record = LiftRecord(lift="deadlift", one_rm_kg=180, recorded_on=date(2026, 7, 1))
+    assert record.source == "tested"
+    with pytest.raises(ValidationError):
+        LiftRecord(lift="deadlift", one_rm_kg=0, recorded_on=date(2026, 7, 1))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("body_fat_pct", 1), ("body_fat_pct", 80), ("calendar_type", "seasonal")],
+)
+def test_profile_rejects_out_of_contract_new_fields(field, value):
+    with pytest.raises(ValidationError):
+        Profile(**{field: value})
