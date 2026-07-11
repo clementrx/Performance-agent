@@ -65,6 +65,16 @@ _UNDULATION_ORDER: tuple[SessionEmphasis, ...] = ("heavy", "light", "moderate")
 MIN_UNDULATING_SESSIONS = 2
 MAX_UNDULATING_SESSIONS = 7
 
+# In-season maintenance: minimum effective dose around fixtures. Volume
+# fractions are of the athlete's off-season baseline; intensity is held high
+# because intensity, not volume, retains strength. Team-chosen priors.
+INSEASON_VOLUME_ONE_MATCH = 0.50
+INSEASON_VOLUME_TWO_MATCHES = 0.30
+INSEASON_MIN_INTENSITY = 0.80
+INSEASON_SESSIONS_ONE_MATCH = 2
+INSEASON_SESSIONS_TWO_MATCHES = 1
+MAX_INSEASON_MATCHES = 2
+
 
 @dataclass(frozen=True)
 class WeekLoad:
@@ -211,3 +221,48 @@ def build_undulating_week(sessions_per_week: int) -> list[UndulatingSession]:
         low, high = UNDULATION_ZONES[emphasis]
         sessions.append(UndulatingSession(index + 1, emphasis, low, high))
     return sessions
+
+
+@dataclass(frozen=True)
+class InseasonWeek:
+    """Strength maintenance prescription for one in-season week."""
+
+    matches: int
+    strength_sessions: int
+    volume_factor: float
+    min_intensity_factor: float
+
+
+def build_inseason_week(matches_this_week: int) -> InseasonWeek:
+    """Prescribe strength maintenance around this week's fixtures (1 or 2).
+
+    Volume is a fraction of the off-season baseline; min_intensity_factor is
+    the floor to hold (intensity, not volume, retains strength). Zero matches
+    and congested (3+) weeks are refused with coaching guidance in the error.
+    """
+    validate_whole_number("matches_this_week", matches_this_week)
+    if matches_this_week < 0:
+        msg = f"matches_this_week must be non-negative, got {matches_this_week!r}"
+        raise ValueError(msg)
+    if matches_this_week == 0:
+        msg = "no fixture this week: use a normal building week, not the in-season model"
+        raise ValueError(msg)
+    if matches_this_week > MAX_INSEASON_MATCHES:
+        msg = (
+            f"got {matches_this_week!r} matches: more than 2 fixtures leaves no recovery "
+            "window for strength work — rest is the prescription"
+        )
+        raise ValueError(msg)
+    if matches_this_week == 1:
+        return InseasonWeek(
+            matches=1,
+            strength_sessions=INSEASON_SESSIONS_ONE_MATCH,
+            volume_factor=INSEASON_VOLUME_ONE_MATCH,
+            min_intensity_factor=INSEASON_MIN_INTENSITY,
+        )
+    return InseasonWeek(
+        matches=2,
+        strength_sessions=INSEASON_SESSIONS_TWO_MATCHES,
+        volume_factor=INSEASON_VOLUME_TWO_MATCHES,
+        min_intensity_factor=INSEASON_MIN_INTENSITY,
+    )

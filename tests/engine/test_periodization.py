@@ -9,8 +9,10 @@ from performance_agent.engine.periodization import (
     REALIZATION_VOLUME,
     UNDULATION_ZONES,
     BlockWeek,
+    InseasonWeek,
     WeekLoad,
     build_block_periodization,
+    build_inseason_week,
     build_undulating_week,
     build_weekly_waves,
 )
@@ -189,3 +191,37 @@ def test_undulating_zone_bounds_are_valid_rir_percentages(emphasis):
     low, high = UNDULATION_ZONES[emphasis]
     assert reps_for_percentage_rir(low, 0) >= 1
     assert reps_for_percentage_rir(high, 0) >= 1
+
+
+def test_inseason_one_match_week():
+    week = build_inseason_week(matches_this_week=1)
+    assert week == InseasonWeek(
+        matches=1, strength_sessions=2, volume_factor=0.50, min_intensity_factor=0.80
+    )
+
+
+def test_inseason_two_match_week():
+    week = build_inseason_week(matches_this_week=2)
+    assert week.strength_sessions == 1
+    assert week.volume_factor == pytest.approx(0.30)
+    assert week.min_intensity_factor == pytest.approx(0.80)
+
+
+def test_inseason_zero_matches_points_to_a_building_week():
+    with pytest.raises(ValueError, match="normal building week"):
+        build_inseason_week(matches_this_week=0)
+
+
+def test_inseason_three_matches_prescribes_rest():
+    with pytest.raises(ValueError, match="rest is the prescription"):
+        build_inseason_week(matches_this_week=3)
+
+
+def test_inseason_rejects_negative_matches():
+    with pytest.raises(ValueError, match="non-negative"):
+        build_inseason_week(matches_this_week=-1)
+
+
+def test_inseason_rejects_non_whole_matches():
+    with pytest.raises(ValueError, match="whole number"):
+        build_inseason_week(matches_this_week=1.0)  # ty: ignore[invalid-argument-type]
