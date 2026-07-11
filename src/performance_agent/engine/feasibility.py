@@ -13,6 +13,7 @@ performance limit, so long-horizon and already-met verdicts are optimistic.
 import math
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Literal
 
 from performance_agent.engine._validation import validate_finite, validate_whole_number
 
@@ -56,10 +57,28 @@ HYPERTROPHY_ACHIEVABLE_WEEKLY_KG: dict[TrainingAge, float] = {
     TrainingAge.ADVANCED: 0.05,
 }
 
+# Safe weekly fat-loss rate as a fraction of bodyweight. 0.5-1.0 %/week is
+# the range commonly recommended to preserve lean mass; we score against the
+# 0.75% midpoint and flag anything above 1.0% as muscle-risking.
+BODYCOMP_ACHIEVABLE_WEEKLY_LOSS_PCT_BW = 0.0075
+BODYCOMP_MAX_SAFE_WEEKLY_LOSS_PCT_BW = 0.010
+# Essential-fat floors below which we refuse to plan. Team-chosen priors
+# aligned with common physiology references.
+MIN_HEALTHY_BODY_FAT_PCT: dict[str, float] = {"male": 5.0, "female": 12.0}
+# Plausible input range for a body-fat percentage; anything outside it is
+# almost certainly a data-entry error rather than a real measurement.
+MIN_PLAUSIBLE_BODY_FAT_PCT = 3.0
+MAX_PLAUSIBLE_BODY_FAT_PCT = 60.0
+
 
 @dataclass(frozen=True)
 class FeasibilityResult:
-    """Feasibility verdict with the rates that produced it (for explainability)."""
+    """Feasibility verdict with the rates that produced it (for explainability).
+
+    Units depend on the goal type: endurance and strength express
+    improvement_needed and the weekly rates as fractions of current
+    performance; hypertrophy expresses them in absolute kg and kg/week.
+    """
 
     improvement_needed: float
     required_weekly_rate: float
@@ -207,4 +226,89 @@ def hypertrophy_feasibility(
         achievable_weekly_rate=achievable_weekly_rate,
         ratio=ratio,
         probability=_logistic_probability(ratio),
+    )
+
+
+@dataclass(frozen=True)
+class BodycompFeasibility:
+    """Body-composition verdict with its drivers (for explainability)."""
+
+    fat_mass_to_lose_kg: float
+    required_weekly_loss_pct_bw: float
+    achievable_weekly_loss_pct_bw: float
+    ratio: float
+    probability: float
+    exceeds_safe_rate: bool
+
+
+def bodycomp_feasibility(
+    current_weight_kg: float,
+    current_body_fat_pct: float,
+    target_body_fat_pct: float,
+    weeks: int,
+    sex: Literal["male", "female"],
+) -> BodycompFeasibility:
+    """Score the feasibility of a fat-loss body-composition goal.
+
+    Assumes constant lean mass: fat to lose is the weight change needed to
+    hit the target body-fat percentage at today's lean mass. The required
+    weekly loss (fraction of current bodyweight) is scored against the 0.75%
+    midpoint of the commonly recommended 0.5-1.0%/week band; anything above
+    1.0%/week additionally sets exceeds_safe_rate (muscle-risking deadline).
+    Targets below the healthy minimum for the athlete's sex are refused with
+    a ValueError. Body-fat GAIN goals are out of scope and also refused.
+
+    Args:
+        current_weight_kg: Current bodyweight, in kg.
+        current_body_fat_pct: Current body-fat percentage, in (3, 60).
+        target_body_fat_pct: Target body-fat percentage, in (3, 60), below
+            current and at or above the healthy floor for `sex`.
+        weeks: Whole weeks available until the goal deadline.
+        sex: "male" or "female" (selects the healthy body-fat floor).
+
+    Returns:
+        A BodycompFeasibility whose probability is in the open interval (0, 1).
+    """
+    validate_whole_number("weeks", weeks)
+    validate_finite("current_weight_kg", current_weight_kg)
+    for name, value in (
+        ("current_body_fat_pct", current_body_fat_pct),
+        ("target_body_fat_pct", target_body_fat_pct),
+    ):
+        validate_finite(name, value)
+    if current_weight_kg <= 0 or weeks <= 0:
+        msg = f"current_weight_kg and weeks must be positive, got {current_weight_kg!r}, {weeks!r}"
+        raise ValueError(msg)
+    for name, value in (
+        ("current_body_fat_pct", current_body_fat_pct),
+        ("target_body_fat_pct", target_body_fat_pct),
+    ):
+        if not MIN_PLAUSIBLE_BODY_FAT_PCT < value < MAX_PLAUSIBLE_BODY_FAT_PCT:
+            msg = f"{name} must be between 3 and 60 percent (exclusive), got {value!r}"
+            raise ValueError(msg)
+    if target_body_fat_pct >= current_body_fat_pct:
+        msg = (
+            "target_body_fat_pct must be below current_body_fat_pct; "
+            "body-fat GAIN goals are not modelled; treat as hypertrophy"
+        )
+        raise ValueError(msg)
+    healthy_floor = MIN_HEALTHY_BODY_FAT_PCT[sex]
+    if target_body_fat_pct < healthy_floor:
+        msg = (
+            f"target_body_fat_pct {target_body_fat_pct!r} is below the healthy minimum "
+            f"for {sex} ({healthy_floor}%) — refuse and refer to a health professional"
+        )
+        raise ValueError(msg)
+    lean_mass_kg = current_weight_kg * (1 - current_body_fat_pct / 100)
+    target_weight_kg = lean_mass_kg / (1 - target_body_fat_pct / 100)
+    fat_mass_to_lose_kg = current_weight_kg - target_weight_kg
+    required_weekly_loss_pct_bw = (fat_mass_to_lose_kg / current_weight_kg) / weeks
+    ratio = required_weekly_loss_pct_bw / BODYCOMP_ACHIEVABLE_WEEKLY_LOSS_PCT_BW
+    return BodycompFeasibility(
+        fat_mass_to_lose_kg=fat_mass_to_lose_kg,
+        required_weekly_loss_pct_bw=required_weekly_loss_pct_bw,
+        achievable_weekly_loss_pct_bw=BODYCOMP_ACHIEVABLE_WEEKLY_LOSS_PCT_BW,
+        ratio=ratio,
+        probability=_logistic_probability(ratio),
+        exceeds_safe_rate=required_weekly_loss_pct_bw > BODYCOMP_MAX_SAFE_WEEKLY_LOSS_PCT_BW,
     )

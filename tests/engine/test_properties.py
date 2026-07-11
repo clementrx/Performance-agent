@@ -4,6 +4,7 @@ from hypothesis import strategies as st
 
 from performance_agent.engine import (
     acute_chronic_ratio,
+    bodycomp_feasibility,
     build_weekly_waves,
     endurance_feasibility,
     hypertrophy_feasibility,
@@ -119,3 +120,16 @@ def test_waves_cover_every_week_with_positive_factors(total_weeks, deload_every)
     assert len(waves) == total_weeks
     assert all(w.volume_factor > 0 and w.intensity_factor > 0 for w in waves)
     assert [w.week for w in waves] == list(range(1, total_weeks + 1))
+
+
+@given(
+    weight=st.floats(min_value=40, max_value=200, allow_nan=False),
+    current_bf=st.floats(min_value=13, max_value=55, allow_nan=False),
+    target_bf=st.floats(min_value=12, max_value=50, allow_nan=False),
+    weeks=st.integers(min_value=1, max_value=104),
+    sex=st.sampled_from(["male", "female"]),
+)
+def test_bodycomp_probability_is_a_probability(weight, current_bf, target_bf, weeks, sex):
+    assume(target_bf < current_bf)
+    result = bodycomp_feasibility(weight, current_bf, target_bf, weeks, sex)
+    assert 0.0 < result.probability < 1.0

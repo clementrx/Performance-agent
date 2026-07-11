@@ -3,8 +3,10 @@ import math
 import pytest
 
 from performance_agent.engine.feasibility import (
+    BodycompFeasibility,
     FeasibilityResult,
     TrainingAge,
+    bodycomp_feasibility,
     endurance_feasibility,
     hypertrophy_feasibility,
     strength_feasibility,
@@ -298,4 +300,97 @@ def test_hypertrophy_non_finite_gain_rejected(bad):
             target_lean_gain_kg=bad,
             weeks=26,
             training_age=TrainingAge.BEGINNER,
+        )
+
+
+def test_bodycomp_feasibility_exact_values():
+    # 80 kg at 20% -> 12% in 16 weeks, male. Constant lean mass 64 kg;
+    # target weight 64/0.88 ~ 72.727 kg; fat to lose ~7.2727 kg;
+    # required (7.2727/80)/16 ~ 0.5682%/wk vs 0.75%/wk -> ratio ~0.7576.
+    result = bodycomp_feasibility(
+        current_weight_kg=80.0,
+        current_body_fat_pct=20.0,
+        target_body_fat_pct=12.0,
+        weeks=16,
+        sex="male",
+    )
+    assert isinstance(result, BodycompFeasibility)
+    assert result.fat_mass_to_lose_kg == pytest.approx(80.0 - 64.0 / 0.88)
+    assert result.fat_mass_to_lose_kg == pytest.approx(7.2727, abs=0.001)
+    assert result.required_weekly_loss_pct_bw == pytest.approx(0.005682, abs=0.00001)
+    assert result.achievable_weekly_loss_pct_bw == pytest.approx(0.0075)
+    assert result.ratio == pytest.approx(0.7576, abs=0.001)
+    assert result.probability == pytest.approx(1 / (1 + math.exp(3 * (0.757576 - 1))), abs=0.001)
+    assert result.probability == pytest.approx(0.6742, abs=0.001)
+    assert result.exceeds_safe_rate is False
+
+
+def test_bodycomp_refuses_sub_healthy_target():
+    with pytest.raises(ValueError, match="healthy minimum for male"):
+        bodycomp_feasibility(
+            current_weight_kg=80.0,
+            current_body_fat_pct=15.0,
+            target_body_fat_pct=4.0,
+            weeks=16,
+            sex="male",
+        )
+    with pytest.raises(ValueError, match="healthy minimum for female"):
+        bodycomp_feasibility(
+            current_weight_kg=60.0,
+            current_body_fat_pct=22.0,
+            target_body_fat_pct=10.0,
+            weeks=16,
+            sex="female",
+        )
+
+
+def test_bodycomp_refuses_gain_direction():
+    with pytest.raises(ValueError, match="not modelled; treat as hypertrophy"):
+        bodycomp_feasibility(
+            current_weight_kg=80.0,
+            current_body_fat_pct=12.0,
+            target_body_fat_pct=15.0,
+            weeks=16,
+            sex="male",
+        )
+
+
+def test_bodycomp_aggressive_deadline_flags_muscle_risk_but_still_scores():
+    # Same 80 kg 20% -> 12% squeezed into 8 weeks: required ~1.136%/wk > 1.0%/wk cap.
+    result = bodycomp_feasibility(
+        current_weight_kg=80.0,
+        current_body_fat_pct=20.0,
+        target_body_fat_pct=12.0,
+        weeks=8,
+        sex="male",
+    )
+    assert result.exceeds_safe_rate is True
+    assert result.required_weekly_loss_pct_bw == pytest.approx(0.011364, abs=0.00001)
+    assert 0.0 < result.probability < 0.5
+
+
+@pytest.mark.parametrize(
+    ("weight", "weeks"),
+    [(0, 16), (-80, 16), (80, 0), (80, -4)],
+)
+def test_bodycomp_weight_and_weeks_are_validated(weight, weeks):
+    with pytest.raises(ValueError, match="positive"):
+        bodycomp_feasibility(
+            current_weight_kg=weight,
+            current_body_fat_pct=20.0,
+            target_body_fat_pct=15.0,
+            weeks=weeks,
+            sex="male",
+        )
+
+
+@pytest.mark.parametrize("bad_pct", [3.0, 2.0, 60.0, 75.0])
+def test_bodycomp_body_fat_percent_range_is_validated(bad_pct):
+    with pytest.raises(ValueError, match="between 3 and 60"):
+        bodycomp_feasibility(
+            current_weight_kg=80.0,
+            current_body_fat_pct=bad_pct,
+            target_body_fat_pct=bad_pct,
+            weeks=16,
+            sex="male",
         )

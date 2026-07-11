@@ -6,8 +6,10 @@ compute training numbers themselves.
 
 from performance_agent.engine.endurance import pace_s_per_km, riegel_predict
 from performance_agent.engine.feasibility import (
+    BodycompFeasibility,
     FeasibilityResult,
     TrainingAge,
+    bodycomp_feasibility,
     endurance_feasibility,
     hypertrophy_feasibility,
     strength_feasibility,
@@ -25,10 +27,12 @@ from performance_agent.engine.strength import (
 )
 
 __all__ = [
+    "BodycompFeasibility",
     "FeasibilityResult",
     "TrainingAge",
     "WeekLoad",
     "acute_chronic_ratio",
+    "bodycomp_feasibility",
     "build_weekly_waves",
     "endurance_feasibility",
     "hypertrophy_feasibility",
