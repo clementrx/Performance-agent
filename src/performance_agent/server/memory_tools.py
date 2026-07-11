@@ -55,15 +55,15 @@ class CheckinHistory(TypedDict):
     checkins: list[CheckinEntry]
 
 
-class ProgramSaved(TypedDict):
-    """Result of writing a new program version."""
+class VersionedDocSaved(TypedDict):
+    """Result of writing a new version of a versioned athlete document."""
 
     path: str
     version: int
 
 
-class ProgramView(TypedDict):
-    """A stored program version with its audit metadata."""
+class VersionedDocView(TypedDict):
+    """A stored document version with its audit metadata."""
 
     version: int
     goal_id: str
@@ -145,35 +145,96 @@ def read_checkins(last_n: Annotated[int, Field(ge=1)] | None = None) -> CheckinH
     return CheckinHistory(checkins=checkins)
 
 
-def save_program(markdown_body: str, goal_id: str, reason: str | None = None) -> ProgramSaved:
+def _doc_view(result: tuple[dict[str, object], str] | None, missing_msg: str) -> VersionedDocView:
+    if result is None:
+        raise ValueError(missing_msg)
+    frontmatter, body = result
+    reason = frontmatter.get("reason")
+    return VersionedDocView(
+        version=int(str(frontmatter["version"])),
+        goal_id=str(frontmatter["goal_id"]),
+        created_on=str(frontmatter["created_on"]),
+        reason=str(reason) if reason is not None else None,
+        body=body,
+    )
+
+
+def save_program(markdown_body: str, goal_id: str, reason: str | None = None) -> VersionedDocSaved:
     """Write the NEXT program version (immutable audit trail).
 
     Version 1 needs no reason; every adaptation (v2+) requires a reason stating
     the coaching decision. Existing versions are never overwritten.
     """
     path, version = store.save_program(resolve_athlete_dir(), markdown_body, goal_id, reason)
-    return ProgramSaved(path=str(path), version=version)
+    return VersionedDocSaved(path=str(path), version=version)
 
 
-def read_program(version: int | None = None) -> ProgramView:
+def read_program(version: int | None = None) -> VersionedDocView:
     """Return the latest (or a specific) program version.
 
     Raises a readable error if no program has been saved yet — call
     save_program first. Check read_athlete's program_version first: null
     there means nothing to read yet.
     """
-    result = store.read_program(resolve_athlete_dir(), version)
-    if result is None:
-        msg = "no program has been saved yet; call save_program first"
-        raise ValueError(msg)
-    frontmatter, body = result
-    reason = frontmatter.get("reason")
-    return ProgramView(
-        version=int(str(frontmatter["version"])),
-        goal_id=str(frontmatter["goal_id"]),
-        created_on=str(frontmatter["created_on"]),
-        reason=str(reason) if reason is not None else None,
-        body=body,
+    return _doc_view(
+        store.read_program(resolve_athlete_dir(), version),
+        "no program has been saved yet; call save_program first",
+    )
+
+
+def save_analysis(markdown_body: str, goal_id: str, reason: str | None = None) -> VersionedDocSaved:
+    """Write the NEXT needs-analysis version (immutable audit trail).
+
+    The needs analysis is the Analyst's output and the brief the Researcher and
+    program builder receive: athlete summary, goal & feasibility verdict with
+    its drivers, quality hierarchy, muscle/pattern priorities, injury flags,
+    and research questions. Version 1 needs no reason; every revision (v2+)
+    requires a reason stating what changed (new verdict, renegotiated goal).
+    Existing versions are never overwritten.
+    """
+    path, version = store.save_analysis(resolve_athlete_dir(), markdown_body, goal_id, reason)
+    return VersionedDocSaved(path=str(path), version=version)
+
+
+def read_analysis(version: int | None = None) -> VersionedDocView:
+    """Return the latest (or a specific) needs-analysis version.
+
+    Raises a readable error when no analysis has been saved yet — run the
+    needs-analysis skill (which ends with save_analysis) first.
+    """
+    return _doc_view(
+        store.read_analysis(resolve_athlete_dir(), version),
+        "no needs analysis has been saved yet; call save_analysis first",
+    )
+
+
+def save_research_dossier(
+    markdown_body: str, goal_id: str, reason: str | None = None
+) -> VersionedDocSaved:
+    """Write the NEXT research-dossier version (immutable audit trail).
+
+    The dossier is the Researcher's output: per-facet synthesis with evidence
+    grades, contradictions surfaced with both camps cited, confidence levels,
+    and honest thin-evidence/degraded-coverage notes. Cite only corpus ids —
+    every study it builds on must already be persisted via save_evidence.
+    Version 1 needs no reason; re-research (v2+) requires a reason. Existing
+    versions are never overwritten.
+    """
+    path, version = store.save_research_dossier(
+        resolve_athlete_dir(), markdown_body, goal_id, reason
+    )
+    return VersionedDocSaved(path=str(path), version=version)
+
+
+def read_research_dossier(version: int | None = None) -> VersionedDocView:
+    """Return the latest (or a specific) research-dossier version.
+
+    Raises a readable error when no dossier has been saved yet — run the
+    deep-research skill (which ends with save_research_dossier) first.
+    """
+    return _doc_view(
+        store.read_research_dossier(resolve_athlete_dir(), version),
+        "no research dossier has been saved yet; call save_research_dossier first",
     )
 
 
@@ -199,6 +260,10 @@ def register(mcp: FastMCP) -> None:
         read_checkins,
         save_program,
         read_program,
+        save_analysis,
+        read_analysis,
+        save_research_dossier,
+        read_research_dossier,
         get_time_context,
     ):
         mcp.tool()(tool)

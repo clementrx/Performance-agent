@@ -19,6 +19,8 @@ GOALS_FILE = "goals.yaml"
 SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
 PROGRAMS_DIR = "programs"
+ANALYSIS_DIR = "analysis"
+RESEARCH_DIR = "research"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -143,39 +145,38 @@ def read_checkins(base_dir: Path) -> list[CheckinEntry]:
     )
 
 
-def _program_path(base_dir: Path, version: int) -> Path:
-    return base_dir / PROGRAMS_DIR / f"program-v{version}.md"
+def _doc_path(base_dir: Path, subdir: str, prefix: str, version: int) -> Path:
+    return base_dir / subdir / f"{prefix}-v{version}.md"
 
 
-def latest_program_version(base_dir: Path) -> int | None:
-    """Return the highest existing program version, or None."""
-    programs_dir = base_dir / PROGRAMS_DIR
-    if not programs_dir.is_dir():
+def _latest_doc_version(base_dir: Path, subdir: str, prefix: str) -> int | None:
+    doc_dir = base_dir / subdir
+    if not doc_dir.is_dir():
         return None
+    marker = f"{prefix}-v"
     versions = [
         int(stem)
-        for path in programs_dir.glob("program-v*.md")
-        if (stem := path.stem.removeprefix("program-v")).isdigit() and str(int(stem)) == stem
+        for path in doc_dir.glob(f"{marker}*.md")
+        if (stem := path.stem.removeprefix(marker)).isdigit() and str(int(stem)) == stem
     ]
     return max(versions) if versions else None
 
 
-def save_program(
+def _save_versioned_doc(  # noqa: PLR0913 -- shared by 3 doc families, all keyword-only past 3
     base_dir: Path,
     markdown_body: str,
     goal_id: str,
-    reason: str | None = None,
-    today: date | None = None,
+    *,
+    subdir: str,
+    prefix: str,
+    label: str,
+    reason: str | None,
+    today: date | None,
 ) -> tuple[Path, int]:
-    """Write the next program version; adapting an existing program requires a reason.
-
-    Versions are immutable: this never overwrites, and the required reason on
-    v2+ is the coaching-decision audit trail.
-    """
-    current = latest_program_version(base_dir)
+    current = _latest_doc_version(base_dir, subdir, prefix)
     version = 1 if current is None else current + 1
     if version > 1 and not reason:
-        msg = f"adapting program v{current} to v{version} requires a reason (audit trail)"
+        msg = f"adapting {label} v{current} to v{version} requires a reason (audit trail)"
         raise ValueError(msg)
     frontmatter = {
         "version": version,
@@ -184,24 +185,28 @@ def save_program(
         "reason": reason,
     }
     content = "---\n" + _to_yaml(frontmatter) + "---\n\n" + markdown_body.strip() + "\n"
-    path = _program_path(base_dir, version)
+    path = _doc_path(base_dir, subdir, prefix, version)
     if path.exists():
-        msg = f"{path} already exists; program versions are immutable"
+        msg = f"{path} already exists; {label} versions are immutable"
         raise ValueError(msg)
     _atomic_write(path, content)
     return path, version
 
 
-def read_program(
-    base_dir: Path, version: int | None = None
+def _read_versioned_doc(
+    base_dir: Path,
+    *,
+    subdir: str,
+    prefix: str,
+    label: str,
+    version: int | None,
 ) -> tuple[dict[str, object], str] | None:
-    """Return (frontmatter, body) for the given or latest version; None when empty."""
-    target = version if version is not None else latest_program_version(base_dir)
+    target = version if version is not None else _latest_doc_version(base_dir, subdir, prefix)
     if target is None:
         return None
-    path = _program_path(base_dir, target)
+    path = _doc_path(base_dir, subdir, prefix, target)
     if not path.exists():
-        msg = f"program version {target} does not exist"
+        msg = f"{label} version {target} does not exist"
         raise ValueError(msg)
     text = path.read_text(encoding="utf-8")
     if text.count(_FRONTMATTER_DELIMITER) < _FRONTMATTER_DELIMITER_COUNT:
@@ -220,3 +225,113 @@ def read_program(
         )
         raise ValueError(msg)
     return frontmatter, body.strip()
+
+
+def latest_program_version(base_dir: Path) -> int | None:
+    """Return the highest existing program version, or None."""
+    return _latest_doc_version(base_dir, PROGRAMS_DIR, "program")
+
+
+def save_program(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next program version; adapting an existing program requires a reason.
+
+    Versions are immutable: this never overwrites, and the required reason on
+    v2+ is the coaching-decision audit trail.
+    """
+    return _save_versioned_doc(
+        base_dir,
+        markdown_body,
+        goal_id,
+        subdir=PROGRAMS_DIR,
+        prefix="program",
+        label="program",
+        reason=reason,
+        today=today,
+    )
+
+
+def read_program(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest version; None when empty."""
+    return _read_versioned_doc(
+        base_dir, subdir=PROGRAMS_DIR, prefix="program", label="program", version=version
+    )
+
+
+def save_analysis(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next needs-analysis version; revising an existing one requires a reason.
+
+    Same immutable-version audit trail as programs; lives in analysis/.
+    """
+    return _save_versioned_doc(
+        base_dir,
+        markdown_body,
+        goal_id,
+        subdir=ANALYSIS_DIR,
+        prefix="needs-analysis",
+        label="needs analysis",
+        reason=reason,
+        today=today,
+    )
+
+
+def read_analysis(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest needs analysis; None when empty."""
+    return _read_versioned_doc(
+        base_dir,
+        subdir=ANALYSIS_DIR,
+        prefix="needs-analysis",
+        label="needs analysis",
+        version=version,
+    )
+
+
+def save_research_dossier(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next research-dossier version; re-research requires a reason.
+
+    Same immutable-version audit trail as programs; lives in research/.
+    """
+    return _save_versioned_doc(
+        base_dir,
+        markdown_body,
+        goal_id,
+        subdir=RESEARCH_DIR,
+        prefix="dossier",
+        label="research dossier",
+        reason=reason,
+        today=today,
+    )
+
+
+def read_research_dossier(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest dossier; None when empty."""
+    return _read_versioned_doc(
+        base_dir,
+        subdir=RESEARCH_DIR,
+        prefix="dossier",
+        label="research dossier",
+        version=version,
+    )

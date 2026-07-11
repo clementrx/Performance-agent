@@ -202,7 +202,60 @@ async def test_memory_tools_are_listed(client):
         "save_program",
         "read_program",
         "get_time_context",
+        "save_analysis",
+        "read_analysis",
+        "save_research_dossier",
+        "read_research_dossier",
     } <= names
+
+
+@pytest.mark.anyio
+async def test_analysis_lifecycle(client, athlete_home):
+    saved = await client.call_tool(
+        "save_analysis", {"markdown_body": "# Needs analysis", "goal_id": "squat-160"}
+    )
+    assert not saved.isError
+    assert saved.structuredContent["version"] == 1
+    assert (athlete_home / "analysis" / "needs-analysis-v1.md").exists()
+
+    read_back = await client.call_tool("read_analysis", {})
+    assert read_back.structuredContent["goal_id"] == "squat-160"
+    assert read_back.structuredContent["body"] == "# Needs analysis"
+
+    unreasoned = await client.call_tool(
+        "save_analysis", {"markdown_body": "v2", "goal_id": "squat-160"}
+    )
+    assert unreasoned.isError
+    assert "reason" in unreasoned.content[0].text
+
+
+@pytest.mark.anyio
+async def test_research_dossier_lifecycle(client, athlete_home):
+    saved = await client.call_tool(
+        "save_research_dossier", {"markdown_body": "# Dossier", "goal_id": "squat-160"}
+    )
+    assert not saved.isError
+    assert saved.structuredContent["version"] == 1
+    assert (athlete_home / "research" / "dossier-v1.md").exists()
+
+    read_back = await client.call_tool("read_research_dossier", {})
+    assert read_back.structuredContent["body"] == "# Dossier"
+
+    unreasoned = await client.call_tool(
+        "save_research_dossier", {"markdown_body": "v2", "goal_id": "squat-160"}
+    )
+    assert unreasoned.isError
+    assert "reason" in unreasoned.content[0].text
+
+
+@pytest.mark.anyio
+async def test_reading_unsaved_documents_errors_readably(client):
+    analysis = await client.call_tool("read_analysis", {})
+    assert analysis.isError
+    assert "save_analysis" in analysis.content[0].text
+    dossier = await client.call_tool("read_research_dossier", {})
+    assert dossier.isError
+    assert "save_research_dossier" in dossier.content[0].text
 
 
 @pytest.mark.anyio
