@@ -60,6 +60,18 @@ stay with their rationale.
   minutes (documented in the docstring). If latency ever matters, verify in
   tier order and stop at K.
 
+## Open items for the guardians phase (from phase 5 final review, 2026-07-12)
+
+- **Peaking-tool docstring vs hybrid-calendar clause** — `build_peaking_block`'s
+  docstring says "1RM test only" while program-planning's hybrid clause allows
+  it before a decisive fixture; reconcile (qualify the skill clause: test-week
+  supra-maximal intensities only for actual 1RM tests).
+- **Skeleton contract: intensity mode** — planning's skeleton spec should state
+  the RIR-vs-%1RM path per cycle (the Optimizer's path choice depends on it).
+- **Nutrition refusal escape hatch** — when the Nutritionniste refuses to
+  prescribe (red flags), program-planning must route the goal back to
+  needs-analysis, not loop on the frame gate.
+
 ## Descoped with rationale (maintainer decision 2026-07-11)
 
 - **Minimum-population-size live-search filter** (spec §5 "where the source
