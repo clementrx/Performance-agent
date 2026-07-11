@@ -29,6 +29,24 @@ stay with their rationale.
   two names (static fact vs time series). The Interview/Vigile skills must
   state the mapping when they are written.
 
+## Open items (from phase 2b reviews, 2026-07-11)
+
+- **Weekly undulating (WUP) variant** — spec §4.3 says "daily/weekly
+  undulating"; only daily landed. Weekly can be composed from
+  `build_undulating_sessions` across weeks; add a dedicated model only if a
+  Planner use case demands it.
+- **Eating-disorder signal refusal engine-side** — spec §4.4 mentions
+  "BMI or signals"; only the BMI refusal is in `engine/nutrition.py`. The
+  signal-based red flags belong to the guardians phase (Contrôleur/Vigile) —
+  do not silently drop.
+- **Load-increment recommendations** — spec §4.2 "load increments" exists
+  only as `double_progression`'s `increment_kg` parameter; training-age- and
+  exercise-specific increment suggestions (2.5 kg upper / 5 kg lower) are
+  Optimizer-skill coaching judgment, not engine math.
+- **`weekly_weight_change_kg` on clamped results** reflects the requested,
+  not achievable, rate (documented in docstrings); revisit if a consumer
+  starts trusting it numerically.
+
 ## Descoped with rationale (maintainer decision 2026-07-11)
 
 - **Bodyweight-relative 1RM progression rates** (spec §4.1 "and relative to
