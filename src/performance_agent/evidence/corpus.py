@@ -2,28 +2,31 @@
 
 from importlib import resources
 
-import yaml
+from performance_agent.evidence.manifest import parse_manifest
 
+# no cycle: personal_corpus does not import this module
+from performance_agent.evidence.personal_corpus import load_personal_entries
 from performance_agent.evidence.schemas import EvidenceEntry
 
+__all__ = ["load_corpus", "parse_manifest"]
 
-def parse_manifest(text: str) -> list[EvidenceEntry]:
-    """Parse manifest YAML into validated entries; ids must be unique."""
-    raw = yaml.safe_load(text) or []
-    if not isinstance(raw, list):
-        msg = "the corpus manifest must be a YAML list of entries"
-        raise ValueError(msg)
-    entries = [EvidenceEntry.model_validate(item) for item in raw]
-    seen: set[str] = set()
-    for entry in entries:
-        if entry.id in seen:
-            msg = f"duplicate corpus id: {entry.id}"
-            raise ValueError(msg)
-        seen.add(entry.id)
-    return entries
+
+def _packaged_manifest_text() -> str:
+    data = resources.files("performance_agent.evidence") / "data" / "seed_corpus.yaml"
+    return data.read_text(encoding="utf-8")
 
 
 def load_corpus() -> list[EvidenceEntry]:
-    """Load the corpus shipped inside the package."""
-    data = resources.files("performance_agent.evidence") / "data" / "seed_corpus.yaml"
-    return parse_manifest(data.read_text(encoding="utf-8"))
+    """Load the packaged corpus merged with the athlete's live-discovered entries.
+
+    Raises ValueError if a personal entry's id collides with a packaged one.
+    """
+    packaged = parse_manifest(_packaged_manifest_text())
+    personal = load_personal_entries()
+    seen = {entry.id for entry in packaged}
+    for entry in personal:
+        if entry.id in seen:
+            msg = f"duplicate corpus id across packaged and personal corpus: {entry.id}"
+            raise ValueError(msg)
+        seen.add(entry.id)
+    return packaged + personal

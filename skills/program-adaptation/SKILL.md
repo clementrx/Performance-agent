@@ -6,8 +6,8 @@ description: Use when a check-in fires a trigger (missed sessions, high fatigue,
 tools: [read_athlete, get_time_context, read_program, read_sessions, read_checkins,
         compute_session_load, compute_weekly_loads, compute_acwr,
         assess_endurance_goal, prescribe_load, estimate_1rm,
-        build_periodization_waves, search_evidence, get_citation,
-        check_citations, save_program]
+        build_periodization_waves, search_evidence, search_evidence_live,
+        save_evidence, verify_reference, get_citation, check_citations, save_program]
 ---
 
 # Program Adaptation
@@ -52,8 +52,16 @@ wave you don't apply is decoration (see program-generation §2).
 
 - Citation repair: when a render was refused for unknown references, locate the
   offending claims, replace each with a `search_evidence`-backed citation rendered
-  via `get_citation` (or drop the claim), and save vN+1 with reason "citation
-  repair".
+  via `get_citation` (or drop the claim). If nothing in the corpus covers the
+  claim, run `search_evidence_live` with translated `language_terms` (en, fr, es,
+  de, ru, no, sv, it, zh). Classify and `save_evidence` any verified candidate —
+  `suggested_study_type` if set, otherwise your own abstract-based proposal
+  (grading ceiling still enforced) — before citing it. If that also comes up
+  empty, fall back to a web search per language; anything found that way MUST
+  pass `verify_reference` before you propose `save_evidence` — never propose an
+  entry from an unverified web result, and never patch a refused render by
+  weakening the claim into something unverifiable. Save vN+1 with reason
+  "citation repair".
 
 ## 3. Confirm, then version
 

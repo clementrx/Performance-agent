@@ -14,7 +14,10 @@ from pydantic import Field
 from performance_agent.evidence.citations import find_unknown_references, format_citation
 from performance_agent.evidence.corpus import load_corpus
 from performance_agent.evidence.index import EvidenceIndex
+from performance_agent.evidence.live_search import run_live_search
+from performance_agent.evidence.personal_corpus import append_entry
 from performance_agent.evidence.schemas import STARS, EvidenceEntry, EvidenceLevel, StudyType
+from performance_agent.evidence.verify import resolve_reference
 
 
 class EvidenceHit(TypedDict):
@@ -34,6 +37,42 @@ class SearchResults(TypedDict):
     """Ranked search hits (most relevant first)."""
 
     hits: list[EvidenceHit]
+
+
+class LiveCandidateResult(TypedDict):
+    """One live-search candidate, already DOI/PMID-verified."""
+
+    title: str
+    authors: list[str]
+    year: int
+    journal: str | None
+    abstract: str | None
+    doi: str | None
+    pmid: str | None
+    suggested_study_type: str | None
+    source: str
+    found_via_language: str
+
+
+class LiveSearchResults(TypedDict):
+    """Verified live-search candidates, plus any source/language that failed."""
+
+    candidates: list[LiveCandidateResult]
+    failed_sources: list[str]
+
+
+class ReferenceResolution(TypedDict):
+    """Whether a bare DOI/PMID resolves against Crossref/PubMed, and its title."""
+
+    ok: bool
+    title: str | None
+    detail: str
+
+
+class WrittenFile(TypedDict):
+    """Path of the file the tool just wrote."""
+
+    path: str
 
 
 class CitationResult(TypedDict):
@@ -123,7 +162,83 @@ def check_citations(text: str) -> CitationCheck:
     return CitationCheck(ok=not unknown, unknown_references=unknown)
 
 
+def search_evidence_live(language_terms: dict[str, str]) -> LiveSearchResults:
+    """Search PubMed, Crossref and Semantic Scholar for studies outside the local corpus.
+
+    language_terms maps an ISO language code to a search term YOU translate for
+    that language, e.g. {"en": "javelin throw training", "de": "Speerwurf
+    Training"}. Every returned candidate has already been verified: its DOI/PMID
+    resolves against Crossref or PubMed. suggested_study_type is filled from
+    PubMed's own publication-type tags when unambiguous; when it's null, read the
+    abstract yourself and propose a study_type before calling save_evidence — the
+    grading ceiling is enforced server-side regardless of what you propose. A
+    source/language pair that failed to respond is listed in failed_sources —
+    mention degraded coverage rather than silently under-searching.
+    """
+    outcome = run_live_search(language_terms)
+    return LiveSearchResults(
+        candidates=[
+            LiveCandidateResult(
+                title=c.title,
+                authors=c.authors,
+                year=c.year,
+                journal=c.journal,
+                abstract=c.abstract,
+                doi=c.doi,
+                pmid=c.pmid,
+                suggested_study_type=(
+                    c.suggested_study_type.value if c.suggested_study_type else None
+                ),
+                source=c.source,
+                found_via_language=c.found_via_language,
+            )
+            for c in outcome.candidates
+        ],
+        failed_sources=outcome.failed_sources,
+    )
+
+
+def verify_reference(doi: str | None = None, pmid: str | None = None) -> ReferenceResolution:
+    """Confirm a DOI or PMID found via general web search actually resolves.
+
+    Call this before proposing save_evidence for anything found outside
+    search_evidence_live — e.g. a reference surfaced by a general web search for a
+    federation, thesis, or conference paper. Never save an entry whose locator did
+    not resolve here.
+    """
+    resolved = resolve_reference(doi, pmid)
+    return ReferenceResolution(ok=resolved.ok, title=resolved.title, detail=resolved.detail)
+
+
+def save_evidence(entry: EvidenceEntry) -> WrittenFile:
+    """Persist a verified, graded study to your personal evidence corpus.
+
+    The entry is re-verified here (its DOI/PMID must resolve) regardless of what
+    you were told earlier by search_evidence_live or verify_reference — this tool
+    never trusts a self-reported verified flag. The grading ceiling
+    (schemas.GRADING_CEILING) still applies: you cannot save a cross-sectional
+    study as "strong". Once saved, the entry is immediately searchable via
+    search_evidence.
+    """
+    resolved = resolve_reference(entry.doi, entry.pmid)
+    if not resolved.ok:
+        msg = f"{entry.id}: could not verify before saving — {resolved.detail}"
+        raise ValueError(msg)
+    verified_entry = entry.model_copy(update={"verified": True})
+    known_ids = {e.id for e in load_corpus()}
+    path = append_entry(verified_entry, known_ids)
+    _index.cache_clear()
+    return WrittenFile(path=str(path))
+
+
 def register(mcp: FastMCP) -> None:
     """Register every evidence tool on the server."""
-    for tool in (search_evidence, get_citation, check_citations):
+    for tool in (
+        search_evidence,
+        get_citation,
+        check_citations,
+        search_evidence_live,
+        verify_reference,
+        save_evidence,
+    ):
         mcp.tool()(tool)

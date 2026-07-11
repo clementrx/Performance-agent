@@ -3,8 +3,9 @@ name: program-generation
 description: Use after a goal has been assessed as accepted. Builds the periodized
   program from evidence and engine math, personalizes it to the athlete's real
   constraints, and saves it through the versioned program store.
-tools: [read_athlete, get_time_context, search_evidence, get_citation,
-        check_citations, build_periodization_waves, prescribe_load, estimate_1rm,
+tools: [read_athlete, get_time_context, search_evidence, search_evidence_live,
+        save_evidence, verify_reference, get_citation, check_citations,
+        build_periodization_waves, prescribe_load, estimate_1rm,
         predict_race_time, compute_pace, save_program, log_session]
 ---
 
@@ -21,8 +22,14 @@ key training questions — e.g. for a 10K goal: strength training and running ec
 interval vs continuous work, tapering; for barbell strength: volume and frequency
 dose-response, progression models. Collect the ids, stars, and conclusions you will
 build on. Render the full citation string for any id you plan to quote with
-`get_citation`. If a question returns nothing, say the corpus has no entry yet and
-label that part of the plan as coaching judgment.
+`get_citation`. If a question returns nothing from `search_evidence`, run
+`search_evidence_live` with translated `language_terms` (en, fr, es, de, ru, no, sv,
+it, zh) before concluding the corpus has no entry. Classify and `save_evidence` any
+verified candidate worth citing — `suggested_study_type` if set, otherwise your own
+abstract-based proposal (grading ceiling still enforced). Still nothing? Fall back
+to a web search per language, `verify_reference` anything with a locator before
+proposing `save_evidence`, and if that also comes up empty, label that part of the
+plan as coaching judgment rather than force a citation.
 
 ## 2. Structure
 

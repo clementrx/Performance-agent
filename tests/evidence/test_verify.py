@@ -1,6 +1,6 @@
 import performance_agent.evidence.verify as verify_module
 from performance_agent.evidence.schemas import EvidenceEntry
-from performance_agent.evidence.verify import verify_entry
+from performance_agent.evidence.verify import resolve_reference, verify_entry
 
 
 def _entry(**overrides) -> EvidenceEntry:
@@ -21,7 +21,7 @@ def _entry(**overrides) -> EvidenceEntry:
 def test_doi_resolution_success(monkeypatch):
     payload = {"message": {"title": ["A sample study"]}}
     monkeypatch.setattr(
-        verify_module, "_fetch_json", lambda url: payload if "crossref" in url else None
+        verify_module, "fetch_json", lambda url: payload if "crossref" in url else None
     )
     result = verify_entry(_entry())
     assert result.ok
@@ -29,7 +29,7 @@ def test_doi_resolution_success(monkeypatch):
 
 
 def test_doi_resolution_failure(monkeypatch):
-    monkeypatch.setattr(verify_module, "_fetch_json", lambda _url: None)
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: None)
     result = verify_entry(_entry())
     assert not result.ok
     assert "10.1000/sample" in result.detail
@@ -37,7 +37,7 @@ def test_doi_resolution_failure(monkeypatch):
 
 def test_pmid_resolution_success(monkeypatch):
     payload = {"result": {"123456": {"title": "A sample study"}, "uids": ["123456"]}}
-    monkeypatch.setattr(verify_module, "_fetch_json", lambda _url: payload)
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: payload)
     entry = _entry(doi=None, pmid="123456")
     result = verify_entry(entry)
     assert result.ok
@@ -69,7 +69,7 @@ def test_fetch_json_returns_none_on_non_json_body(monkeypatch):
 
 def test_disjoint_title_reports_mismatch(monkeypatch):
     payload = {"message": {"title": ["A completely unrelated paper about something else"]}}
-    monkeypatch.setattr(verify_module, "_fetch_json", lambda _url: payload)
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: payload)
     result = verify_entry(_entry())
     assert not result.ok
     assert "TITLE MISMATCH" in result.detail
@@ -82,7 +82,43 @@ def test_subtitle_split_title_matches(monkeypatch):
             "subtitle": ["A Meta-Analysis"],
         }
     }
-    monkeypatch.setattr(verify_module, "_fetch_json", lambda _url: payload)
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: payload)
     entry = _entry(title="Effects of Tapering on Performance: A Meta-Analysis")
     result = verify_entry(entry)
     assert result.ok
+
+
+def test_resolve_reference_via_doi(monkeypatch):
+    payload = {"message": {"title": ["A sample study"]}}
+    monkeypatch.setattr(
+        verify_module, "fetch_json", lambda url: payload if "crossref" in url else None
+    )
+    resolved = resolve_reference("10.1000/sample", None)
+    assert resolved.ok
+    assert resolved.title == "A sample study"
+
+
+def test_resolve_reference_via_pmid(monkeypatch):
+    payload = {"result": {"123456": {"title": "A sample study"}}}
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: payload)
+    resolved = resolve_reference(None, "123456")
+    assert resolved.ok
+    assert resolved.title == "A sample study"
+
+
+def test_resolve_reference_without_locator():
+    resolved = resolve_reference(None, None)
+    assert not resolved.ok
+    assert "no DOI or PMID" in resolved.detail
+
+
+def test_resolve_reference_doi_does_not_resolve(monkeypatch):
+    monkeypatch.setattr(verify_module, "fetch_json", lambda _url: None)
+    resolved = resolve_reference("10.1000/missing", None)
+    assert not resolved.ok
+    assert "10.1000/missing" in resolved.detail
+
+
+def test_resolve_reference_handles_malformed_doi():
+    resolved = resolve_reference("not a real doi with spaces", None)
+    assert not resolved.ok

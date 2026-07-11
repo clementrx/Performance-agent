@@ -2,6 +2,19 @@
 
 import pytest
 
+import performance_agent.server.evidence_tools as evidence_tools_module
+from performance_agent.evidence.live_search import LiveCandidate, LiveSearchOutcome
+from performance_agent.evidence.schemas import StudyType
+from performance_agent.evidence.verify import ResolvedReference
+
+
+@pytest.fixture(autouse=True)
+def athlete_home(monkeypatch, tmp_path):
+    monkeypatch.setenv("PERFORMANCE_AGENT_HOME", str(tmp_path))
+    evidence_tools_module._index.cache_clear()
+    yield tmp_path
+    evidence_tools_module._index.cache_clear()
+
 
 @pytest.mark.anyio
 async def test_search_evidence_returns_graded_hits(client):
@@ -79,3 +92,163 @@ async def test_evidence_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}
     assert {"search_evidence", "get_citation", "check_citations"} <= names
+
+
+@pytest.mark.anyio
+async def test_search_evidence_live_returns_verified_candidates(client, monkeypatch):
+    def fake_run_live_search(_language_terms):
+        return LiveSearchOutcome(
+            candidates=[
+                LiveCandidate(
+                    title="Javelin throw training review",
+                    authors=["Doe J"],
+                    year=2021,
+                    journal="J Sports Sci",
+                    abstract=None,
+                    doi="10.1000/javelin-review",
+                    pmid=None,
+                    suggested_study_type=StudyType.SYSTEMATIC_REVIEW,
+                    source="pubmed",
+                    found_via_language="en",
+                )
+            ],
+            failed_sources=["crossref:de"],
+        )
+
+    monkeypatch.setattr(evidence_tools_module, "run_live_search", fake_run_live_search)
+
+    result = await client.call_tool(
+        "search_evidence_live", {"language_terms": {"en": "javelin throw training"}}
+    )
+
+    assert not result.isError
+    body = result.structuredContent
+    assert len(body["candidates"]) == 1
+    candidate = body["candidates"][0]
+    assert candidate["doi"] == "10.1000/javelin-review"
+    assert candidate["suggested_study_type"] == "systematic_review"
+    assert body["failed_sources"] == ["crossref:de"]
+
+
+@pytest.mark.anyio
+async def test_search_evidence_live_is_listed(client):
+    listed = await client.list_tools()
+    names = {tool.name for tool in listed.tools}
+    assert "search_evidence_live" in names
+
+
+@pytest.mark.anyio
+async def test_verify_reference_resolves_doi(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "A federation whitepaper", "resolved via Crossref"
+        ),
+    )
+    result = await client.call_tool("verify_reference", {"doi": "10.1000/whitepaper"})
+    assert not result.isError
+    assert result.structuredContent == {
+        "ok": True,
+        "title": "A federation whitepaper",
+        "detail": "resolved via Crossref",
+    }
+
+
+@pytest.mark.anyio
+async def test_verify_reference_reports_failure_without_raising(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(False, None, "DOI did not resolve: 10.1000/fake"),
+    )
+    result = await client.call_tool("verify_reference", {"doi": "10.1000/fake"})
+    assert not result.isError
+    assert result.structuredContent["ok"] is False
+
+
+@pytest.mark.anyio
+async def test_verify_reference_handles_malformed_input_without_raising(client):
+    result = await client.call_tool("verify_reference", {"doi": "not a real doi with spaces"})
+    assert not result.isError
+    assert result.structuredContent["ok"] is False
+
+
+def _live_entry_payload(**overrides) -> dict:
+    data = {
+        "id": "live-javelin-review",
+        "title": "Javelin throw training review",
+        "authors": ["Doe J"],
+        "year": 2021,
+        "study_type": "systematic_review",
+        "conclusions": "Periodized throwing volume improves distance over a macrocycle.",
+        "evidence_level": "strong",
+        "doi": "10.1000/javelin-review",
+    }
+    data.update(overrides)
+    return data
+
+
+@pytest.mark.anyio
+async def test_save_evidence_persists_and_is_immediately_searchable(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "Javelin throw training review", "resolved via Crossref"
+        ),
+    )
+
+    save_result = await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+    assert not save_result.isError
+    assert save_result.structuredContent["path"].endswith("evidence_extra.yaml")
+
+    search_result = await client.call_tool("search_evidence", {"query": "javelin throw training"})
+    ids = {hit["id"] for hit in search_result.structuredContent["hits"]}
+    assert "live-javelin-review" in ids
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_unresolvable_locator(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            False, None, "DOI did not resolve: 10.1000/javelin-review"
+        ),
+    )
+
+    result = await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+    assert result.isError
+    assert "could not verify" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_grading_ceiling_violation(client):
+    # a cross_sectional study cannot be graded "strong" — schemas.py enforces this
+    result = await client.call_tool(
+        "save_evidence",
+        {
+            "entry": _live_entry_payload(
+                id="live-overgraded", study_type="cross_sectional", evidence_level="strong"
+            )
+        },
+    )
+    assert result.isError
+
+
+@pytest.mark.anyio
+async def test_save_evidence_rejects_id_collision(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "Javelin throw training review", "resolved via Crossref"
+        ),
+    )
+    await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+    result = await client.call_tool(
+        "save_evidence", {"entry": _live_entry_payload(doi="10.1000/other-doi")}
+    )
+    assert result.isError
+    assert "live-javelin-review" in result.content[0].text
