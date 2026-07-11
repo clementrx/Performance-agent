@@ -10,12 +10,26 @@ documented on those functions.
 import math
 from dataclasses import dataclass
 
-from performance_agent.engine._validation import validate_whole_number
+from performance_agent.engine._validation import validate_finite, validate_whole_number
 from performance_agent.engine.feasibility import TrainingAge
 
 MAX_ESTIMATION_REPS = 12
 MAX_PERCENTAGE = 1.3  # supra-maximal work (eccentrics, partials) tops out around 130%
 MAX_EFFECTIVE_REPS = 18  # reps + RIR beyond this leaves the formula's validated range
+# Back-off drops beyond 50% of 1RM stop being training weight (team-chosen prior).
+MAX_BACKOFF_DROP = 0.5
+# More than 10 back-off sets is volume programming, not a top-set day (team-chosen prior).
+MAX_BACKOFF_SETS = 10
+# Wave-loading bounds, all team-chosen priors: per-set jumps above 10% of 1RM
+# skip too much of the intensity curve; 2-5 sets per wave and 1-4 waves cover
+# every classic scheme.
+MAX_WAVE_STEP = 0.1
+MIN_STEPS_PER_WAVE = 2
+MAX_STEPS_PER_WAVE = 5
+MAX_WAVES = 4
+# CR-10 session-RPE scale bounds (published scale, not a tunable prior).
+MIN_RPE = 1.0
+MAX_RPE = 10.0
 
 
 def _validate_load_and_reps(load_kg: float, reps: int) -> None:
@@ -263,3 +277,162 @@ def double_progression(
         next_target_reps=min(min(reps_achieved) + 1, rep_range_high),
         load_increased=False,
     )
+
+
+@dataclass(frozen=True)
+class TopSetBackoff:
+    """A top-set/back-off session prescription."""
+
+    top_set_load_kg: float
+    backoff_load_kg: float
+    backoff_sets: int
+
+
+def top_set_backoff(
+    one_rm_kg: float,
+    top_percentage: float,
+    backoff_drop: float,
+    backoff_sets: int,
+) -> TopSetBackoff:
+    """Prescribe one top set and its back-off sets from a 1RM.
+
+    Top load is one_rm_kg * top_percentage; back-off load sits backoff_drop
+    (a fraction of 1RM, e.g. 0.10 = 10 percentage points) below the top
+    percentage, for backoff_sets sets. top_percentage must be in
+    (0, MAX_PERCENTAGE], backoff_drop in (0, 0.5], backoff_sets a whole
+    number 1-10, and the resulting back-off percentage must stay positive.
+    """
+    validate_whole_number("backoff_sets", backoff_sets)
+    if one_rm_kg <= 0:
+        msg = f"one_rm_kg must be positive, got {one_rm_kg!r}"
+        raise ValueError(msg)
+    if not 0 < top_percentage <= MAX_PERCENTAGE:
+        msg = f"top_percentage must be in (0, {MAX_PERCENTAGE}], got {top_percentage!r}"
+        raise ValueError(msg)
+    if not 0 < backoff_drop <= MAX_BACKOFF_DROP:
+        msg = (
+            f"backoff_drop must be in (0, {MAX_BACKOFF_DROP}], got {backoff_drop!r}: "
+            "back-off drops beyond 50% stop being training weight"
+        )
+        raise ValueError(msg)
+    if not 1 <= backoff_sets <= MAX_BACKOFF_SETS:
+        msg = f"backoff_sets must be between 1 and {MAX_BACKOFF_SETS}, got {backoff_sets!r}"
+        raise ValueError(msg)
+    backoff_percentage = top_percentage - backoff_drop
+    if backoff_percentage <= 0:
+        msg = (
+            f"backoff_drop {backoff_drop!r} leaves no back-off load below "
+            f"top_percentage {top_percentage!r}"
+        )
+        raise ValueError(msg)
+    return TopSetBackoff(
+        top_set_load_kg=one_rm_kg * top_percentage,
+        backoff_load_kg=one_rm_kg * backoff_percentage,
+        backoff_sets=backoff_sets,
+    )
+
+
+@dataclass(frozen=True)
+class WaveStep:
+    """One set in a wave-loading scheme (wave and step are 1-indexed)."""
+
+    wave: int
+    step: int
+    percentage: float
+    load_kg: float
+
+
+def _validate_wave_loading_inputs(  # noqa: PLR0913 -- mirrors wave_loading's plan-approved signature
+    one_rm_kg: float,
+    base_percentage: float,
+    step_increment: float,
+    steps_per_wave: int,
+    waves: int,
+    inter_wave_increment: float,
+) -> None:
+    """Raise ValueError if any wave_loading input is out of range."""
+    validate_whole_number("steps_per_wave", steps_per_wave)
+    validate_whole_number("waves", waves)
+    if one_rm_kg <= 0:
+        msg = f"one_rm_kg must be positive, got {one_rm_kg!r}"
+        raise ValueError(msg)
+    if not 0 < base_percentage <= 1:
+        msg = f"base_percentage must be in (0, 1], got {base_percentage!r}"
+        raise ValueError(msg)
+    if not 0 < step_increment <= MAX_WAVE_STEP:
+        msg = f"step_increment must be in (0, {MAX_WAVE_STEP}], got {step_increment!r}"
+        raise ValueError(msg)
+    if not MIN_STEPS_PER_WAVE <= steps_per_wave <= MAX_STEPS_PER_WAVE:
+        msg = (
+            f"steps_per_wave must be between {MIN_STEPS_PER_WAVE} and "
+            f"{MAX_STEPS_PER_WAVE}, got {steps_per_wave!r}"
+        )
+        raise ValueError(msg)
+    if not 1 <= waves <= MAX_WAVES:
+        msg = f"waves must be between 1 and {MAX_WAVES}, got {waves!r}"
+        raise ValueError(msg)
+    if not 0 <= inter_wave_increment < step_increment:
+        msg = (
+            f"inter_wave_increment must be in [0, step_increment), got "
+            f"{inter_wave_increment!r} with step_increment {step_increment!r}: waves must "
+            "overlap — each wave starts below where the previous one ended"
+        )
+        raise ValueError(msg)
+
+
+def wave_loading(  # noqa: PLR0913 -- plan-approved signature; all call sites use keywords
+    one_rm_kg: float,
+    base_percentage: float,
+    step_increment: float,
+    steps_per_wave: int,
+    waves: int,
+    inter_wave_increment: float,
+) -> list[WaveStep]:
+    """Generate a wave-loading set sequence (waves and steps are 1-indexed).
+
+    Wave w, step s: percentage = base_percentage + (s-1)*step_increment +
+    (w-1)*inter_wave_increment; load = one_rm_kg * percentage.
+    inter_wave_increment must stay strictly below step_increment so waves
+    OVERLAP — the defining property of wave loading: wave 2 starts lower
+    than wave 1 ended. The peak percentage (last step of the last wave)
+    must not exceed MAX_PERCENTAGE.
+    """
+    _validate_wave_loading_inputs(
+        one_rm_kg, base_percentage, step_increment, steps_per_wave, waves, inter_wave_increment
+    )
+    peak = (
+        base_percentage + (steps_per_wave - 1) * step_increment + (waves - 1) * inter_wave_increment
+    )
+    if peak > MAX_PERCENTAGE:
+        msg = (
+            f"wave scheme peaks at {peak!r} of 1RM, above the {MAX_PERCENTAGE} supra-maximal "
+            "cap — lower base_percentage, step_increment, waves or inter_wave_increment"
+        )
+        raise ValueError(msg)
+    steps: list[WaveStep] = []
+    for wave in range(1, waves + 1):
+        for step in range(1, steps_per_wave + 1):
+            percentage = (
+                base_percentage + (step - 1) * step_increment + (wave - 1) * inter_wave_increment
+            )
+            steps.append(WaveStep(wave, step, percentage, one_rm_kg * percentage))
+    return steps
+
+
+def rir_from_rpe(rpe: float) -> float:
+    """Convert session RPE (1-10 scale) to reps in reserve: RIR = 10 - RPE.
+
+    Accepts half-point RPEs (e.g. 8.5 -> 1.5 RIR). Prescription work lives
+    at RPE 5-10; below 5 the conversion is arithmetic but rarely meaningful.
+    """
+    validate_finite("rpe", rpe)
+    if not MIN_RPE <= rpe <= MAX_RPE:
+        msg = f"rpe must be between {MIN_RPE} and {MAX_RPE}, got {rpe!r}"
+        raise ValueError(msg)
+    # Half points are exactly representable in binary floats, so a valid
+    # rpe * 2 is an exact integer and the comparison is safe.
+    doubled = rpe * 2
+    if doubled != round(doubled):
+        msg = f"rpe must be on the half-point scale (1.0, 1.5, ... 10.0), got {rpe!r}"
+        raise ValueError(msg)
+    return MAX_RPE - rpe

@@ -28,6 +28,7 @@ from performance_agent.engine.periodization import (
     build_strength_peaking,
     build_undulating_week,
 )
+from performance_agent.engine.strength import MAX_PERCENTAGE, top_set_backoff, wave_loading
 
 loads = st.floats(min_value=1, max_value=500, allow_nan=False)
 times = st.floats(min_value=60, max_value=36000, allow_nan=False)
@@ -210,3 +211,43 @@ def test_cut_prescription_never_goes_below_the_floor(tdee, rate, weight, height,
     target = prescribe_energy_target(tdee, "cut", rate, weight, height, sex)
     assert target.daily_kcal >= CALORIC_FLOOR_KCAL[sex]
     assert target.protein_g_per_day > 0
+
+
+@given(
+    one_rm_kg=st.floats(min_value=1, max_value=500, allow_nan=False),
+    top_percentage=st.floats(min_value=0.51, max_value=1.3, allow_nan=False),
+    backoff_drop=st.floats(min_value=0.05, max_value=0.5, allow_nan=False),
+    backoff_sets=st.integers(min_value=1, max_value=10),
+)
+def test_backoff_load_is_positive_and_below_top_set(
+    one_rm_kg, top_percentage, backoff_drop, backoff_sets
+):
+    prescription = top_set_backoff(one_rm_kg, top_percentage, backoff_drop, backoff_sets)
+    assert 0 < prescription.backoff_load_kg < prescription.top_set_load_kg
+
+
+@given(
+    one_rm_kg=st.floats(min_value=40, max_value=300, allow_nan=False),
+    base_percentage=st.floats(min_value=0.4, max_value=0.7, allow_nan=False),
+    step_increment=st.sampled_from([0.02, 0.025, 0.05, 0.075, 0.1]),
+    steps_per_wave=st.integers(min_value=2, max_value=5),
+    waves=st.integers(min_value=2, max_value=4),
+    inter_wave_increment=st.sampled_from([0.0, 0.01, 0.02, 0.025, 0.05]),
+)
+def test_wave_loading_consecutive_waves_overlap(  # noqa: PLR0913 -- one param per @given strategy
+    one_rm_kg, base_percentage, step_increment, steps_per_wave, waves, inter_wave_increment
+):
+    assume(inter_wave_increment < step_increment)
+    peak = (
+        base_percentage + (steps_per_wave - 1) * step_increment + (waves - 1) * inter_wave_increment
+    )
+    assume(peak <= MAX_PERCENTAGE)
+    steps = wave_loading(
+        one_rm_kg, base_percentage, step_increment, steps_per_wave, waves, inter_wave_increment
+    )
+    assert len(steps) == waves * steps_per_wave
+    assert all(s.load_kg > 0 for s in steps)
+    for wave in range(1, waves):
+        last_of_previous = steps[wave * steps_per_wave - 1]
+        first_of_next = steps[wave * steps_per_wave]
+        assert first_of_next.percentage < last_of_previous.percentage

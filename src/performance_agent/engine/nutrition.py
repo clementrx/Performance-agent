@@ -177,7 +177,9 @@ def prescribe_energy_target(  # noqa: PLR0913 -- plan-approved signature; all ca
     sex-specific caloric floor is clamped to the floor with
     clamped_to_floor=True — the coach must then extend the deadline instead
     of deepening the deficit. weekly_weight_change_kg is negative for a cut,
-    zero for maintain, positive for a gain.
+    zero for maintain, positive for a gain. On a clamped result,
+    weekly_weight_change_kg still reflects the REQUESTED rate, not the rate
+    actually achievable at the clamped intake.
     """
     _validate_target_inputs(tdee_kcal, goal, weight_kg, height_cm, sex)
     bmi = weight_kg / (height_cm / 100) ** 2

@@ -343,6 +343,64 @@ async def test_prescribe_nutrition_targets_refuses_underweight_cut(client):
 
 
 @pytest.mark.anyio
+async def test_prescribe_top_set_backoff(client):
+    result = await client.call_tool(
+        "prescribe_top_set_backoff",
+        {"one_rm_kg": 200.0, "top_percentage": 0.9, "backoff_drop": 0.10, "backoff_sets": 3},
+    )
+    assert not result.isError
+    prescription = result.structuredContent
+    assert prescription["top_set_load_kg"] == pytest.approx(180.0)
+    assert prescription["backoff_load_kg"] == pytest.approx(160.0)
+    assert prescription["backoff_sets"] == 3
+
+
+@pytest.mark.anyio
+async def test_prescribe_wave_loading(client):
+    result = await client.call_tool(
+        "prescribe_wave_loading",
+        {
+            "one_rm_kg": 100.0,
+            "base_percentage": 0.70,
+            "step_increment": 0.05,
+            "steps_per_wave": 3,
+            "waves": 2,
+            "inter_wave_increment": 0.025,
+        },
+    )
+    assert not result.isError
+    steps = result.structuredContent["steps"]
+    assert len(steps) == 6
+    assert [s["load_kg"] for s in steps] == pytest.approx([70.0, 75.0, 80.0, 72.5, 77.5, 82.5])
+    assert steps[3]["wave"] == 2
+    assert steps[3]["step"] == 1
+
+
+@pytest.mark.anyio
+async def test_prescribe_wave_loading_refuses_peak_over_cap(client):
+    result = await client.call_tool(
+        "prescribe_wave_loading",
+        {
+            "one_rm_kg": 100.0,
+            "base_percentage": 1.0,
+            "step_increment": 0.1,
+            "steps_per_wave": 5,
+            "waves": 4,
+            "inter_wave_increment": 0.05,
+        },
+    )
+    assert result.isError
+    assert "peak" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_convert_rpe_to_rir(client):
+    result = await client.call_tool("convert_rpe_to_rir", {"rpe": 8.5})
+    assert not result.isError
+    assert result.structuredContent["rir"] == pytest.approx(1.5)
+
+
+@pytest.mark.anyio
 async def test_all_engine_tools_are_listed(client):
     listed = await client.list_tools()
     names = {tool.name for tool in listed.tools}
@@ -368,4 +426,7 @@ async def test_all_engine_tools_are_listed(client):
         "build_peaking_block",
         "compute_bmr_tdee",
         "prescribe_nutrition_targets",
+        "prescribe_top_set_backoff",
+        "prescribe_wave_loading",
+        "convert_rpe_to_rir",
     } <= names

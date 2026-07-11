@@ -3,6 +3,7 @@ import pytest
 from performance_agent.engine.feasibility import TrainingAge
 from performance_agent.engine.strength import (
     ProgressionDecision,
+    TopSetBackoff,
     WeeklySetTargets,
     double_progression,
     load_for_percentage,
@@ -12,6 +13,9 @@ from performance_agent.engine.strength import (
     one_rm_wathan,
     percentage_for_reps_rir,
     reps_for_percentage_rir,
+    rir_from_rpe,
+    top_set_backoff,
+    wave_loading,
     weekly_set_targets,
 )
 
@@ -287,3 +291,106 @@ def test_double_progression_validation_rejections():
         double_progression(
             reps_achieved=[10], load_kg=60.0, rep_range_low=8, rep_range_high=12, increment_kg=0
         )
+
+
+def test_top_set_backoff_known_values():
+    # top = 200 * 0.9 = 180; backoff = 200 * (0.9 - 0.10) = 160
+    prescription = top_set_backoff(
+        one_rm_kg=200.0, top_percentage=0.9, backoff_drop=0.10, backoff_sets=3
+    )
+    assert isinstance(prescription, TopSetBackoff)
+    assert prescription.top_set_load_kg == pytest.approx(180.0)
+    assert prescription.backoff_load_kg == pytest.approx(160.0)
+    assert prescription.backoff_sets == 3
+
+
+def test_top_set_backoff_rejects_drop_beyond_half():
+    with pytest.raises(ValueError, match="backoff_drop"):
+        top_set_backoff(one_rm_kg=200.0, top_percentage=0.9, backoff_drop=0.6, backoff_sets=3)
+
+
+def test_top_set_backoff_rejects_drop_that_leaves_no_load():
+    # 0.4 - 0.5 <= 0: both inputs pass their own range checks but combine to nothing
+    with pytest.raises(ValueError, match="leaves no back-off load"):
+        top_set_backoff(one_rm_kg=200.0, top_percentage=0.4, backoff_drop=0.5, backoff_sets=3)
+
+
+@pytest.mark.parametrize("backoff_sets", [0, 11])
+def test_top_set_backoff_rejects_out_of_range_sets(backoff_sets):
+    with pytest.raises(ValueError, match="backoff_sets"):
+        top_set_backoff(
+            one_rm_kg=200.0, top_percentage=0.9, backoff_drop=0.10, backoff_sets=backoff_sets
+        )
+
+
+def test_wave_loading_classic_two_by_three():
+    # wave 1: 0.70, 0.75, 0.80; wave 2 restarts 0.025 up: 0.725, 0.775, 0.825
+    steps = wave_loading(
+        one_rm_kg=100.0,
+        base_percentage=0.70,
+        step_increment=0.05,
+        steps_per_wave=3,
+        waves=2,
+        inter_wave_increment=0.025,
+    )
+    assert [(s.wave, s.step) for s in steps] == [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)]
+    assert [s.percentage for s in steps] == pytest.approx([0.70, 0.75, 0.80, 0.725, 0.775, 0.825])
+    assert [s.load_kg for s in steps] == pytest.approx([70.0, 75.0, 80.0, 72.5, 77.5, 82.5])
+
+
+def test_wave_loading_rejects_peak_over_max_percentage():
+    # peak = 1.0 + 4*0.1 + 3*0.05 = 1.55 > 1.3
+    with pytest.raises(ValueError, match="peak"):
+        wave_loading(
+            one_rm_kg=100.0,
+            base_percentage=1.0,
+            step_increment=0.1,
+            steps_per_wave=5,
+            waves=4,
+            inter_wave_increment=0.05,
+        )
+
+
+def test_wave_loading_rejects_non_overlapping_waves():
+    # inter_wave_increment == step_increment: wave 2 would start where wave 1 ended
+    with pytest.raises(ValueError, match="inter_wave_increment"):
+        wave_loading(
+            one_rm_kg=100.0,
+            base_percentage=0.70,
+            step_increment=0.05,
+            steps_per_wave=3,
+            waves=2,
+            inter_wave_increment=0.05,
+        )
+
+
+def test_wave_loading_bounds_rejections():
+    with pytest.raises(ValueError, match="base_percentage"):
+        wave_loading(100.0, 1.1, 0.05, 3, 2, 0.025)
+    with pytest.raises(ValueError, match="step_increment"):
+        wave_loading(100.0, 0.70, 0.15, 3, 2, 0.025)
+    with pytest.raises(ValueError, match="steps_per_wave"):
+        wave_loading(100.0, 0.70, 0.05, 1, 2, 0.025)
+    with pytest.raises(ValueError, match="waves must be"):
+        wave_loading(100.0, 0.70, 0.05, 3, 5, 0.025)
+
+
+@pytest.mark.parametrize(("rpe", "expected_rir"), [(8.0, 2.0), (8.5, 1.5), (10.0, 0.0)])
+def test_rir_from_rpe_known_values(rpe, expected_rir):
+    assert rir_from_rpe(rpe) == pytest.approx(expected_rir)
+
+
+@pytest.mark.parametrize("rpe", [0.5, 10.5])
+def test_rir_from_rpe_rejects_out_of_scale(rpe):
+    with pytest.raises(ValueError, match="rpe must be between"):
+        rir_from_rpe(rpe)
+
+
+def test_rir_from_rpe_rejects_quarter_points():
+    with pytest.raises(ValueError, match="half-point"):
+        rir_from_rpe(8.25)
+
+
+def test_rir_from_rpe_rejects_nan():
+    with pytest.raises(ValueError, match="finite"):
+        rir_from_rpe(float("nan"))

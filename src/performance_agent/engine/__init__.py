@@ -39,6 +39,8 @@ from performance_agent.engine.periodization import (
 )
 from performance_agent.engine.strength import (
     ProgressionDecision,
+    TopSetBackoff,
+    WaveStep,
     WeeklySetTargets,
     double_progression,
     load_for_percentage,
@@ -48,6 +50,9 @@ from performance_agent.engine.strength import (
     one_rm_wathan,
     percentage_for_reps_rir,
     reps_for_percentage_rir,
+    rir_from_rpe,
+    top_set_backoff,
+    wave_loading,
     weekly_set_targets,
 )
 
@@ -59,8 +64,10 @@ __all__ = [
     "InseasonWeek",
     "PeakingWeek",
     "ProgressionDecision",
+    "TopSetBackoff",
     "TrainingAge",
     "UndulatingSession",
+    "WaveStep",
     "WeekLoad",
     "WeeklySetTargets",
     "acute_chronic_ratio",
@@ -84,9 +91,12 @@ __all__ = [
     "prescribe_energy_target",
     "reps_for_percentage_rir",
     "riegel_predict",
+    "rir_from_rpe",
     "session_rpe_load",
     "strength_feasibility",
     "tdee_from_bmr",
+    "top_set_backoff",
+    "wave_loading",
     "weekly_loads",
     "weekly_set_targets",
 ]

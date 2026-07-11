@@ -17,8 +17,10 @@ from performance_agent.engine import (
     InseasonWeek,
     PeakingWeek,
     ProgressionDecision,
+    TopSetBackoff,
     TrainingAge,
     UndulatingSession,
+    WaveStep,
     WeekLoad,
     WeeklySetTargets,
     acute_chronic_ratio,
@@ -41,9 +43,12 @@ from performance_agent.engine import (
     percentage_for_reps_rir,
     prescribe_energy_target,
     riegel_predict,
+    rir_from_rpe,
     session_rpe_load,
     strength_feasibility,
     tdee_from_bmr,
+    top_set_backoff,
+    wave_loading,
     weekly_loads,
 )
 from performance_agent.engine import weekly_set_targets as engine_weekly_set_targets
@@ -136,6 +141,18 @@ class BmrTdee(TypedDict):
 
     bmr_kcal: float
     tdee_kcal: float
+
+
+class WaveLoadingPlan(TypedDict):
+    """Ordered wave-loading sets (wave and step are 1-indexed)."""
+
+    steps: list[WaveStep]
+
+
+class RirValue(TypedDict):
+    """Reps in reserve equivalent to a session RPE."""
+
+    rir: float
 
 
 def assess_endurance_goal(
@@ -435,11 +452,68 @@ def prescribe_nutrition_targets(  # noqa: PLR0913 -- plan-approved signature; al
     (weekly_change_pct_bw is a fraction: 0.0075 = 0.75%/week; must be 0 for
     maintain). Daily kcal for ANY goal (cut, maintain or gain) landing below
     the caloric floor (1500 kcal male, 1200 female) is clamped to the floor
-    with clamped_to_floor=True — that flag means "extend the deadline,
-    never deepen the deficit". Protein is 2.2 g/kg on a cut, 1.6
+    with clamped_to_floor=True. On a clamped CUT, that flag means "extend
+    the deadline, never deepen the deficit"; on a clamped maintain or gain,
+    it means "sanity-check the tdee_kcal input — it is almost certainly an
+    upstream estimation error". Protein is 2.2 g/kg on a cut, 1.6
     maintaining, 1.8 gaining.
     """
     return prescribe_energy_target(tdee_kcal, goal, weekly_change_pct_bw, weight_kg, height_cm, sex)
+
+
+def prescribe_top_set_backoff(
+    one_rm_kg: float, top_percentage: float, backoff_drop: float, backoff_sets: int
+) -> TopSetBackoff:
+    """Prescribe a top-set/back-off strength session from a 1RM.
+
+    One top set at top_percentage of 1RM (in (0, 1.3]), then backoff_sets
+    sets (whole number 1-10) at top_percentage - backoff_drop. backoff_drop
+    is a fraction of 1RM in (0, 0.5] — drops beyond 50% stop being training
+    weight — and must leave a positive back-off percentage. Loads in kg.
+    """
+    return top_set_backoff(one_rm_kg, top_percentage, backoff_drop, backoff_sets)
+
+
+def prescribe_wave_loading(  # noqa: PLR0913 -- plan-approved signature; all call sites use keywords
+    one_rm_kg: float,
+    base_percentage: float,
+    step_increment: float,
+    steps_per_wave: int,
+    waves: int,
+    inter_wave_increment: float,
+) -> WaveLoadingPlan:
+    """Generate a wave-loading set sequence for one strength session.
+
+    Each wave climbs from base_percentage (in (0, 1]) in step_increment
+    jumps (in (0, 0.1]) for steps_per_wave sets (2-5); the next wave
+    restarts inter_wave_increment above the previous wave's base (1-4
+    waves). inter_wave_increment must stay strictly below step_increment so
+    waves OVERLAP — each wave starts below where the previous one ended;
+    that overlap is the defining property of wave loading. The peak
+    percentage (base + (steps_per_wave-1)*step_increment +
+    (waves-1)*inter_wave_increment) is REFUSED above 1.3, the supra-maximal
+    cap — relay that refusal, do not work around it. Loads in kg.
+    """
+    return WaveLoadingPlan(
+        steps=wave_loading(
+            one_rm_kg,
+            base_percentage,
+            step_increment,
+            steps_per_wave,
+            waves,
+            inter_wave_increment,
+        )
+    )
+
+
+def convert_rpe_to_rir(rpe: float) -> RirValue:
+    """Convert a session RPE (1-10, half points allowed) to reps in reserve.
+
+    RIR = 10 - RPE (e.g. RPE 8.5 -> 1.5 RIR). Use this when the athlete or
+    a source speaks RPE; the prescription tools (prescribe_reps_load) take
+    RIR. Quarter-point RPEs are refused — the scale is half-point.
+    """
+    return RirValue(rir=rir_from_rpe(rpe))
 
 
 def register(mcp: FastMCP) -> None:
@@ -466,5 +540,8 @@ def register(mcp: FastMCP) -> None:
         build_peaking_block,
         compute_bmr_tdee,
         prescribe_nutrition_targets,
+        prescribe_top_set_backoff,
+        prescribe_wave_loading,
+        convert_rpe_to_rir,
     ):
         mcp.tool()(tool)
