@@ -162,7 +162,12 @@ def check_citations(text: str) -> CitationCheck:
     return CitationCheck(ok=not unknown, unknown_references=unknown)
 
 
-def search_evidence_live(language_terms: dict[str, str]) -> LiveSearchResults:
+def search_evidence_live(
+    language_terms: dict[str, str],
+    year_from: Annotated[int | None, Field(ge=1900, le=2100)] = None,
+    year_to: Annotated[int | None, Field(ge=1900, le=2100)] = None,
+    publication_types: list[str] | None = None,
+) -> LiveSearchResults:
     """Search PubMed, Crossref and Semantic Scholar for studies outside the local corpus.
 
     language_terms maps an ISO language code to a search term YOU translate for
@@ -175,7 +180,12 @@ def search_evidence_live(language_terms: dict[str, str]) -> LiveSearchResults:
     source/language pair that failed to respond is listed in failed_sources —
     mention degraded coverage rather than silently under-searching.
     """
-    outcome = run_live_search(language_terms)
+    outcome = run_live_search(
+        language_terms,
+        year_from=year_from,
+        year_to=year_to,
+        publication_types=publication_types,
+    )
     return LiveSearchResults(
         candidates=[
             LiveCandidateResult(

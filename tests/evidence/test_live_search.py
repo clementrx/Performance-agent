@@ -1,10 +1,15 @@
+import pytest
+
 import performance_agent.evidence.live_search as live_search_module
 from performance_agent.evidence.live_search import (
     LiveCandidate,
     LiveSearchOutcome,
+    SearchFilters,
+    _crossref_filter,
     _dedup,
     _map_pubmed_type,
     _openalex_abstract,
+    _pubmed_term,
     run_live_search,
     search_crossref,
     search_openalex,
@@ -315,13 +320,19 @@ def test_dedup_drops_candidates_without_any_locator():
 
 
 def test_run_live_search_verifies_and_reports_failures(monkeypatch):
-    def fake_search_pubmed(_term: str, language: str) -> list[LiveCandidate]:
+    def fake_search_pubmed(
+        _term: str, language: str, _filters: SearchFilters
+    ) -> list[LiveCandidate]:
         return [_candidate(doi="10.1000/found", found_via_language=language)]
 
-    def fake_search_crossref(_term: str, _language: str) -> list[LiveCandidate]:
+    def fake_search_crossref(
+        _term: str, _language: str, _filters: SearchFilters
+    ) -> list[LiveCandidate]:
         raise OSError("network down")
 
-    def fake_search_semantic_scholar(_term: str, _language: str) -> list[LiveCandidate]:
+    def fake_search_semantic_scholar(
+        _term: str, _language: str, _filters: SearchFilters
+    ) -> list[LiveCandidate]:
         return []
 
     monkeypatch.setattr(live_search_module, "search_pubmed", fake_search_pubmed)
@@ -412,11 +423,33 @@ def test_search_openalex_returns_empty_on_network_failure(monkeypatch):
     assert search_openalex("javelin", "en") == []
 
 
+def test_search_openalex_skips_authorship_with_null_author(monkeypatch):
+    payload = {
+        "results": [
+            {
+                "title": "Javelot et biomécanique",
+                "doi": "https://doi.org/10.1000/javelot",
+                "publication_year": 2020,
+                "authorships": [
+                    {"author": {"display_name": "Jean Dupont"}},
+                    {"author": None},
+                ],
+            }
+        ]
+    }
+    monkeypatch.setattr(live_search_module, "fetch_json", lambda _url: payload)
+
+    candidates = search_openalex("lancer de javelot", "fr")
+
+    assert len(candidates) == 1
+    assert candidates[0].authors == ["Jean Dupont"]
+
+
 def test_run_live_search_fans_out_to_four_sources(monkeypatch):
     calls: list[str] = []
 
     def fake_source(name):
-        def search(_term, language):
+        def search(_term, language, _filters):
             calls.append(f"{name}:{language}")
             return []
 
@@ -435,7 +468,9 @@ def test_run_live_search_fans_out_to_four_sources(monkeypatch):
 
 
 def test_run_live_search_drops_unverified_candidates(monkeypatch):
-    def fake_search_pubmed(_term: str, language: str) -> list[LiveCandidate]:
+    def fake_search_pubmed(
+        _term: str, language: str, _filters: SearchFilters
+    ) -> list[LiveCandidate]:
         return [_candidate(doi="10.1000/unverified", found_via_language=language)]
 
     monkeypatch.setattr(
@@ -443,8 +478,8 @@ def test_run_live_search_drops_unverified_candidates(monkeypatch):
         "_SOURCES",
         (
             ("pubmed", fake_search_pubmed),
-            ("crossref", lambda _term, _language: []),
-            ("semantic_scholar", lambda _term, _language: []),
+            ("crossref", lambda _term, _language, _filters: []),
+            ("semantic_scholar", lambda _term, _language, _filters: []),
         ),
     )
     monkeypatch.setattr(
@@ -458,3 +493,103 @@ def test_run_live_search_drops_unverified_candidates(monkeypatch):
 
     assert outcome.candidates == []
     assert outcome.failed_sources == []
+
+
+def test_pubmed_term_encodes_year_range_and_types():
+    filters = SearchFilters(
+        year_from=2016, year_to=2026, publication_types=("meta_analysis", "rct")
+    )
+    term = _pubmed_term("hypertrophy volume", filters)
+    assert term.startswith("hypertrophy volume")
+    assert 'AND ("2016"[dp] : "2026"[dp])' in term
+    assert "AND (meta-analysis[pt] OR randomized controlled trial[pt])" in term
+
+
+def test_pubmed_term_open_ended_year_bounds():
+    term = _pubmed_term("tapering", SearchFilters(year_from=2016))
+    assert 'AND ("2016"[dp] : "3000"[dp])' in term
+    term = _pubmed_term("tapering", SearchFilters(year_to=2020))
+    assert 'AND ("1000"[dp] : "2020"[dp])' in term
+
+
+def test_pubmed_term_without_filters_is_unchanged():
+    assert _pubmed_term("tapering", SearchFilters()) == "tapering"
+
+
+def test_crossref_filter_clause():
+    filters = SearchFilters(year_from=2016, year_to=2026, publication_types=("rct",))
+    assert _crossref_filter(filters) == (
+        "from-pub-date:2016-01-01,until-pub-date:2026-12-31,type:journal-article"
+    )
+    assert _crossref_filter(SearchFilters()) == ""
+
+
+def test_semantic_scholar_url_carries_year_and_types(monkeypatch):
+    seen: list[str] = []
+
+    def fake_fetch_json(url: str) -> dict | None:
+        seen.append(url)
+        return {"data": []}
+
+    monkeypatch.setattr(live_search_module, "fetch_json", fake_fetch_json)
+    filters = SearchFilters(
+        year_from=2016, year_to=2026, publication_types=("meta_analysis", "systematic_review")
+    )
+    search_semantic_scholar("tapering", "en", filters)
+    assert "year=2016-2026" in seen[0]
+    assert "publicationTypes=MetaAnalysis,Review" in seen[0]
+
+
+def test_openalex_url_carries_date_filter_and_postfilters_types(monkeypatch):
+    seen: list[str] = []
+    payload = {
+        "results": [
+            {"title": "A dataset", "doi": "https://doi.org/10.1/d", "type": "dataset"},
+            {"title": "A review", "doi": "https://doi.org/10.1/r", "type": "review"},
+            {"title": "Untyped", "doi": "https://doi.org/10.1/u"},
+        ]
+    }
+
+    def fake_fetch_json(url: str) -> dict | None:
+        seen.append(url)
+        return payload
+
+    monkeypatch.setattr(live_search_module, "fetch_json", fake_fetch_json)
+    filters = SearchFilters(year_from=2016, year_to=2026, publication_types=("rct",))
+    candidates = search_openalex("tapering", "en", filters)
+    assert "filter=from_publication_date:2016-01-01,to_publication_date:2026-12-31" in seen[0]
+    # incompatible type dropped; ambiguous/missing types pass through ungraded
+    assert [c.doi for c in candidates] == ["10.1/r", "10.1/u"]
+    assert all(c.suggested_study_type is None for c in candidates)
+
+
+def test_run_live_search_rejects_unknown_publication_type():
+    with pytest.raises(ValueError, match="cohort"):
+        run_live_search({"en": "x"}, publication_types=["cohort"])
+
+
+def test_run_live_search_rejects_inverted_year_range():
+    with pytest.raises(ValueError, match="year_from"):
+        run_live_search({"en": "x"}, year_from=2026, year_to=2016)
+
+
+def test_run_live_search_passes_filters_to_every_source(monkeypatch):
+    received: list[SearchFilters] = []
+
+    def fake_source(_term, _language, filters):
+        received.append(filters)
+        return []
+
+    monkeypatch.setattr(
+        live_search_module,
+        "_SOURCES",
+        tuple((name, fake_source) for name, _fn in live_search_module._SOURCES),
+    )
+    monkeypatch.setattr(live_search_module, "_POLITE_DELAY_S", 0)
+
+    run_live_search({"en": "x"}, year_from=2016, publication_types=["meta_analysis"])
+
+    assert len(received) == 4
+    assert all(
+        f == SearchFilters(year_from=2016, publication_types=("meta_analysis",)) for f in received
+    )

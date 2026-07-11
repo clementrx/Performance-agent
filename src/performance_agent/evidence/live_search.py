@@ -28,6 +28,39 @@ PUBMED_EFETCH_URL = (
 _SEARCH_LIMIT = 5
 _POLITE_DELAY_S = 0.5
 
+_ALLOWED_PUBLICATION_TYPES = ("meta_analysis", "systematic_review", "rct")
+
+
+@dataclass(frozen=True)
+class SearchFilters:
+    """Optional narrowing, applied per source at whatever fidelity each supports."""
+
+    year_from: int | None = None
+    year_to: int | None = None
+    publication_types: tuple[str, ...] | None = None
+
+
+_NO_FILTERS = SearchFilters()
+
+
+def _validated_filters(
+    year_from: int | None, year_to: int | None, publication_types: list[str] | None
+) -> SearchFilters:
+    if publication_types is not None:
+        unknown = sorted(set(publication_types) - set(_ALLOWED_PUBLICATION_TYPES))
+        if unknown:
+            msg = (
+                f"unsupported publication_types {unknown}; "
+                f"allowed: {list(_ALLOWED_PUBLICATION_TYPES)}"
+            )
+            raise ValueError(msg)
+    if year_from is not None and year_to is not None and year_from > year_to:
+        msg = f"year_from ({year_from}) must not exceed year_to ({year_to})"
+        raise ValueError(msg)
+    types = tuple(dict.fromkeys(publication_types)) if publication_types else None
+    return SearchFilters(year_from=year_from, year_to=year_to, publication_types=types)
+
+
 PUBMED_TYPE_MAP: dict[str, StudyType] = {
     "Randomized Controlled Trial": StudyType.RCT,
     "Meta-Analysis": StudyType.META_ANALYSIS,
@@ -127,9 +160,36 @@ def _pubmed_candidate(article: ElementTree.Element, language: str) -> LiveCandid
     )
 
 
-def search_pubmed(term: str, language: str) -> list[LiveCandidate]:
-    """Search PubMed, hydrating candidates with full abstracts via efetch."""
-    search_url = PUBMED_ESEARCH_URL.format(term=quote(term), limit=_SEARCH_LIMIT)
+_PUBMED_TYPE_FILTERS = {
+    "meta_analysis": "meta-analysis[pt]",
+    "systematic_review": "systematic review[pt]",
+    "rct": "randomized controlled trial[pt]",
+}
+
+
+def _pubmed_term(term: str, filters: SearchFilters) -> str:
+    parts = [term]
+    if filters.year_from is not None or filters.year_to is not None:
+        low = filters.year_from if filters.year_from is not None else 1000
+        high = filters.year_to if filters.year_to is not None else 3000
+        parts.append(f'AND ("{low}"[dp] : "{high}"[dp])')
+    if filters.publication_types:
+        clauses = " OR ".join(_PUBMED_TYPE_FILTERS[t] for t in filters.publication_types)
+        parts.append(f"AND ({clauses})")
+    return " ".join(parts)
+
+
+def search_pubmed(
+    term: str, language: str, filters: SearchFilters = _NO_FILTERS
+) -> list[LiveCandidate]:
+    """Search PubMed, hydrating candidates with full abstracts via efetch.
+
+    Year and publication-type filters are faithful here: both are expressed
+    server-side in the esearch term ([dp] date range, [pt] publication types).
+    """
+    search_url = PUBMED_ESEARCH_URL.format(
+        term=quote(_pubmed_term(term, filters)), limit=_SEARCH_LIMIT
+    )
     search_payload = fetch_json(search_url)
     if search_payload is None:
         return []
@@ -151,7 +211,10 @@ def search_pubmed(term: str, language: str) -> list[LiveCandidate]:
     return candidates
 
 
-CROSSREF_SEARCH_URL = "https://api.crossref.org/works?query={term}&rows={limit}"
+CROSSREF_SEARCH_URL = (
+    "https://api.crossref.org/works?query={term}&rows={limit}"
+    "&mailto=performance-agent@users.noreply.github.com"
+)
 SEMANTIC_SCHOLAR_URL = (
     "https://api.semanticscholar.org/graph/v1/paper/search"
     "?query={term}&limit={limit}&fields=title,year,authors,externalIds,abstract,venue"
@@ -190,9 +253,28 @@ def _crossref_candidate(item: dict, language: str) -> LiveCandidate | None:
     )
 
 
-def search_crossref(term: str, language: str) -> list[LiveCandidate]:
+def _crossref_filter(filters: SearchFilters) -> str:
+    clauses = []
+    if filters.year_from is not None:
+        clauses.append(f"from-pub-date:{filters.year_from}-01-01")
+    if filters.year_to is not None:
+        clauses.append(f"until-pub-date:{filters.year_to}-12-31")
+    if filters.publication_types:
+        # Crossref indexes bibliographic type, not study design; journal-article is
+        # the closest faithful narrowing. Candidates keep suggested_study_type=None
+        # and pass through — the agent grades from the abstract.
+        clauses.append("type:journal-article")
+    return ",".join(clauses)
+
+
+def search_crossref(
+    term: str, language: str, filters: SearchFilters = _NO_FILTERS
+) -> list[LiveCandidate]:
     """Search Crossref for term, returning candidates that carry a DOI."""
     url = CROSSREF_SEARCH_URL.format(term=quote(term), limit=_SEARCH_LIMIT)
+    filter_clause = _crossref_filter(filters)
+    if filter_clause:
+        url = f"{url}&filter={filter_clause}"
     payload = fetch_json(url)
     if payload is None:
         return []
@@ -224,9 +306,25 @@ def _semantic_scholar_candidate(item: dict, language: str) -> LiveCandidate | No
     )
 
 
-def search_semantic_scholar(term: str, language: str) -> list[LiveCandidate]:
+_SEMANTIC_SCHOLAR_TYPE_FILTERS = {
+    "meta_analysis": "MetaAnalysis",
+    "systematic_review": "Review",
+    "rct": "ClinicalTrial",
+}
+
+
+def search_semantic_scholar(
+    term: str, language: str, filters: SearchFilters = _NO_FILTERS
+) -> list[LiveCandidate]:
     """Search Semantic Scholar for term, returning candidates with a DOI or PMID."""
     url = SEMANTIC_SCHOLAR_URL.format(term=quote(term), limit=_SEARCH_LIMIT)
+    if filters.year_from is not None or filters.year_to is not None:
+        low = filters.year_from if filters.year_from is not None else ""
+        high = filters.year_to if filters.year_to is not None else ""
+        url = f"{url}&year={low}-{high}"
+    if filters.publication_types:
+        labels = dict.fromkeys(_SEMANTIC_SCHOLAR_TYPE_FILTERS[t] for t in filters.publication_types)
+        url = f"{url}&publicationTypes={','.join(labels)}"
     payload = fetch_json(url)
     if payload is None:
         return []
@@ -264,15 +362,27 @@ def _openalex_journal(work: dict) -> str | None:
     return source.get("display_name")
 
 
-def _openalex_candidate(work: dict, language: str) -> LiveCandidate | None:
+_OPENALEX_COMPATIBLE_TYPES = {"article", "review"}
+
+
+def _openalex_candidate(work: dict, language: str, filters: SearchFilters) -> LiveCandidate | None:
     title = work.get("title")
     doi = _openalex_doi(work)
     if not title or not doi:
         return None
+    work_type = work.get("type")
+    if (
+        filters.publication_types
+        and work_type is not None
+        and work_type not in _OPENALEX_COMPATIBLE_TYPES
+    ):
+        # a book/dataset/dissertation cannot be a meta-analysis, review or RCT;
+        # "article"/"review"/missing stays in with suggested_study_type=None.
+        return None
     authors = [
-        a.get("author", {}).get("display_name", "")
+        (a.get("author") or {}).get("display_name", "")
         for a in work.get("authorships", [])
-        if a.get("author", {}).get("display_name")
+        if (a.get("author") or {}).get("display_name")
     ]
     # OpenAlex `type` is deliberately NOT mapped to a StudyType: "review" lumps
     # narrative and systematic reviews together and "article" says nothing about
@@ -292,14 +402,23 @@ def _openalex_candidate(work: dict, language: str) -> LiveCandidate | None:
     )
 
 
-def search_openalex(term: str, language: str) -> list[LiveCandidate]:
+def search_openalex(
+    term: str, language: str, filters: SearchFilters = _NO_FILTERS
+) -> list[LiveCandidate]:
     """Search OpenAlex for term, returning candidates that carry a DOI."""
     url = OPENALEX_URL.format(term=quote(term), limit=_SEARCH_LIMIT)
+    clauses = []
+    if filters.year_from is not None:
+        clauses.append(f"from_publication_date:{filters.year_from}-01-01")
+    if filters.year_to is not None:
+        clauses.append(f"to_publication_date:{filters.year_to}-12-31")
+    if clauses:
+        url = f"{url}&filter={','.join(clauses)}"
     payload = fetch_json(url)
     if payload is None:
         return []
     works = payload.get("results", [])
-    candidates = [_openalex_candidate(work, language) for work in works]
+    candidates = [_openalex_candidate(work, language, filters) for work in works]
     return [c for c in candidates if c is not None]
 
 
@@ -351,15 +470,23 @@ class LiveSearchOutcome:
     failed_sources: list[str]
 
 
-def run_live_search(language_terms: dict[str, str]) -> LiveSearchOutcome:
+def run_live_search(
+    language_terms: dict[str, str],
+    year_from: int | None = None,
+    year_to: int | None = None,
+    publication_types: list[str] | None = None,
+) -> LiveSearchOutcome:
     """Fan out language/term pairs across PubMed, Crossref, Semantic Scholar and OpenAlex.
 
-    One source/language failing does not blank out the others; failures are
-    reported by name in the outcome instead of raising. Every surviving candidate
-    has been independently re-verified (its DOI/PMID resolves) before being
-    returned — the same guarantee the packaged corpus gets from
-    evidence/verify.py before shipping.
+    Optional filters narrow the search at each source's native fidelity (see the
+    search_evidence_live tool docstring for the per-source table); a source that
+    cannot express a filter faithfully returns its candidates ungraded rather than
+    dropping them. One source/language failing does not blank out the others;
+    failures are reported by name in the outcome instead of raising. Every
+    surviving candidate has been independently re-verified (its DOI/PMID resolves)
+    before being returned.
     """
+    filters = _validated_filters(year_from, year_to, publication_types)
     raw: list[LiveCandidate] = []
     failed: list[str] = []
     # only the very first network call of the whole run skips the delay
@@ -370,7 +497,7 @@ def run_live_search(language_terms: dict[str, str]) -> LiveSearchOutcome:
                 time.sleep(_POLITE_DELAY_S)
             first_call = False
             try:
-                raw.extend(search_fn(term, language))
+                raw.extend(search_fn(term, language, filters))
             except (OSError, ValueError, TypeError, AttributeError, KeyError):
                 # search_fn walks an untrusted third-party JSON response; a
                 # malformed shape (e.g. items not a list, missing author keys)

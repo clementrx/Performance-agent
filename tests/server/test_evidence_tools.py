@@ -96,7 +96,7 @@ async def test_evidence_tools_are_listed(client):
 
 @pytest.mark.anyio
 async def test_search_evidence_live_returns_verified_candidates(client, monkeypatch):
-    def fake_run_live_search(_language_terms):
+    def fake_run_live_search(_language_terms, **_filter_kwargs):
         return LiveSearchOutcome(
             candidates=[
                 LiveCandidate(
@@ -252,3 +252,46 @@ async def test_save_evidence_rejects_id_collision(client, monkeypatch):
     )
     assert result.isError
     assert "live-javelin-review" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_search_evidence_live_forwards_filters(client, monkeypatch):
+    received: dict = {}
+
+    def fake_run_live_search(language_terms, year_from=None, year_to=None, publication_types=None):
+        received.update(
+            language_terms=language_terms,
+            year_from=year_from,
+            year_to=year_to,
+            publication_types=publication_types,
+        )
+        return LiveSearchOutcome(candidates=[], failed_sources=[])
+
+    monkeypatch.setattr(evidence_tools_module, "run_live_search", fake_run_live_search)
+
+    result = await client.call_tool(
+        "search_evidence_live",
+        {
+            "language_terms": {"en": "tapering"},
+            "year_from": 2016,
+            "year_to": 2026,
+            "publication_types": ["meta_analysis", "rct"],
+        },
+    )
+    assert not result.isError
+    assert received == {
+        "language_terms": {"en": "tapering"},
+        "year_from": 2016,
+        "year_to": 2026,
+        "publication_types": ["meta_analysis", "rct"],
+    }
+
+
+@pytest.mark.anyio
+async def test_search_evidence_live_rejects_bad_publication_type(client):
+    result = await client.call_tool(
+        "search_evidence_live",
+        {"language_terms": {"en": "tapering"}, "publication_types": ["cohort"]},
+    )
+    assert result.isError
+    assert "cohort" in result.content[0].text
