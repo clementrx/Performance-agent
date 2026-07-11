@@ -117,13 +117,18 @@ def _tokens(text: str) -> set[str]:
     return {token for token in re.sub(r"[^\w\s]", " ", text.casefold()).split() if token}
 
 
-def _titles_match(manifest_title: str, registry_title: str) -> bool:
-    manifest_tokens = _tokens(manifest_title)
+def titles_match(claimed_title: str, registry_title: str) -> bool:
+    """Token-overlap containment >= 0.6 — the corpus anti-fabrication title check.
+
+    Used by the maintainer verification CLI and by save_evidence to cross-check
+    an agent-supplied title against what the registry actually says.
+    """
+    claimed_tokens = _tokens(claimed_title)
     registry_tokens = _tokens(registry_title)
-    if not manifest_tokens or not registry_tokens:
+    if not claimed_tokens or not registry_tokens:
         return False
-    overlap = len(manifest_tokens & registry_tokens)
-    containment = overlap / min(len(manifest_tokens), len(registry_tokens))
+    overlap = len(claimed_tokens & registry_tokens)
+    containment = overlap / min(len(claimed_tokens), len(registry_tokens))
     return containment >= _TITLE_MATCH_THRESHOLD
 
 
@@ -132,7 +137,7 @@ def _title_result(
 ) -> VerificationResult:
     if registry_title is None:
         return VerificationResult(entry.id, False, f"{source} returned no title")
-    if not _titles_match(entry.title, registry_title):
+    if not titles_match(entry.title, registry_title):
         detail = f"TITLE MISMATCH: manifest={entry.title!r} registry={registry_title!r}"
         return VerificationResult(entry.id, False, detail, registry_title)
     return VerificationResult(entry.id, True, f"resolved via {source}", registry_title)

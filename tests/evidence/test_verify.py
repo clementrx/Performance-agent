@@ -130,3 +130,16 @@ def test_fetch_text_returns_none_on_network_failure(monkeypatch):
 
     monkeypatch.setattr(verify_module.urllib.request, "urlopen", raise_oserror)
     assert verify_module.fetch_text("https://example.org") is None
+
+
+def test_titles_match_is_public_and_tolerant():
+    assert verify_module.titles_match(
+        "Effects of Tapering on Performance: A Meta-Analysis",
+        "Effects of tapering on performance — a meta-analysis",
+    )
+
+
+def test_titles_match_rejects_disjoint_titles():
+    assert not verify_module.titles_match(
+        "Javelin throw training review", "Completely Different Study About Fish"
+    )

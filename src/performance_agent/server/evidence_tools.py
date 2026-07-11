@@ -17,7 +17,7 @@ from performance_agent.evidence.index import EvidenceIndex
 from performance_agent.evidence.live_search import run_live_search
 from performance_agent.evidence.personal_corpus import append_entry
 from performance_agent.evidence.schemas import STARS, EvidenceEntry, EvidenceLevel, StudyType
-from performance_agent.evidence.verify import resolve_reference
+from performance_agent.evidence.verify import resolve_reference, titles_match
 
 
 class EvidenceHit(TypedDict):
@@ -233,6 +233,12 @@ def save_evidence(entry: EvidenceEntry) -> WrittenFile:
     resolved = resolve_reference(entry.doi, entry.pmid)
     if not resolved.ok:
         msg = f"{entry.id}: could not verify before saving — {resolved.detail}"
+        raise ValueError(msg)
+    if resolved.title is not None and not titles_match(entry.title, resolved.title):
+        msg = (
+            f"{entry.id}: title mismatch — you supplied {entry.title!r} but the "
+            f"registry says {resolved.title!r}; fix the title (or the locator) and retry"
+        )
         raise ValueError(msg)
     verified_entry = entry.model_copy(update={"verified": True})
     known_ids = {e.id for e in load_corpus()}

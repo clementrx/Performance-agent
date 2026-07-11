@@ -255,6 +255,24 @@ async def test_save_evidence_rejects_id_collision(client, monkeypatch):
 
 
 @pytest.mark.anyio
+async def test_save_evidence_rejects_title_mismatch(client, monkeypatch):
+    monkeypatch.setattr(
+        evidence_tools_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(
+            True, "Completely Different Study About Fish", "resolved via Crossref"
+        ),
+    )
+
+    result = await client.call_tool("save_evidence", {"entry": _live_entry_payload()})
+
+    assert result.isError
+    text = result.content[0].text
+    assert "Javelin throw training review" in text
+    assert "Completely Different Study About Fish" in text
+
+
+@pytest.mark.anyio
 async def test_search_evidence_live_forwards_filters(client, monkeypatch):
     received: dict = {}
 
