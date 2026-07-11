@@ -32,7 +32,7 @@ every one carries a reason the athlete (and future you) can audit.
   injury probability.
 - If `get_time_context` shows the deadline already passed (negative
   days_remaining), do NOT call `assess_endurance_goal` (it errors on non-positive
-  weeks); route to goal-assessment to renegotiate the deadline first.
+  weeks); route to needs-analysis to renegotiate the deadline first.
 - Re-run `assess_endurance_goal` with today's numbers if the goal's feasibility may
   have moved (quote the new drivers vs the old ones).
 - Name the diagnosis in one sentence: under-recovery / under-stimulus / interrupted
@@ -43,7 +43,7 @@ every one carries a reason the athlete (and future you) can audit.
 ## 2. Propose the change
 
 Smallest change that addresses the diagnosis: swap sessions, cut a week's volume
-(deload), extend the timeline, re-negotiate the goal (route back to goal-assessment
+(deload), extend the timeline, re-negotiate the goal (route back to needs-analysis
 when the goal itself must move). Recompute affected loads/paces with the engine
 tools (`prescribe_load` from a fresh `estimate_1rm` for strength; the pace tools for
 endurance) — never carry stale numbers forward. If you rebuild waves via

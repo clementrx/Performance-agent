@@ -36,7 +36,8 @@ insist more than once. Collect, in this order:
      goal (typically squat, bench, deadlift, plus sport-specific lifts). Per lift:
      a tested 1RM → record with source "tested" and its date; only a recent heavy
      set (e.g. "5 reps at 100 kg with 2 in reserve")? → convert via `estimate_1rm`
-     and record with source "estimated" — always tell the athlete you estimated it.
+     and record with source "estimated" and `recorded_on` as the date of that heavy
+     set — always tell the athlete you estimated it.
    - Endurance athletes: recent race times over the relevant distances.
 6. **Goal** — objective, target metric and value, deadline, priority. Also confirm
    the CURRENT benchmark from step 5 that matches it — the assessment needs it.
@@ -44,7 +45,10 @@ insist more than once. Collect, in this order:
    meet date), recurring_fixtures (weekly matches), open_ended (no fixed date). It
    drives the periodization model later, so probe in plain language — e.g. in
    French: "une compétition précise, des matchs chaque semaine, ou pas
-   d'échéance ?"
+   d'échéance ?" A fixed competition date wins over routine weekly training when
+   both are present — fixtures means recurring competitions, not recurring
+   training, so record single_deadline whenever there is one specific date to
+   peak for.
 8. **Environment** — equipment (be concrete: barbell? rack? treadmill? track
    access?), sessions per week, minutes per session, and split_preferences (e.g.
    "upper/lower", "full body", "push/pull/legs" — scheduling quirks go to notes).

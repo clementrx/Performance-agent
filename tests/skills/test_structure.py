@@ -3,7 +3,7 @@
 EXPECTED_SKILLS = {
     "performance-coach",
     "athlete-onboarding",
-    "goal-assessment",
+    "needs-analysis",
     "program-generation",
     "training-checkin",
     "program-adaptation",
@@ -63,17 +63,22 @@ def test_onboarding_skill_protocol(skills):
         assert needle in body, f"onboarding skill lost: {needle}"
 
 
-def test_assessment_skill_protocol(skills):
-    assessment = next(s for s in skills if s.frontmatter["name"] == "goal-assessment")
-    body = assessment.body.casefold()
+def test_needs_analysis_skill_protocol(skills):
+    analysis = next(s for s in skills if s.frontmatter["name"] == "needs-analysis")
+    body = analysis.body.casefold()
     for needle in (
         "assess_endurance_goal",
+        "assess_strength_goal",
+        "assess_hypertrophy_goal",
+        "assess_bodycomp_goal",
+        "estimate_1rm",
         "drivers",
         "counter-proposal",
         "honest",
-        "estimate_1rm",
+        "save_analysis",
+        "research questions",
     ):
-        assert needle in body, f"assessment skill lost: {needle}"
+        assert needle in body, f"needs-analysis skill lost: {needle}"
 
 
 def test_generation_skill_protocol(skills):
