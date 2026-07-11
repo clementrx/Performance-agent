@@ -106,7 +106,7 @@ pick it up).
 > List the performance-agent tools.
 ```
 
-You should see 32 tools. Then ask:
+You should see 38 tools. Then ask:
 
 ```
 > What does your performance-coach skill do at the start of a session?
@@ -216,7 +216,7 @@ A detailed changelog of what's built, for evaluating the project rather than usi
   explainable drivers · periodization waves (mesocycles, deloads, taper)
 - ✅ Engine purity enforced by an architectural test (stdlib-only, no LLM/network/DB)
 - ✅ CI with SHA-pinned actions, exact-pinned toolchain (uv, ruff, ty)
-- ✅ MCP server exposing the engine as 15 tools — see [docs/installing.md](docs/installing.md)
+- ✅ MCP server exposing the engine as 21 tools — see [docs/installing.md](docs/installing.md)
 - ✅ File-based athlete memory: schema-validated profile & goals, append-only session
   and check-in logs, versioned programs with a required-reason adaptation audit trail,
   and time awareness ("your last update was 14 days ago")
