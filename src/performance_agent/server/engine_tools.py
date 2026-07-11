@@ -19,13 +19,20 @@ from performance_agent.engine import (
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
+    one_rm_lombardi,
+    one_rm_wathan,
     pace_s_per_km,
     riegel_predict,
     session_rpe_load,
     weekly_loads,
 )
 
-_ONE_RM_FORMULAS = {"brzycki": one_rm_brzycki, "epley": one_rm_epley}
+_ONE_RM_FORMULAS = {
+    "brzycki": one_rm_brzycki,
+    "epley": one_rm_epley,
+    "lombardi": one_rm_lombardi,
+    "wathan": one_rm_wathan,
+}
 
 
 class RacePrediction(TypedDict):
@@ -45,7 +52,7 @@ class OneRmEstimate(TypedDict):
     """Estimated one-rep max and the formula that produced it."""
 
     one_rm_kg: float
-    formula: Literal["epley", "brzycki"]
+    formula: Literal["epley", "brzycki", "lombardi", "wathan"]
 
 
 class LoadPrescription(TypedDict):
@@ -116,12 +123,14 @@ def compute_pace(distance_m: float, time_s: float) -> Pace:
 
 
 def estimate_1rm(
-    load_kg: float, reps: int, formula: Literal["epley", "brzycki"] = "epley"
+    load_kg: float,
+    reps: int,
+    formula: Literal["epley", "brzycki", "lombardi", "wathan"] = "epley",
 ) -> OneRmEstimate:
     """Estimate a one-rep max in kg from a submaximal set (1-12 reps).
 
     Pick one formula per athlete and lift and stay consistent; do not average
-    the two.
+    them.
     """
     return OneRmEstimate(one_rm_kg=_ONE_RM_FORMULAS[formula](load_kg, reps), formula=formula)
 

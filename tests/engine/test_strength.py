@@ -8,6 +8,8 @@ from performance_agent.engine.strength import (
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
+    one_rm_lombardi,
+    one_rm_wathan,
     percentage_for_reps_rir,
     reps_for_percentage_rir,
     weekly_set_targets,
@@ -43,6 +45,38 @@ def test_rep_range_is_validated(reps):
 def test_load_must_be_positive(load_kg):
     with pytest.raises(ValueError, match="load"):
         one_rm_epley(load_kg=load_kg, reps=5)
+
+
+def test_lombardi_known_value():
+    # 100 * 8**0.1 ~ 123.11
+    assert one_rm_lombardi(load_kg=100, reps=8) == pytest.approx(123.11, abs=0.01)
+
+
+def test_wathan_known_value():
+    # 100 * 100 / (48.8 + 53.8 * e^-0.6) ~ 127.67
+    assert one_rm_wathan(load_kg=100, reps=8) == pytest.approx(127.67, abs=0.01)
+
+
+def test_lombardi_and_wathan_single_rep_is_the_load_itself():
+    # Wathan at reps=1 would give ~1.3% above the load; the shortcut clamps it.
+    assert one_rm_lombardi(load_kg=100, reps=1) == 100.0
+    assert one_rm_wathan(load_kg=100, reps=1) == 100.0
+
+
+@pytest.mark.parametrize("reps", [0, -1, 13])
+def test_lombardi_and_wathan_rep_range_is_validated(reps):
+    with pytest.raises(ValueError, match="reps"):
+        one_rm_lombardi(load_kg=100, reps=reps)
+    with pytest.raises(ValueError, match="reps"):
+        one_rm_wathan(load_kg=100, reps=reps)
+
+
+@pytest.mark.parametrize("load_kg", [0, -20])
+def test_lombardi_and_wathan_load_must_be_positive(load_kg):
+    with pytest.raises(ValueError, match="load"):
+        one_rm_lombardi(load_kg=load_kg, reps=5)
+    with pytest.raises(ValueError, match="load"):
+        one_rm_wathan(load_kg=load_kg, reps=5)
 
 
 def test_accepted_boundaries_compute():
@@ -201,6 +235,19 @@ def test_double_progression_target_is_capped_at_range_top():
     )
     assert held.load_increased is False
     assert held.next_target_reps == 12  # min(11 + 1, 12)
+
+
+def test_double_progression_below_range_target_is_unfloored():
+    decision = double_progression(
+        reps_achieved=[2],
+        load_kg=100,
+        rep_range_low=8,
+        rep_range_high=12,
+        increment_kg=2.5,
+    )
+    assert decision == ProgressionDecision(
+        next_load_kg=100, next_target_reps=3, load_increased=False
+    )
 
 
 def test_double_progression_validation_rejections():

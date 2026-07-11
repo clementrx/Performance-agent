@@ -10,6 +10,8 @@ from performance_agent.engine import (
     hypertrophy_feasibility,
     one_rm_brzycki,
     one_rm_epley,
+    one_rm_lombardi,
+    one_rm_wathan,
     percentage_for_reps_rir,
     reps_for_percentage_rir,
     riegel_predict,
@@ -22,7 +24,7 @@ from performance_agent.engine.feasibility import TrainingAge
 loads = st.floats(min_value=1, max_value=500, allow_nan=False)
 times = st.floats(min_value=60, max_value=36000, allow_nan=False)
 riegel_distances = st.floats(min_value=1500, max_value=42195, allow_nan=False)
-one_rm_formulas = st.sampled_from([one_rm_epley, one_rm_brzycki])
+one_rm_formulas = st.sampled_from([one_rm_epley, one_rm_brzycki, one_rm_lombardi, one_rm_wathan])
 
 
 @given(

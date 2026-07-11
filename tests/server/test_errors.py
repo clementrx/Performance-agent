@@ -32,11 +32,13 @@ async def test_unknown_training_age_lists_valid_values(client):
 @pytest.mark.anyio
 async def test_unknown_formula_lists_valid_values(client):
     result = await client.call_tool(
-        "estimate_1rm", {"load_kg": 100, "reps": 5, "formula": "lombardi"}
+        "estimate_1rm", {"load_kg": 100, "reps": 5, "formula": "mcglothin"}
     )
     text = error_text(result)
     assert "brzycki" in text
     assert "epley" in text
+    assert "lombardi" in text
+    assert "wathan" in text
 
 
 @pytest.mark.anyio

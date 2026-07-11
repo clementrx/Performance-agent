@@ -57,6 +57,26 @@ async def test_estimate_1rm_brzycki(client):
 
 
 @pytest.mark.anyio
+async def test_estimate_1rm_lombardi(client):
+    result = await client.call_tool(
+        "estimate_1rm", {"load_kg": 100, "reps": 8, "formula": "lombardi"}
+    )
+    assert not result.isError
+    assert result.structuredContent["one_rm_kg"] == pytest.approx(123.11, abs=0.01)
+    assert result.structuredContent["formula"] == "lombardi"
+
+
+@pytest.mark.anyio
+async def test_estimate_1rm_wathan(client):
+    result = await client.call_tool(
+        "estimate_1rm", {"load_kg": 100, "reps": 8, "formula": "wathan"}
+    )
+    assert not result.isError
+    assert result.structuredContent["one_rm_kg"] == pytest.approx(127.67, abs=0.01)
+    assert result.structuredContent["formula"] == "wathan"
+
+
+@pytest.mark.anyio
 async def test_prescribe_load(client):
     result = await client.call_tool("prescribe_load", {"one_rm_kg": 150, "percentage": 0.8})
     assert not result.isError

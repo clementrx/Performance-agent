@@ -53,6 +53,33 @@ def one_rm_brzycki(load_kg: float, reps: int) -> float:
     return load_kg * 36 / (37 - reps)
 
 
+def one_rm_lombardi(load_kg: float, reps: int) -> float:
+    """Estimate 1RM with the Lombardi formula: load * reps^0.10.
+
+    A single rep at a given load is, by definition, at least a 1RM at that
+    load, so ``reps == 1`` returns ``load_kg`` unchanged.
+    """
+    _validate_load_and_reps(load_kg, reps)
+    if reps == 1:
+        return float(load_kg)
+    return load_kg * reps**0.10
+
+
+def one_rm_wathan(load_kg: float, reps: int) -> float:
+    """Estimate 1RM with the Wathan formula: 100*load / (48.8 + 53.8*e^(-0.075*reps)).
+
+    At ``reps == 1`` the raw formula lands about 1.3% ABOVE the lifted load
+    (100 / (48.8 + 53.8*e^-0.075) ~ 1.013), but a single rep at a given load
+    is, by definition, at least a 1RM at that load — so ``reps == 1`` returns
+    ``load_kg`` unchanged as a deliberate consistency clamp, matching the
+    other formulas.
+    """
+    _validate_load_and_reps(load_kg, reps)
+    if reps == 1:
+        return float(load_kg)
+    return 100 * load_kg / (48.8 + 53.8 * math.exp(-0.075 * reps))
+
+
 def load_for_percentage(one_rm_kg: float, percentage: float) -> float:
     """Return the absolute load for a fraction of 1RM (e.g. 0.8 for 80%)."""
     if one_rm_kg <= 0:
@@ -205,8 +232,11 @@ def double_progression(
 
     Fill the rep range first, then add load: when every set reached
     rep_range_high, add increment_kg and reset the target to rep_range_low;
-    otherwise hold the load and target one rep above the lowest achieved
-    set, capped at rep_range_high.
+    otherwise hold the load and target the lowest achieved set + 1 (never
+    above rep_range_high by construction). Load REDUCTION (deload/regression)
+    is out of scope: when performance falls below the rep range, the hold
+    branch's target is unfloored and next_target_reps may fall below
+    rep_range_low.
 
     Args:
         reps_achieved: Reps completed per set last session (non-empty, >= 0).
