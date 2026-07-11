@@ -47,7 +47,25 @@ stay with their rationale.
   not achievable, rate (documented in docstrings); revisit if a consumer
   starts trusting it numerically.
 
+## Open items (from phase 3 reviews, 2026-07-11)
+
+- **`titles_match` min-set containment leniency** — a very short claimed
+  title whose tokens all appear in the registry title passes. Accepted
+  residual (it is what makes subtitle omissions and Open Library short
+  titles work); the phase-4 Researcher protocol must instruct agents to
+  save the registry's canonical title (translated titles are rejected by
+  design).
+- **Verification latency at full budget** — `run_live_search` sleeps 0.5s
+  per candidate post-dedup; a multi-language full-budget run can take a few
+  minutes (documented in the docstring). If latency ever matters, verify in
+  tier order and stop at K.
+
 ## Descoped with rationale (maintainer decision 2026-07-11)
+
+- **Minimum-population-size live-search filter** (spec §5 "where the source
+  provides it") — none of PubMed/Crossref/Semantic Scholar/OpenAlex exposes
+  sample size in search results, so the condition resolves to nowhere.
+  Deliberately not implemented; the agent grades population from abstracts.
 
 - **Bodyweight-relative 1RM progression rates** (spec §4.1 "and relative to
   bodyweight") — deferred: needs strength-standards tables we don't have
