@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from performance_agent.memory.schemas import Goal, Injury, Profile
+from performance_agent.memory.schemas import Goal, Injury, LiftRecord, Profile
 from performance_agent.memory.store import (
     read_goals,
     read_profile,
@@ -71,3 +71,21 @@ def test_schema_invalid_profile_names_the_file(tmp_path):
     (tmp_path / "profile.yaml").write_text("locale: xx\n", encoding="utf-8")
     with pytest.raises(ValueError, match=r"profile\.yaml"):
         read_profile(tmp_path)
+
+
+def test_pre_extension_profile_yaml_still_loads(tmp_path):
+    (tmp_path / "profile.yaml").write_text(
+        "locale: en\nweight_kg: 75\nsport: running\n", encoding="utf-8"
+    )
+    profile = read_profile(tmp_path)
+    assert profile.lift_inventory == []
+    assert profile.calendar_type is None
+
+
+def test_extended_profile_round_trips(tmp_path):
+    profile = Profile(
+        calendar_type="recurring_fixtures",
+        lift_inventory=[LiftRecord(lift="back squat", one_rm_kg=140, recorded_on=date(2026, 7, 1))],
+    )
+    write_profile(tmp_path, profile)
+    assert read_profile(tmp_path) == profile

@@ -8,9 +8,9 @@ Timestamps are naive local wall-clock time; timezone-aware values are rejected.
 """
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from performance_agent.engine import TrainingAge
 
@@ -157,7 +157,10 @@ class CheckinEntry(BaseModel):
     fatigue: int | None = Field(default=None, ge=1, le=10)
     pain_flags: list[str] = Field(default_factory=list)
     bodyweight_kg: float | None = Field(default=None, ge=30, le=250)
-    measurements: dict[str, float] = Field(default_factory=dict)
+    measurements: dict[
+        Annotated[str, StringConstraints(min_length=1)],
+        Annotated[float, Field(gt=0, le=500, allow_inf_nan=False)],
+    ] = Field(default_factory=dict)
     prs: list[RepPR] = Field(default_factory=list)
     notes: str | None = None
 

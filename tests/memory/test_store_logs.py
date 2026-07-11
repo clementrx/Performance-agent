@@ -1,8 +1,14 @@
-from datetime import datetime
+from datetime import date, datetime
 
 import pytest
 
-from performance_agent.memory.schemas import CheckinEntry, SessionEntry
+from performance_agent.memory.schemas import (
+    CheckinEntry,
+    ExercisePerformed,
+    RepPR,
+    SessionEntry,
+    SetPerformed,
+)
 from performance_agent.memory.store import (
     append_checkin,
     append_session,
@@ -65,3 +71,40 @@ def test_schema_invalid_session_line_names_the_file(tmp_path):
     )
     with pytest.raises(ValueError, match=r"sessions\.jsonl"):
         read_sessions(tmp_path)
+
+
+def test_pre_extension_session_line_still_loads(tmp_path):
+    legacy = '{"performed_at": "2026-07-01T18:00:00", "kind": "run", "rpe": 5}'
+    (tmp_path / "sessions.jsonl").write_text(legacy + "\n", encoding="utf-8")
+    sessions = read_sessions(tmp_path)
+    assert sessions[0].exercises == []
+
+
+def test_structured_session_round_trips(tmp_path):
+    entry = SessionEntry(
+        performed_at=datetime(2026, 7, 11, 18, 0),
+        kind="strength",
+        exercises=[
+            ExercisePerformed(name="back squat", sets=[SetPerformed(reps=5, load_kg=100, rir=2)])
+        ],
+    )
+    append_session(tmp_path, entry)
+    assert read_sessions(tmp_path)[0] == entry
+
+
+def test_pre_extension_checkin_line_still_loads(tmp_path):
+    legacy = '{"at": "2026-07-01T09:00:00", "adherence_pct": 80.0}'
+    (tmp_path / "checkins.jsonl").write_text(legacy + "\n", encoding="utf-8")
+    checkins = read_checkins(tmp_path)
+    assert checkins[0].prs == []
+
+
+def test_populated_checkin_round_trips(tmp_path):
+    entry = CheckinEntry(
+        at=datetime(2026, 7, 11, 9, 0),
+        bodyweight_kg=79.4,
+        measurements={"waist": 84.0},
+        prs=[RepPR(lift="bench press", reps=5, load_kg=90, achieved_on=date(2026, 7, 9))],
+    )
+    append_checkin(tmp_path, entry)
+    assert read_checkins(tmp_path)[0] == entry

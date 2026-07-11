@@ -188,3 +188,12 @@ def test_checkin_new_fields_are_optional():
 def test_checkin_bodyweight_bounds():
     with pytest.raises(ValidationError):
         CheckinEntry(at=datetime(2026, 7, 11, 9, 0), bodyweight_kg=10)
+
+
+@pytest.mark.parametrize(
+    "measurements",
+    [{"waist": float("nan")}, {"waist": -5.0}, {"waist": 600.0}, {"": 84.0}],
+)
+def test_checkin_measurements_are_bounded(measurements):
+    with pytest.raises(ValidationError):
+        CheckinEntry(at=datetime(2026, 7, 11, 9, 0), measurements=measurements)
