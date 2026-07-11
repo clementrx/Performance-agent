@@ -222,8 +222,14 @@ A detailed changelog of what's built, for evaluating the project rather than usi
   and time awareness ("your last update was 14 days ago")
 - ✅ Evidence corpus: live-verified starter corpus of 10 studies with grading ceilings
   enforced by schema, Porter-stemmed FTS5 full-text search, an anti-fabrication
-  `check_citations` tool, and a maintainer verification CLI that asserts registry title
-  matches before an entry ships
+  `check_citations` tool (DOI, PMID and ISBN), and a maintainer verification CLI that
+  asserts registry title matches before an entry ships
+- ✅ Live evidence search across PubMed (full abstracts), OpenAlex, Crossref and
+  Semantic Scholar: multilingual fan-out, year and publication-type filters, 25
+  results per source with evidence-tier ordering, and a double verification gate
+  (locator resolution + registry title cross-check) before anything can be saved or
+  cited; ISBN-verified reference books (e.g. *Manuel ultime de musculation*) join the
+  athlete's personal corpus capped at expert opinion
 - ✅ Six coaching skills (Claude Code plugin format): session rituals, onboarding,
   honest goal assessment with counter-proposals, evidence-cited program generation,
   structured check-ins, versioned adaptation — each eval-guarded against tool drift

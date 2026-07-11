@@ -105,6 +105,12 @@ class EvidenceEntry(BaseModel):
             if self.isbn is None:
                 msg = f"{self.id}: a reference_book entry needs an ISBN to be citable"
                 raise ValueError(msg)
+            if self.doi is not None or self.pmid is not None:
+                msg = (
+                    f"{self.id}: reference_book entries are verified by ISBN only; "
+                    "drop the doi/pmid"
+                )
+                raise ValueError(msg)
             return self
         if self.isbn is not None:
             msg = f"{self.id}: only reference_book entries may carry an ISBN"

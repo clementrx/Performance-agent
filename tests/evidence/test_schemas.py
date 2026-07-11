@@ -150,3 +150,18 @@ def test_non_book_entries_may_not_carry_isbn():
             doi="10.1000/sample",
             isbn="978-2-7576-0546-2",
         )
+
+
+def test_reference_book_may_not_carry_doi_or_pmid():
+    with pytest.raises(ValidationError, match="doi/pmid"):
+        EvidenceEntry(
+            id="book-with-doi",
+            title="A book",
+            authors=["Doe J"],
+            year=2023,
+            study_type=StudyType.REFERENCE_BOOK,
+            conclusions="x",
+            evidence_level="expert",
+            isbn="978-2-7576-0546-2",
+            doi="10.1000/sample",
+        )

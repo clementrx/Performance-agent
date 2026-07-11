@@ -168,16 +168,32 @@ def search_evidence_live(
     year_to: Annotated[int | None, Field(ge=1900, le=2100)] = None,
     publication_types: list[str] | None = None,
 ) -> LiveSearchResults:
-    """Search PubMed, Crossref and Semantic Scholar for studies outside the local corpus.
+    """Search PubMed, OpenAlex, Crossref and Semantic Scholar for studies outside the corpus.
 
     language_terms maps an ISO language code to a search term YOU translate for
     that language, e.g. {"en": "javelin throw training", "de": "Speerwurf
-    Training"}. Every returned candidate has already been verified: its DOI/PMID
-    resolves against Crossref or PubMed. suggested_study_type is filled from
-    PubMed's own publication-type tags when unambiguous; when it's null, read the
-    abstract yourself and propose a study_type before calling save_evidence — the
-    grading ceiling is enforced server-side regardless of what you propose. A
-    source/language pair that failed to respond is listed in failed_sources —
+    Training"}. Up to 25 results per source per language; DOI/PMID dedup across
+    sources; every returned candidate has already been verified (its DOI/PMID
+    resolves against Crossref or PubMed). Candidates arrive ordered by evidence
+    tier — meta-analyses, then systematic reviews, then RCTs, then everything
+    else — most recent first within a tier (unknown years last). PubMed
+    candidates carry full abstracts (efetch); read them before grading.
+
+    Optional filters — applied at each source's native fidelity, never by
+    silently dropping candidates a source cannot classify:
+    - year_from/year_to: PubMed [dp] range, Crossref from/until-pub-date,
+      Semantic Scholar year=, OpenAlex from/to_publication_date. Faithful at
+      all four sources.
+    - publication_types (any of "meta_analysis", "systematic_review", "rct";
+      anything else is rejected): faithful only at PubMed ([pt] tags). Crossref
+      narrows to journal-article, Semantic Scholar to a conservative superset
+      (MetaAnalysis/Review/ClinicalTrial), OpenAlex only drops clearly
+      incompatible work types (books, datasets). Non-PubMed candidates keep
+      suggested_study_type=null — read the abstract and propose a study_type
+      yourself before calling save_evidence; the grading ceiling is enforced
+      server-side regardless of what you propose.
+
+    A source/language pair that failed to respond is listed in failed_sources —
     mention degraded coverage rather than silently under-searching.
     """
     outcome = run_live_search(
@@ -217,19 +233,30 @@ def verify_reference(
     resolves against Open Library with a Google Books fallback. Never save an
     entry whose locator did not resolve here.
     """
+    if isbn is not None and (doi is not None or pmid is not None):
+        msg = "pass exactly one of doi, pmid or isbn — not isbn together with doi/pmid"
+        raise ValueError(msg)
     resolved = resolve_isbn(isbn) if isbn else resolve_reference(doi, pmid)
     return ReferenceResolution(ok=resolved.ok, title=resolved.title, detail=resolved.detail)
 
 
 def save_evidence(entry: EvidenceEntry) -> WrittenFile:
-    """Persist a verified, graded study to your personal evidence corpus.
+    """Persist a verified, graded study or reference book to your personal evidence corpus.
 
-    The entry is re-verified here (its DOI/PMID must resolve) regardless of what
-    you were told earlier by search_evidence_live or verify_reference — this tool
-    never trusts a self-reported verified flag. The grading ceiling
+    The entry is re-verified here regardless of what you were told earlier by
+    search_evidence_live or verify_reference — this tool never trusts a
+    self-reported verified flag. Two independent checks run before anything is
+    written: the locator must resolve (DOI/PMID via Crossref/PubMed; ISBN via
+    Open Library/Google Books for study_type "reference_book"), and the title
+    you supply must match the registry's title (0.6 token-overlap — a real DOI
+    under an invented title is rejected). The grading ceiling
     (schemas.GRADING_CEILING) still applies: you cannot save a cross-sectional
-    study as "strong". Once saved, the entry is immediately searchable via
-    search_evidence.
+    study as "strong", and a reference_book is always capped at "expert" — e.g.
+    Manuel ultime de musculation (ISBN 978-2-7576-0546-2) enters as
+    expert-opinion technique/pedagogy support, never as evidence against a
+    meta-analysis. Books carry an isbn instead of doi/pmid; studies must not
+    carry an isbn. Once saved, the entry is immediately searchable via
+    search_evidence and its locator is recognized by check_citations.
     """
     if entry.study_type is StudyType.REFERENCE_BOOK:
         resolved = resolve_isbn(entry.isbn or "")

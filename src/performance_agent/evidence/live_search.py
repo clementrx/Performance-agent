@@ -504,7 +504,9 @@ def run_live_search(
     dropping them. One source/language failing does not blank out the others;
     failures are reported by name in the outcome instead of raising. Every
     surviving candidate has been independently re-verified (its DOI/PMID resolves)
-    before being returned.
+    before being returned. Verification sleeps 0.5s per candidate to stay polite
+    with upstream APIs; a multi-language run at the full 25/source budget can take
+    a few minutes.
     """
     filters = _validated_filters(year_from, year_to, publication_types)
     raw: list[LiveCandidate] = []

@@ -366,6 +366,15 @@ async def test_save_evidence_rejects_book_with_mismatched_title(client, monkeypa
 
 
 @pytest.mark.anyio
+async def test_verify_reference_rejects_mixed_locators(client):
+    result = await client.call_tool(
+        "verify_reference", {"doi": "10.1000/sample", "isbn": "978-2-7576-0546-2"}
+    )
+    assert result.isError
+    assert "exactly one" in result.content[0].text
+
+
+@pytest.mark.anyio
 async def test_verify_reference_resolves_isbn(client, monkeypatch):
     monkeypatch.setattr(
         evidence_tools_module,
