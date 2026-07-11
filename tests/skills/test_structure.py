@@ -6,6 +6,7 @@ EXPECTED_SKILLS = {
     "needs-analysis",
     "program-generation",
     "program-planning",
+    "program-optimization",
     "training-checkin",
     "program-adaptation",
     "program-report",
@@ -121,6 +122,30 @@ def test_planning_skill_protocol(skills):
         "program-optimization",
     ):
         assert needle in body, f"program-planning skill lost: {needle}"
+
+
+def test_optimization_skill_protocol(skills):
+    optimization = next(s for s in skills if s.frontmatter["name"] == "program-optimization")
+    body = optimization.body.casefold()
+    for needle in (
+        "skeleton",
+        "prescribe_reps_load",
+        "prescribe_load",
+        "estimate_1rm",
+        "progress_double_progression",
+        "prescribe_top_set_backoff",
+        "prescribe_wave_loading",
+        "convert_rpe_to_rir",
+        "predict_race_time",
+        "read_nutrition_frame",
+        "save_program",
+        "check_citations",
+        "split_preferences",
+        "rest",
+        "purpose",
+        "stars",
+    ):
+        assert needle in body, f"program-optimization skill lost: {needle}"
 
 
 def test_checkin_skill_protocol(skills):
