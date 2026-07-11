@@ -58,6 +58,9 @@ At session start:
 - Returning athlete with a program → training-checkin
 - Goal analyzed and accepted, but no research dossier → deep-research
 - Analysis and dossier done, but no saved program → program-generation
+- Athlete explicitly declines deep research → program-generation anyway (its
+  fallback handles the no-dossier state); record the decline in the conversation
+  and do not re-offer deep-research this session.
 
 After a skill hands back:
 
