@@ -153,8 +153,8 @@ def test_weekly_set_targets_invariant_ordering(age):
     targets = weekly_set_targets(age)
     assert (
         0
-        < targets.minimum_effective
-        < targets.optimal_low
-        < targets.optimal_high
-        < targets.maximum_adaptive
+        < targets.minimum_effective_sets
+        < targets.optimal_low_sets
+        < targets.optimal_high_sets
+        < targets.maximum_adaptive_sets
     )

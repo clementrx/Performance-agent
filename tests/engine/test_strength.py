@@ -2,7 +2,9 @@ import pytest
 
 from performance_agent.engine.feasibility import TrainingAge
 from performance_agent.engine.strength import (
+    ProgressionDecision,
     WeeklySetTargets,
+    double_progression,
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
@@ -125,17 +127,17 @@ def test_weekly_set_targets_fields_strictly_increase(age):
     targets = weekly_set_targets(age)
     assert isinstance(targets, WeeklySetTargets)
     assert (
-        targets.minimum_effective
-        < targets.optimal_low
-        < targets.optimal_high
-        < targets.maximum_adaptive
+        targets.minimum_effective_sets
+        < targets.optimal_low_sets
+        < targets.optimal_high_sets
+        < targets.maximum_adaptive_sets
     )
 
 
 def test_weekly_set_targets_beginner_values():
     targets = weekly_set_targets(TrainingAge.BEGINNER)
     assert targets == WeeklySetTargets(
-        minimum_effective=6, optimal_low=8, optimal_high=12, maximum_adaptive=16
+        minimum_effective_sets=6, optimal_low_sets=8, optimal_high_sets=12, maximum_adaptive_sets=16
     )
 
 
@@ -143,5 +145,98 @@ def test_weekly_set_targets_scale_with_training_age():
     beginner = weekly_set_targets(TrainingAge.BEGINNER)
     intermediate = weekly_set_targets(TrainingAge.INTERMEDIATE)
     advanced = weekly_set_targets(TrainingAge.ADVANCED)
-    assert beginner.optimal_low < intermediate.optimal_low < advanced.optimal_low
-    assert beginner.maximum_adaptive < intermediate.maximum_adaptive < advanced.maximum_adaptive
+    assert beginner.optimal_low_sets < intermediate.optimal_low_sets < advanced.optimal_low_sets
+    assert (
+        beginner.maximum_adaptive_sets
+        < intermediate.maximum_adaptive_sets
+        < advanced.maximum_adaptive_sets
+    )
+
+
+def test_double_progression_all_sets_at_top_increments_load():
+    decision = double_progression(
+        reps_achieved=[12, 12, 12],
+        load_kg=60.0,
+        rep_range_low=8,
+        rep_range_high=12,
+        increment_kg=2.5,
+    )
+    assert decision == ProgressionDecision(
+        next_load_kg=62.5, next_target_reps=8, load_increased=True
+    )
+
+
+def test_double_progression_partial_achievement_holds_load():
+    decision = double_progression(
+        reps_achieved=[12, 11, 10],
+        load_kg=60.0,
+        rep_range_low=8,
+        rep_range_high=12,
+        increment_kg=2.5,
+    )
+    assert decision.next_load_kg == 60.0
+    assert decision.load_increased is False
+    # lowest set (10) drives the target: 10 + 1 = 11
+    assert decision.next_target_reps == 11
+
+
+def test_double_progression_target_is_capped_at_range_top():
+    # lowest achieved already at the top (e.g. logged above range): cap at high
+    decision = double_progression(
+        reps_achieved=[13, 12, 14],
+        load_kg=60.0,
+        rep_range_low=8,
+        rep_range_high=12,
+        increment_kg=2.5,
+    )
+    # every set reached the top -> load increases instead of rep chasing
+    assert decision.load_increased is True
+
+    held = double_progression(
+        reps_achieved=[12, 12, 11],
+        load_kg=60.0,
+        rep_range_low=8,
+        rep_range_high=12,
+        increment_kg=2.5,
+    )
+    assert held.load_increased is False
+    assert held.next_target_reps == 12  # min(11 + 1, 12)
+
+
+def test_double_progression_validation_rejections():
+    with pytest.raises(ValueError, match="empty"):
+        double_progression(
+            reps_achieved=[], load_kg=60.0, rep_range_low=8, rep_range_high=12, increment_kg=2.5
+        )
+    with pytest.raises(ValueError, match="rep range"):
+        double_progression(
+            reps_achieved=[10],
+            load_kg=60.0,
+            rep_range_low=12,
+            rep_range_high=8,
+            increment_kg=2.5,
+        )
+    with pytest.raises(ValueError, match="rep range"):
+        double_progression(
+            reps_achieved=[10],
+            load_kg=60.0,
+            rep_range_low=8,
+            rep_range_high=19,
+            increment_kg=2.5,
+        )
+    with pytest.raises(ValueError, match="non-negative"):
+        double_progression(
+            reps_achieved=[10, -1],
+            load_kg=60.0,
+            rep_range_low=8,
+            rep_range_high=12,
+            increment_kg=2.5,
+        )
+    with pytest.raises(ValueError, match="load_kg"):
+        double_progression(
+            reps_achieved=[10], load_kg=0, rep_range_low=8, rep_range_high=12, increment_kg=2.5
+        )
+    with pytest.raises(ValueError, match="increment_kg"):
+        double_progression(
+            reps_achieved=[10], load_kg=60.0, rep_range_low=8, rep_range_high=12, increment_kg=0
+        )

@@ -129,16 +129,18 @@ def reps_for_percentage_rir(percentage: float, rir: int) -> int:
 class WeeklySetTargets:
     """Weekly hard-set targets for one muscle group."""
 
-    minimum_effective: int
-    optimal_low: int
-    optimal_high: int
-    maximum_adaptive: int
+    minimum_effective_sets: int
+    optimal_low_sets: int
+    optimal_high_sets: int
+    maximum_adaptive_sets: int
 
 
 # Weekly hard sets per muscle group by training age. Anchored on the
-# dose-response meta-analysis in the corpus (resistance-training-volume-
-# hypertrophy-meta-2017: 10+ sets/muscle/week outperform fewer); the spread
-# across training ages is a team-chosen prior.
+# dose-response meta-analysis in the corpus
+# (resistance-training-volume-hypertrophy-meta-2017); the "10+ sets/muscle/week
+# outperform fewer" direction is the paper's headline finding (the corpus
+# record itself is kept non-directional), and the spread across training ages
+# is a team-chosen prior.
 WEEKLY_SET_TARGETS: dict[TrainingAge, WeeklySetTargets] = {
     TrainingAge.BEGINNER: WeeklySetTargets(6, 8, 12, 16),
     TrainingAge.INTERMEDIATE: WeeklySetTargets(8, 10, 16, 20),
@@ -149,3 +151,85 @@ WEEKLY_SET_TARGETS: dict[TrainingAge, WeeklySetTargets] = {
 def weekly_set_targets(training_age: TrainingAge) -> WeeklySetTargets:
     """Return per-muscle weekly hard-set targets for a training-age bucket."""
     return WEEKLY_SET_TARGETS[training_age]
+
+
+@dataclass(frozen=True)
+class ProgressionDecision:
+    """Next-session prescription from a double-progression rule."""
+
+    next_load_kg: float
+    next_target_reps: int
+    load_increased: bool
+
+
+def _validate_double_progression_inputs(
+    reps_achieved: list[int],
+    load_kg: float,
+    rep_range_low: int,
+    rep_range_high: int,
+    increment_kg: float,
+) -> None:
+    """Raise ValueError if any double_progression input is out of range."""
+    for name, value in (("rep_range_low", rep_range_low), ("rep_range_high", rep_range_high)):
+        validate_whole_number(name, value)
+    if not 1 <= rep_range_low < rep_range_high <= MAX_EFFECTIVE_REPS:
+        msg = (
+            f"rep range must satisfy 1 <= low < high <= {MAX_EFFECTIVE_REPS}, "
+            f"got low={rep_range_low!r}, high={rep_range_high!r}"
+        )
+        raise ValueError(msg)
+    if load_kg <= 0:
+        msg = f"load_kg must be positive, got {load_kg!r}"
+        raise ValueError(msg)
+    if increment_kg <= 0:
+        msg = f"increment_kg must be positive, got {increment_kg!r}"
+        raise ValueError(msg)
+    if not reps_achieved:
+        msg = "reps_achieved must not be empty"
+        raise ValueError(msg)
+    for reps in reps_achieved:
+        validate_whole_number("reps_achieved entry", reps)
+        if reps < 0:
+            msg = f"reps_achieved entries must be non-negative, got {reps!r}"
+            raise ValueError(msg)
+
+
+def double_progression(
+    reps_achieved: list[int],
+    load_kg: float,
+    rep_range_low: int,
+    rep_range_high: int,
+    increment_kg: float,
+) -> ProgressionDecision:
+    """Apply the double-progression rule to one exercise's last session.
+
+    Fill the rep range first, then add load: when every set reached
+    rep_range_high, add increment_kg and reset the target to rep_range_low;
+    otherwise hold the load and target one rep above the lowest achieved
+    set, capped at rep_range_high.
+
+    Args:
+        reps_achieved: Reps completed per set last session (non-empty, >= 0).
+        load_kg: Load used last session, in kg (positive).
+        rep_range_low: Bottom of the working rep range (>= 1).
+        rep_range_high: Top of the working rep range (> low, <= 18).
+        increment_kg: Load added when the range is filled (positive).
+
+    Returns:
+        A ProgressionDecision with the next load, next rep target and
+        whether the load increased.
+    """
+    _validate_double_progression_inputs(
+        reps_achieved, load_kg, rep_range_low, rep_range_high, increment_kg
+    )
+    if all(reps >= rep_range_high for reps in reps_achieved):
+        return ProgressionDecision(
+            next_load_kg=load_kg + increment_kg,
+            next_target_reps=rep_range_low,
+            load_increased=True,
+        )
+    return ProgressionDecision(
+        next_load_kg=load_kg,
+        next_target_reps=min(min(reps_achieved) + 1, rep_range_high),
+        load_increased=False,
+    )
