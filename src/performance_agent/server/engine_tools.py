@@ -384,7 +384,7 @@ def build_undulating_sessions(sessions_per_week: int) -> UndulatingWeekPlan:
     Use this to structure intensity WITHIN a training week (2-7 sessions)
     when all qualities are trained concurrently — the block and peaking
     tools structure across weeks instead. Sessions cycle heavy (0.85-0.925
-    of 1RM), light (0.60-0.70), moderate (0.725-0.80); heavy-then-light
+    of 1RM), light (0.625-0.70), moderate (0.725-0.80); heavy-then-light
     adjacency is deliberate recovery spacing. A single weekly session cannot
     undulate (error).
     """
