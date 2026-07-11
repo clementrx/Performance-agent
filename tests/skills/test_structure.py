@@ -5,6 +5,7 @@ EXPECTED_SKILLS = {
     "athlete-onboarding",
     "needs-analysis",
     "program-generation",
+    "program-planning",
     "training-checkin",
     "program-adaptation",
     "program-report",
@@ -98,6 +99,28 @@ def test_generation_skill_protocol(skills):
         "purpose",
     ):
         assert needle in body, f"generation skill lost: {needle}"
+
+
+def test_planning_skill_protocol(skills):
+    planning = next(s for s in skills if s.frontmatter["name"] == "program-planning")
+    body = planning.body.casefold()
+    for needle in (
+        "read_analysis",
+        "read_research_dossier",
+        "calendar_type",
+        "build_block_cycle",
+        "build_periodization_waves",
+        "build_undulating_sessions",
+        "build_inseason_maintenance",
+        "build_peaking_block",
+        "weekly_set_targets_for",
+        "skeleton",
+        "coaching judgment",
+        "check_citations",
+        "nutrition-planning",
+        "program-optimization",
+    ):
+        assert needle in body, f"program-planning skill lost: {needle}"
 
 
 def test_checkin_skill_protocol(skills):
