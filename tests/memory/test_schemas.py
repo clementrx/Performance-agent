@@ -11,6 +11,7 @@ from performance_agent.memory.schemas import (
     Injury,
     LiftRecord,
     Profile,
+    RepPR,
     SessionEntry,
     SetPerformed,
 )
@@ -164,3 +165,26 @@ def test_lift_record_defaults_to_tested_and_bounds():
 def test_profile_rejects_out_of_contract_new_fields(field, value):
     with pytest.raises(ValidationError):
         Profile(**{field: value})
+
+
+def test_checkin_accepts_bodyweight_measurements_and_prs():
+    entry = CheckinEntry(
+        at=datetime(2026, 7, 11, 9, 0),
+        bodyweight_kg=79.4,
+        measurements={"waist": 84.0},
+        prs=[RepPR(lift="bench press", reps=5, load_kg=90, achieved_on=date(2026, 7, 9))],
+    )
+    assert entry.measurements["waist"] == 84.0
+    assert entry.prs[0].reps == 5
+
+
+def test_checkin_new_fields_are_optional():
+    entry = CheckinEntry(at=datetime(2026, 7, 11, 9, 0), fatigue=3)
+    assert entry.bodyweight_kg is None
+    assert entry.measurements == {}
+    assert entry.prs == []
+
+
+def test_checkin_bodyweight_bounds():
+    with pytest.raises(ValidationError):
+        CheckinEntry(at=datetime(2026, 7, 11, 9, 0), bodyweight_kg=10)

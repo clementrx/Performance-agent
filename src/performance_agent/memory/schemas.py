@@ -135,6 +135,17 @@ class SessionEntry(BaseModel):
     _naive_performed_at = field_validator("performed_at")(staticmethod(_require_naive))
 
 
+class RepPR(BaseModel):
+    """A rep personal record: best load for a rep count on a lift."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lift: str = Field(min_length=1)
+    reps: int = Field(ge=1, le=100)
+    load_kg: float = Field(gt=0, le=1000)
+    achieved_on: date
+
+
 class CheckinEntry(BaseModel):
     """One coaching check-in record."""
 
@@ -145,6 +156,9 @@ class CheckinEntry(BaseModel):
     adherence_pct: float | None = Field(default=None, ge=0, le=100)
     fatigue: int | None = Field(default=None, ge=1, le=10)
     pain_flags: list[str] = Field(default_factory=list)
+    bodyweight_kg: float | None = Field(default=None, ge=30, le=250)
+    measurements: dict[str, float] = Field(default_factory=dict)
+    prs: list[RepPR] = Field(default_factory=list)
     notes: str | None = None
 
     _naive_at = field_validator("at")(staticmethod(_require_naive))
