@@ -175,3 +175,33 @@ def test_gain_rate_above_half_percent_rejected():
             height_cm=178.0,
             sex="male",
         )
+
+
+def test_maintain_clamps_to_caloric_floor():
+    # maintain daily_kcal == tdee_kcal == 900 < 1200 female floor
+    target = prescribe_energy_target(
+        tdee_kcal=900.0,
+        goal="maintain",
+        weekly_change_pct_bw=0.0,
+        weight_kg=55.0,
+        height_cm=165.0,
+        sex="female",
+    )
+    assert target.daily_kcal == pytest.approx(1200.0)
+    assert target.clamped_to_floor is True
+    assert target.weekly_weight_change_kg == 0.0
+
+
+def test_gain_clamps_to_caloric_floor():
+    # TDEE 100, 0.4%/wk on 75 kg -> +0.3 kg/wk -> +330 kcal/day -> raw 430 < 1500 male floor
+    target = prescribe_energy_target(
+        tdee_kcal=100.0,
+        goal="gain",
+        weekly_change_pct_bw=0.004,
+        weight_kg=75.0,
+        height_cm=178.0,
+        sex="male",
+    )
+    assert target.daily_kcal == pytest.approx(1500.0)
+    assert target.clamped_to_floor is True
+    assert target.weekly_weight_change_kg == pytest.approx(0.3)

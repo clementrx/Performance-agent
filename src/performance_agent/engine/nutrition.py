@@ -1,7 +1,8 @@
 """Energy and protein targets with hard safety guards.
 
 The guards live HERE, not in prompts: no agent can prescribe below the
-caloric floor, above the safe loss rate, or to an underweight athlete.
+caloric floor for any goal, above the safe loss rate, or to an underweight
+athlete.
 Numbers are team-chosen priors from mainstream sports-nutrition consensus;
 they parameterize honesty, not medical advice — the tools refuse and refer
 out when a request crosses a red line.
@@ -71,7 +72,10 @@ def _validate_age(age_years: int) -> None:
         )
         raise ValueError(msg)
     if age_years >= high:
-        msg = f"age_years must be under {high}, got {age_years!r}"
+        msg = (
+            f"age_years must be under {high}, got {age_years!r} — refer to a "
+            "professional for older-adult nutrition"
+        )
         raise ValueError(msg)
 
 
@@ -168,11 +172,12 @@ def prescribe_energy_target(  # noqa: PLR0913 -- plan-approved signature; all ca
     weekly_change_pct_bw is the weekly bodyweight change as a fraction of
     bodyweight: 0 for maintain, in (0, 0.010] for a cut, in (0, 0.005] for a
     gain. Hard guards, in order: an underweight athlete (BMI < 18.5) is
-    refused a deficit outright; the rate caps are enforced; and a cut whose
-    daily kcal would land below the sex-specific caloric floor is clamped to
-    the floor with clamped_to_floor=True — the coach must then extend the
-    deadline instead of deepening the deficit. weekly_weight_change_kg is
-    negative for a cut, zero for maintain, positive for a gain.
+    refused a deficit outright; the rate caps are enforced; and daily kcal
+    for ANY goal (cut, maintain or gain) that would land below the
+    sex-specific caloric floor is clamped to the floor with
+    clamped_to_floor=True — the coach must then extend the deadline instead
+    of deepening the deficit. weekly_weight_change_kg is negative for a cut,
+    zero for maintain, positive for a gain.
     """
     _validate_target_inputs(tdee_kcal, goal, weight_kg, height_cm, sex)
     bmi = weight_kg / (height_cm / 100) ** 2
@@ -185,19 +190,19 @@ def prescribe_energy_target(  # noqa: PLR0913 -- plan-approved signature; all ca
     _validate_rate(goal, weekly_change_pct_bw)
     weekly_change_kg = weekly_change_pct_bw * weight_kg
     daily_adjustment_kcal = weekly_change_kg * KCAL_PER_KG_TISSUE / 7
-    clamped = False
     if goal == "cut":
         daily_kcal = tdee_kcal - daily_adjustment_kcal
         weekly_weight_change_kg = -weekly_change_kg
-        if daily_kcal < CALORIC_FLOOR_KCAL[sex]:
-            daily_kcal = CALORIC_FLOOR_KCAL[sex]
-            clamped = True
     elif goal == "gain":
         daily_kcal = tdee_kcal + daily_adjustment_kcal
         weekly_weight_change_kg = weekly_change_kg
     else:
         daily_kcal = tdee_kcal
         weekly_weight_change_kg = 0.0
+    clamped = False
+    if daily_kcal < CALORIC_FLOOR_KCAL[sex]:
+        daily_kcal = CALORIC_FLOOR_KCAL[sex]
+        clamped = True
     return EnergyTarget(
         goal=goal,
         daily_kcal=daily_kcal,

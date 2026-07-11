@@ -81,7 +81,9 @@ MAX_INSEASON_MATCHES = 2
 # near-max, with the final days as full rest/openers. Team-chosen priors
 # consistent with powerlifting taper practice and the tapering meta-analysis
 # in the corpus (tapering-performance-meta-2007: ~2-week tapers with 41-60%
-# volume reduction perform best).
+# volume reduction perform best). The final week's 0.35 volume with rising
+# (not constant) intensity is a deliberate powerlifting-practice deviation
+# from the meta-analysis's constant-intensity taper protocol.
 PEAKING_MAX_WEEKS = 3
 PEAKING_SCHEDULE: dict[int, tuple[tuple[float, float], ...]] = {
     1: ((0.40, 1.00),),
@@ -263,8 +265,8 @@ def build_inseason_week(matches_this_week: int) -> InseasonWeek:
         raise ValueError(msg)
     if matches_this_week > MAX_INSEASON_MATCHES:
         msg = (
-            f"got {matches_this_week!r} matches: more than 2 fixtures leaves no recovery "
-            "window for strength work — rest is the prescription"
+            f"got {matches_this_week!r} matches: more than {MAX_INSEASON_MATCHES} fixtures "
+            "leaves no recovery window for strength work — rest is the prescription"
         )
         raise ValueError(msg)
     if matches_this_week == 1:
