@@ -45,6 +45,23 @@ _BLOCK_PHASE_FACTORS: dict[BlockPhase, tuple[float, float]] = {
     "realization": (REALIZATION_VOLUME, REALIZATION_INTENSITY),
 }
 
+SessionEmphasis = Literal["heavy", "moderate", "light"]
+
+# Daily-undulating intensity zones as fractions of 1RM (low, high) with the
+# rep quality they serve. Team-chosen priors consistent with common DUP schemes.
+UNDULATION_ZONES: dict[SessionEmphasis, tuple[float, float]] = {
+    "heavy": (0.85, 0.925),
+    "moderate": (0.725, 0.80),
+    "light": (0.60, 0.70),
+}
+# Heavy-then-light adjacency is deliberate: the light day buys recovery
+# after the heaviest stimulus before quality moderate work.
+_UNDULATION_ORDER: tuple[SessionEmphasis, ...] = ("heavy", "light", "moderate")
+# A single weekly session cannot undulate; beyond daily training the cycle
+# stops meaning anything. Team-chosen bounds.
+MIN_UNDULATING_SESSIONS = 2
+MAX_UNDULATING_SESSIONS = 7
+
 
 @dataclass(frozen=True)
 class WeekLoad:
@@ -156,3 +173,36 @@ def build_block_periodization(total_weeks: int) -> list[BlockWeek]:
             weeks.append(BlockWeek(week, phase, volume, intensity))
             week += 1
     return weeks
+
+
+@dataclass(frozen=True)
+class UndulatingSession:
+    """One session slot in a daily-undulating training week."""
+
+    session: int
+    emphasis: SessionEmphasis
+    intensity_low: float
+    intensity_high: float
+
+
+def build_undulating_week(sessions_per_week: int) -> list[UndulatingSession]:
+    """Assign daily-undulating emphases to a week's strength sessions.
+
+    Sessions cycle heavy -> light -> moderate (heavy-then-light adjacency is
+    deliberate recovery spacing). Zone bounds are fractions of 1RM from
+    UNDULATION_ZONES.
+    """
+    validate_whole_number("sessions_per_week", sessions_per_week)
+    if not MIN_UNDULATING_SESSIONS <= sessions_per_week <= MAX_UNDULATING_SESSIONS:
+        msg = (
+            f"sessions_per_week must be between {MIN_UNDULATING_SESSIONS} and "
+            f"{MAX_UNDULATING_SESSIONS}, got {sessions_per_week!r}: a single weekly "
+            "session cannot undulate, and beyond daily training the cycle is meaningless"
+        )
+        raise ValueError(msg)
+    sessions: list[UndulatingSession] = []
+    for index in range(sessions_per_week):
+        emphasis = _UNDULATION_ORDER[index % len(_UNDULATION_ORDER)]
+        low, high = UNDULATION_ZONES[emphasis]
+        sessions.append(UndulatingSession(index + 1, emphasis, low, high))
+    return sessions

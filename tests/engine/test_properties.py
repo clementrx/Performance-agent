@@ -20,7 +20,7 @@ from performance_agent.engine import (
     weekly_set_targets,
 )
 from performance_agent.engine.feasibility import TrainingAge
-from performance_agent.engine.periodization import build_block_periodization
+from performance_agent.engine.periodization import build_block_periodization, build_undulating_week
 
 loads = st.floats(min_value=1, max_value=500, allow_nan=False)
 times = st.floats(min_value=60, max_value=36000, allow_nan=False)
@@ -169,3 +169,11 @@ def test_block_periodization_covers_every_week_with_all_three_phases(total_weeks
     assert [w.week for w in weeks] == list(range(1, total_weeks + 1))
     for phase in ("accumulation", "intensification", "realization"):
         assert sum(1 for w in weeks if w.phase == phase) >= 1
+
+
+@given(sessions_per_week=st.integers(min_value=2, max_value=7))
+def test_undulating_sessions_are_contiguous_with_sane_zones(sessions_per_week):
+    sessions = build_undulating_week(sessions_per_week)
+    assert [s.session for s in sessions] == list(range(1, sessions_per_week + 1))
+    for session in sessions:
+        assert 0 < session.intensity_low < session.intensity_high < 1

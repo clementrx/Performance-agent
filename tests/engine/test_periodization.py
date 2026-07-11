@@ -10,6 +10,7 @@ from performance_agent.engine.periodization import (
     BlockWeek,
     WeekLoad,
     build_block_periodization,
+    build_undulating_week,
     build_weekly_waves,
 )
 
@@ -139,3 +140,31 @@ def test_block_weeks_are_frozen_value_objects():
     week = BlockWeek(week=1, phase="accumulation", volume_factor=1.10, intensity_factor=0.85)
     with pytest.raises(AttributeError):
         week.volume_factor = 2.0  # ty: ignore[invalid-assignment]
+
+
+def test_undulating_three_sessions_heavy_light_moderate():
+    sessions = build_undulating_week(sessions_per_week=3)
+    assert [s.session for s in sessions] == [1, 2, 3]
+    assert [s.emphasis for s in sessions] == ["heavy", "light", "moderate"]
+    assert sessions[0].intensity_low == pytest.approx(0.85)
+    assert sessions[0].intensity_high == pytest.approx(0.925)
+    assert sessions[1].intensity_low == pytest.approx(0.60)
+    assert sessions[1].intensity_high == pytest.approx(0.70)
+    assert sessions[2].intensity_low == pytest.approx(0.725)
+    assert sessions[2].intensity_high == pytest.approx(0.80)
+
+
+def test_undulating_five_sessions_wrap_the_cycle():
+    sessions = build_undulating_week(sessions_per_week=5)
+    assert [s.emphasis for s in sessions] == ["heavy", "light", "moderate", "heavy", "light"]
+
+
+@pytest.mark.parametrize("sessions_per_week", [1, 8])
+def test_undulating_rejects_out_of_range_sessions(sessions_per_week):
+    with pytest.raises(ValueError, match="cannot undulate"):
+        build_undulating_week(sessions_per_week=sessions_per_week)
+
+
+def test_undulating_rejects_non_whole_sessions():
+    with pytest.raises(ValueError, match="whole number"):
+        build_undulating_week(sessions_per_week=3.0)  # ty: ignore[invalid-argument-type]
