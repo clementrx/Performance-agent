@@ -11,6 +11,7 @@ EXPECTED_SKILLS = {
     "program-adaptation",
     "program-report",
     "deep-research",
+    "nutrition-planning",
 }
 
 
@@ -200,3 +201,22 @@ def test_research_skill_protocol(skills):
         "failed",
     ):
         assert needle in body, f"deep-research skill lost: {needle}"
+
+
+def test_nutrition_skill_protocol(skills):
+    nutrition = next(s for s in skills if s.frontmatter["name"] == "nutrition-planning")
+    body = nutrition.body.casefold()
+    for needle in (
+        "compute_bmr_tdee",
+        "prescribe_nutrition_targets",
+        "save_nutrition_frame",
+        "clamped_to_floor",
+        "protein",
+        "activity factor",
+        "not medical advice",
+        "refer",
+        "relay",
+        "review_trigger",
+        "intensification",
+    ):
+        assert needle in body, f"nutrition-planning skill lost: {needle}"
