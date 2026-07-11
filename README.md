@@ -77,9 +77,13 @@ claude mcp add performance-agent -s user \
 This downloads and registers the coach's "brain" (the engine, the science library, your
 future athlete profile) as a tool Claude Code can call. `-s user` makes it available
 everywhere, in any folder you later open `claude` from — skip it and it only works in
-the one folder you ran this command from. `PERFORMANCE_AGENT_HOME` is just the folder
-where your profile, programs and training logs will be saved as plain files; it's
-created for you automatically.
+the one folder you ran this command from.
+
+`~/athlete-data` is just a suggested path — pick any folder you like, it doesn't need
+to exist yet. **Don't create it yourself**: the coach creates it automatically the
+first time it saves something (your profile, a program, a session), not right after
+this command runs — so don't worry if you don't see it appear immediately. That's also
+where all your data will live as plain markdown/YAML files, nothing sent anywhere else.
 
 **Step 2 — teach it how to coach.** The server above gives Claude the *tools* (the
 math, the data). This step gives it the *coaching protocols* — when to ask what, when
