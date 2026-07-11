@@ -1,12 +1,17 @@
 """Strength math: 1RM estimation and percentage-based load prescription.
 
 Formulas are only validated for 1-12 repetitions; both Epley and Brzycki
-degrade badly beyond ~10 reps, so higher inputs are rejected.
+degrade badly beyond ~10 reps, so higher inputs are rejected. The
+percentage_for_reps_rir/reps_for_percentage_rir pair extends this to 18
+effective reps (reps + RIR), with 13-18 carrying the extra uncertainty
+documented on those functions.
 """
 
 import math
+from dataclasses import dataclass
 
 from performance_agent.engine._validation import validate_whole_number
+from performance_agent.engine.feasibility import TrainingAge
 
 MAX_ESTIMATION_REPS = 12
 MAX_PERCENTAGE = 1.3  # supra-maximal work (eccentrics, partials) tops out around 130%
@@ -91,7 +96,9 @@ def reps_for_percentage_rir(percentage: float, rir: int) -> int:
     Inverts percentage_for_reps_rir: effective reps = floor(30 * (1/pct - 1)),
     with at least one effective rep (a single rep is always possible at or
     below 100% of 1RM), then subtracts `rir`. Raises if the percentage is
-    too high to leave `rir` reps in reserve.
+    too high to leave `rir` reps in reserve, or if it implies more effective
+    reps than the Epley curve is valid for. Effective reps of 13-18 carry
+    extra uncertainty, same as the forward percentage_for_reps_rir function.
     """
     validate_whole_number("rir", rir)
     if not 0 < percentage <= 1:
@@ -102,6 +109,12 @@ def reps_for_percentage_rir(percentage: float, rir: int) -> int:
         raise ValueError(msg)
     # The epsilon absorbs float rounding so exact Epley percentages round-trip.
     effective_reps = max(math.floor(30 * (1 / percentage - 1) + 1e-9), 1)
+    if effective_reps > MAX_EFFECTIVE_REPS:
+        msg = (
+            f"percentage {percentage!r} implies more than {MAX_EFFECTIVE_REPS} "
+            "effective reps; the Epley curve is not valid there"
+        )
+        raise ValueError(msg)
     reps = effective_reps - rir
     if reps < 1:
         msg = (
@@ -110,3 +123,29 @@ def reps_for_percentage_rir(percentage: float, rir: int) -> int:
         )
         raise ValueError(msg)
     return reps
+
+
+@dataclass(frozen=True)
+class WeeklySetTargets:
+    """Weekly hard-set targets for one muscle group."""
+
+    minimum_effective: int
+    optimal_low: int
+    optimal_high: int
+    maximum_adaptive: int
+
+
+# Weekly hard sets per muscle group by training age. Anchored on the
+# dose-response meta-analysis in the corpus (resistance-training-volume-
+# hypertrophy-meta-2017: 10+ sets/muscle/week outperform fewer); the spread
+# across training ages is a team-chosen prior.
+WEEKLY_SET_TARGETS: dict[TrainingAge, WeeklySetTargets] = {
+    TrainingAge.BEGINNER: WeeklySetTargets(6, 8, 12, 16),
+    TrainingAge.INTERMEDIATE: WeeklySetTargets(8, 10, 16, 20),
+    TrainingAge.ADVANCED: WeeklySetTargets(10, 12, 20, 26),
+}
+
+
+def weekly_set_targets(training_age: TrainingAge) -> WeeklySetTargets:
+    """Return per-muscle weekly hard-set targets for a training-age bucket."""
+    return WEEKLY_SET_TARGETS[training_age]

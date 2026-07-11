@@ -21,11 +21,13 @@ from performance_agent.engine.load import (
 )
 from performance_agent.engine.periodization import WeekLoad, build_weekly_waves
 from performance_agent.engine.strength import (
+    WeeklySetTargets,
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
     percentage_for_reps_rir,
     reps_for_percentage_rir,
+    weekly_set_targets,
 )
 
 __all__ = [
@@ -33,6 +35,7 @@ __all__ = [
     "FeasibilityResult",
     "TrainingAge",
     "WeekLoad",
+    "WeeklySetTargets",
     "acute_chronic_ratio",
     "bodycomp_feasibility",
     "build_weekly_waves",
@@ -48,4 +51,5 @@ __all__ = [
     "session_rpe_load",
     "strength_feasibility",
     "weekly_loads",
+    "weekly_set_targets",
 ]

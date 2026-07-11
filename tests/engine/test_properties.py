@@ -15,6 +15,7 @@ from performance_agent.engine import (
     riegel_predict,
     strength_feasibility,
     weekly_loads,
+    weekly_set_targets,
 )
 from performance_agent.engine.feasibility import TrainingAge
 
@@ -145,3 +146,15 @@ def test_reps_rir_percentage_round_trips(reps, rir):
     assume(reps + rir <= 18)
     percentage = percentage_for_reps_rir(reps, rir)
     assert reps_for_percentage_rir(percentage, rir) == reps
+
+
+@given(age=st.sampled_from(list(TrainingAge)))
+def test_weekly_set_targets_invariant_ordering(age):
+    targets = weekly_set_targets(age)
+    assert (
+        0
+        < targets.minimum_effective
+        < targets.optimal_low
+        < targets.optimal_high
+        < targets.maximum_adaptive
+    )

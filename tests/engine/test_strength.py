@@ -1,11 +1,14 @@
 import pytest
 
+from performance_agent.engine.feasibility import TrainingAge
 from performance_agent.engine.strength import (
+    WeeklySetTargets,
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
     percentage_for_reps_rir,
     reps_for_percentage_rir,
+    weekly_set_targets,
 )
 
 
@@ -109,3 +112,36 @@ def test_reps_for_percentage_rir_percentage_validated(percentage):
 def test_rir_functions_reject_non_whole_numbers(reps, rir):
     with pytest.raises(ValueError, match="whole number"):
         percentage_for_reps_rir(reps=reps, rir=rir)
+
+
+@pytest.mark.parametrize(("percentage", "rir"), [(0.30, 2), (0.5, 0)])
+def test_reps_for_percentage_rir_rejects_effective_reps_beyond_cap(percentage, rir):
+    with pytest.raises(ValueError, match="effective reps"):
+        reps_for_percentage_rir(percentage, rir)
+
+
+@pytest.mark.parametrize("age", list(TrainingAge))
+def test_weekly_set_targets_fields_strictly_increase(age):
+    targets = weekly_set_targets(age)
+    assert isinstance(targets, WeeklySetTargets)
+    assert (
+        targets.minimum_effective
+        < targets.optimal_low
+        < targets.optimal_high
+        < targets.maximum_adaptive
+    )
+
+
+def test_weekly_set_targets_beginner_values():
+    targets = weekly_set_targets(TrainingAge.BEGINNER)
+    assert targets == WeeklySetTargets(
+        minimum_effective=6, optimal_low=8, optimal_high=12, maximum_adaptive=16
+    )
+
+
+def test_weekly_set_targets_scale_with_training_age():
+    beginner = weekly_set_targets(TrainingAge.BEGINNER)
+    intermediate = weekly_set_targets(TrainingAge.INTERMEDIATE)
+    advanced = weekly_set_targets(TrainingAge.ADVANCED)
+    assert beginner.optimal_low < intermediate.optimal_low < advanced.optimal_low
+    assert beginner.maximum_adaptive < intermediate.maximum_adaptive < advanced.maximum_adaptive
