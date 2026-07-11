@@ -2,10 +2,11 @@
 
 🏋️ **The first open-source AI Strength & Conditioning Coach powered by scientific research.**
 
-It runs inside the AI agent you already pay for — Claude Code, Gemini CLI, Codex — and
-turns it into a professional coach that designs, explains, monitors, and adapts your
-training. No backend, no API key, no hosting. And it will tell you the truth when your
-goal is unrealistic:
+It runs inside an AI agent CLI — a terminal program you chat with, such as Claude
+Code, Gemini CLI, or Codex — and turns it into a professional coach that designs,
+explains, monitors, and adapts your training. Don't have one of those yet? The
+[Install](#install) section below gets you set up in five minutes. No backend, no
+API key, no hosting. And it will tell you the truth when your goal is unrealistic:
 
 ```text
 $ claude
@@ -40,15 +41,148 @@ tell you what you want to hear. PerformanceAgent is architected so neither is po
 
 - **LLMs narrate, the engine calculates.** Every number — feasibility probabilities,
   race predictions, training loads, periodization waves — comes from a deterministic,
-  property-tested Python engine exposed as MCP tools. The agent explains the math; it
-  never does the math.
+  property-tested Python engine exposed as MCP tools (small functions the agent can
+  call to get a real, computed answer instead of guessing one). The agent explains the
+  math; it never does the math.
 - **Citations can't be hallucinated.** The coach may only cite studies returned by the
   local evidence corpus (graded, DOI/PMID-verified). The PDF renderer hard-fails on any
   reference that isn't in the corpus.
 - **Your data is files, not a cloud.** The athlete profile, programs, session logs, and
   check-ins live in a plain directory of markdown/YAML you can read, edit, diff, and sync.
 
+## Install
+
+PerformanceAgent isn't an app you open — it's a tool that plugs into an AI agent CLI
+(a terminal program you chat with, like Claude Code). Once plugged in, you just talk
+to it in plain language; no config files to edit, no commands to memorize. Five
+minutes, three steps.
+
+**Never used Claude Code before?** Install it first:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+(full instructions: [code.claude.com/docs](https://code.claude.com/docs/en/quickstart.md)).
+You'll also need [`uv`](https://docs.astral.sh/uv/getting-started/installation/) — it
+fetches the right Python version by itself, nothing else to install.
+
+**Step 1 — plug in the coach.** Run this once, from any terminal:
+
+```bash
+claude mcp add performance-agent -s user \
+  --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
+```
+
+This downloads and registers the coach's "brain" (the engine, the science library, your
+future athlete profile) as a tool Claude Code can call. `-s user` makes it available
+everywhere, in any folder you later open `claude` from — skip it and it only works in
+the one folder you ran this command from. `PERFORMANCE_AGENT_HOME` is just the folder
+where your profile, programs and training logs will be saved as plain files; it's
+created for you automatically.
+
+**Step 2 — teach it how to coach.** The server above gives Claude the *tools* (the
+math, the data). This step gives it the *coaching protocols* — when to ask what, when
+to be honest about a goal, how to build a program:
+
+```bash
+git clone --depth 1 https://github.com/clementrx/Performance-agent
+mkdir -p ~/.claude/skills
+cp -R Performance-agent/skills/* ~/.claude/skills/
+```
+
+**Step 3 — fully quit and restart Claude Code.** This is the one step people miss: a
+new tool is only loaded when a `claude` session *starts*, so if you already had one
+open, close it completely and run `claude` again (a new tab of the same session won't
+pick it up).
+
+**Check it worked** — in your fresh session, ask:
+
+```
+> List the performance-agent tools.
+```
+
+You should see 23 tools. Then ask:
+
+```
+> What does your performance-coach skill do at the start of a session?
+```
+
+It should describe reading your profile first. If both work, you're done —
+just talk to it, see the example below.
+
+### Which AI tool can I use this with?
+
+PerformanceAgent has two parts, and they don't travel together. The **MCP server**
+(the engine, the science, your data) speaks a standard protocol — [MCP](https://modelcontextprotocol.io) —
+that most AI coding tools understand today, so it works the same way everywhere. The
+**coaching skills** (the honesty rules, the periodization know-how) are packaged in
+Claude Code's native skill format, so anywhere else you paste the same instructions
+into that tool's own "custom instructions" file — one extra step, not a blocker.
+
+| Client | MCP tools | Coaching skills |
+|---|---|---|
+| Claude Code | ✅ native (steps above) | ✅ native |
+| Gemini CLI | ✅ native | ⚠️ paste into `GEMINI.md` |
+| Codex | ✅ native | ⚠️ paste into `AGENTS.md` |
+| Cursor | ✅ native | ⚠️ paste into `.cursor/rules/*.mdc` |
+| Windsurf | ✅ native | ⚠️ paste into its rules/memories settings |
+| VS Code (GitHub Copilot) | ✅ native | ⚠️ paste into `.github/copilot-instructions.md` |
+| Cline (VS Code extension) | ✅ native | ⚠️ paste into `.clinerules/` |
+
+Setup commands for each, PDF reports (requires `typst`), how the data directory is
+resolved, and troubleshooting: [docs/installing.md](docs/installing.md).
+
+Not listed above (e.g. a Grok CLI) — if the tool supports MCP servers, the same
+`uvx performance-agent` command works; if not, it can't be used yet. Not sure? Check
+that tool's own docs for "MCP" support before assuming.
+
+## Example: a 10K under 50 minutes, five months out
+
+Every number below comes from the deterministic engine — run it yourself and you'll
+get the same ones.
+
+```text
+$ claude
+> I want to run a 10K under 50 minutes. I have 5 months. Coach me.
+
+🏋️ Coach: [reads your profile — empty, so onboarding comes first]
+   Gladly. Two facts before I judge that goal: your current 10K time
+   (a recent race, or a time trial this week), and how long you've
+   been training consistently?
+
+> I ran 55:12 last month. About a year of running, 3× a week.
+
+🏋️ Coach: Feasibility over your 21-week horizon:
+
+   Probability: 84% — realistic, and worth committing to.
+   You need a 9.4% improvement, i.e. 0.45%/week, while a runner at
+   your training age can sustain about 1%/week. Comfortable margin —
+   the plan can even absorb a missed week or two.
+
+   Want me to build the program?
+
+> Yes.
+
+📄 Program written to athlete/programs/program-v1.md
+   21 weeks, 3 sessions/week, periodized into mesocycles with deloads
+   and a taper. Every session carries its purpose, evidence grade, and
+   corpus-verified citations.
+```
+
+From there, the coach lives in your conversation and your files:
+
+- **After a run** — *"Logged: 8 km easy, RPE 4"* → appended to the session log.
+- **Every couple of weeks** — *"Check-in"* → the coach compares the plan against what
+  you actually logged, quotes your training load, and flags drift.
+- **When life happens** — *"I tweaked my ankle"* → the program is adapted and
+  versioned (`program-v2.md`) with the reason recorded in the audit trail.
+
 ## How it works
+
+Just here to use the coach? You can skip this section — it's for the curious and for
+contributors. The diagram below shows what happens behind the scenes of the
+conversation you saw above.
 
 ```mermaid
 flowchart TB
@@ -68,6 +202,8 @@ tools own every fact. The agent you already use glues it together with your exis
 subscription — **zero additional LLM cost**.
 
 ## Features
+
+A detailed changelog of what's built, for evaluating the project rather than using it.
 
 **Working today**
 - ✅ Deterministic sports-science engine, 93 engine tests (290 total) incl. property-based (Hypothesis):
