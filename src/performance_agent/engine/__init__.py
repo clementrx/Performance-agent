@@ -9,6 +9,7 @@ from performance_agent.engine.feasibility import (
     FeasibilityResult,
     TrainingAge,
     endurance_feasibility,
+    strength_feasibility,
 )
 from performance_agent.engine.load import (
     acute_chronic_ratio,
@@ -35,5 +36,6 @@ __all__ = [
     "pace_s_per_km",
     "riegel_predict",
     "session_rpe_load",
+    "strength_feasibility",
     "weekly_loads",
 ]

@@ -1,9 +1,12 @@
+import math
+
 import pytest
 
 from performance_agent.engine.feasibility import (
     FeasibilityResult,
     TrainingAge,
     endurance_feasibility,
+    strength_feasibility,
 )
 
 
@@ -167,5 +170,81 @@ def test_non_finite_times_rejected(bad):
             current_time_s=2820,
             target_time_s=bad,
             weeks=8,
+            training_age=TrainingAge.INTERMEDIATE,
+        )
+
+
+def test_strength_feasibility_exact_values():
+    # 100 -> 110 kg in 20 weeks, intermediate: 10% improvement, 0.5%/wk required
+    # vs 0.35%/wk achievable -> ratio 10/7, probability 1/(1+exp(3*(10/7-1)))
+    result = strength_feasibility(
+        current_one_rm_kg=100.0,
+        target_one_rm_kg=110.0,
+        weeks=20,
+        training_age=TrainingAge.INTERMEDIATE,
+    )
+    assert isinstance(result, FeasibilityResult)
+    assert result.improvement_needed == pytest.approx(0.10)
+    assert result.required_weekly_rate == pytest.approx(0.005)
+    assert result.achievable_weekly_rate == pytest.approx(0.0035)
+    assert result.ratio == pytest.approx(10 / 7)
+    assert result.probability == pytest.approx(1 / (1 + math.exp(3 * (10 / 7 - 1))))
+    assert result.probability == pytest.approx(0.2166, abs=0.001)
+
+
+def test_strength_already_met_goal_is_easy():
+    # Target below current: improvement <= 0, required rate <= 0, ratio <= 0,
+    # and the logistic yields near-certainty. Already-met goals are easy.
+    result = strength_feasibility(
+        current_one_rm_kg=100.0,
+        target_one_rm_kg=95.0,
+        weeks=8,
+        training_age=TrainingAge.ADVANCED,
+    )
+    assert result.improvement_needed <= 0
+    assert result.required_weekly_rate <= 0
+    assert result.ratio <= 0
+    assert result.probability > 0.95
+
+
+@pytest.mark.parametrize(
+    ("current", "target", "weeks"),
+    [(0, 110, 20), (-100, 110, 20), (100, 0, 20), (100, -110, 20), (100, 110, 0)],
+)
+def test_strength_inputs_are_validated(current, target, weeks):
+    with pytest.raises(ValueError, match="positive"):
+        strength_feasibility(
+            current_one_rm_kg=current,
+            target_one_rm_kg=target,
+            weeks=weeks,
+            training_age=TrainingAge.INTERMEDIATE,
+        )
+
+
+@pytest.mark.parametrize("weeks", [2.5, True])
+def test_strength_non_integer_weeks_rejected(weeks):
+    with pytest.raises(ValueError, match="whole number"):
+        strength_feasibility(
+            current_one_rm_kg=100.0,
+            target_one_rm_kg=110.0,
+            weeks=weeks,
+            training_age=TrainingAge.INTERMEDIATE,
+        )
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_strength_non_finite_loads_rejected(bad):
+    with pytest.raises(ValueError, match="finite"):
+        strength_feasibility(
+            current_one_rm_kg=bad,
+            target_one_rm_kg=110.0,
+            weeks=20,
+            training_age=TrainingAge.INTERMEDIATE,
+        )
+    with pytest.raises(ValueError, match="finite"):
+        strength_feasibility(
+            current_one_rm_kg=100.0,
+            target_one_rm_kg=bad,
+            weeks=20,
             training_age=TrainingAge.INTERMEDIATE,
         )

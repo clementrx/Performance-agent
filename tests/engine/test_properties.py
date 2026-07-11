@@ -9,6 +9,7 @@ from performance_agent.engine import (
     one_rm_brzycki,
     one_rm_epley,
     riegel_predict,
+    strength_feasibility,
     weekly_loads,
 )
 from performance_agent.engine.feasibility import TrainingAge
@@ -52,6 +53,17 @@ def test_riegel_longer_distance_takes_longer(d1, d2, known_t):
 )
 def test_feasibility_probability_is_a_probability(current, target, weeks, age):
     result = endurance_feasibility(current, target, weeks, age)
+    assert 0.0 < result.probability < 1.0
+
+
+@given(
+    current=st.floats(min_value=20, max_value=500, allow_nan=False),
+    target=st.floats(min_value=20, max_value=500, allow_nan=False),
+    weeks=st.integers(min_value=1, max_value=104),
+    age=st.sampled_from(list(TrainingAge)),
+)
+def test_strength_feasibility_probability_is_a_probability(current, target, weeks, age):
+    result = strength_feasibility(current, target, weeks, age)
     assert 0.0 < result.probability < 1.0
 
 

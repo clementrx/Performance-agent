@@ -38,6 +38,15 @@ LOGISTIC_STEEPNESS = 3.0
 # collapse the probability to exactly 0.0 or 1.0 (it must stay in (0, 1)).
 MAX_LOGISTIC_EXPONENT = 30.0
 
+# Sustainable weekly 1RM improvement (fraction of current 1RM), by training
+# age. Team-chosen priors, not yet validated against data; strength gains
+# decay far faster with training age than endurance gains.
+STRENGTH_ACHIEVABLE_WEEKLY_RATE: dict[TrainingAge, float] = {
+    TrainingAge.BEGINNER: 0.010,
+    TrainingAge.INTERMEDIATE: 0.0035,
+    TrainingAge.ADVANCED: 0.0010,
+}
+
 
 @dataclass(frozen=True)
 class FeasibilityResult:
@@ -48,6 +57,13 @@ class FeasibilityResult:
     achievable_weekly_rate: float
     ratio: float
     probability: float
+
+
+def _logistic_probability(ratio: float) -> float:
+    """Map a required/achievable ratio to a probability via the shared logistic."""
+    exponent = LOGISTIC_STEEPNESS * (ratio - 1)
+    exponent = max(min(exponent, MAX_LOGISTIC_EXPONENT), -MAX_LOGISTIC_EXPONENT)
+    return 1 / (1 + math.exp(exponent))
 
 
 def _validate_inputs(current_time_s: float, target_time_s: float, weeks: int) -> None:
@@ -84,13 +100,62 @@ def endurance_feasibility(
     required_weekly_rate = improvement_needed / weeks
     achievable_weekly_rate = ACHIEVABLE_WEEKLY_RATE[training_age]
     ratio = required_weekly_rate / achievable_weekly_rate
-    exponent = LOGISTIC_STEEPNESS * (ratio - 1)
-    exponent = max(min(exponent, MAX_LOGISTIC_EXPONENT), -MAX_LOGISTIC_EXPONENT)
-    probability = 1 / (1 + math.exp(exponent))
+    probability = _logistic_probability(ratio)
     return FeasibilityResult(
         improvement_needed=improvement_needed,
         required_weekly_rate=required_weekly_rate,
         achievable_weekly_rate=achievable_weekly_rate,
         ratio=ratio,
         probability=probability,
+    )
+
+
+def _validate_load_inputs(current_one_rm_kg: float, target_one_rm_kg: float, weeks: int) -> None:
+    validate_whole_number("weeks", weeks)
+    for name, value in (
+        ("current_one_rm_kg", current_one_rm_kg),
+        ("target_one_rm_kg", target_one_rm_kg),
+    ):
+        validate_finite(name, value)
+    if current_one_rm_kg <= 0 or target_one_rm_kg <= 0 or weeks <= 0:
+        msg = (
+            "current_one_rm_kg, target_one_rm_kg and weeks must be positive, "
+            f"got {current_one_rm_kg!r}, {target_one_rm_kg!r}, {weeks!r}"
+        )
+        raise ValueError(msg)
+
+
+def strength_feasibility(
+    current_one_rm_kg: float,
+    target_one_rm_kg: float,
+    weeks: int,
+    training_age: TrainingAge,
+) -> FeasibilityResult:
+    """Score the feasibility of a strength (1RM) goal.
+
+    Sign convention is INVERTED versus endurance: a bigger target is better,
+    so improvement_needed = (target - current) / current. A target at or
+    below the current 1RM yields improvement <= 0, ratio <= 0 and a
+    probability above 0.95 — already-met goals are easy by construction.
+
+    Args:
+        current_one_rm_kg: Current estimated 1RM for the lift, in kg.
+        target_one_rm_kg: Target 1RM for the same lift, in kg.
+        weeks: Whole weeks available until the goal deadline.
+        training_age: Athlete's training-experience bucket.
+
+    Returns:
+        A FeasibilityResult whose probability is in the open interval (0, 1).
+    """
+    _validate_load_inputs(current_one_rm_kg, target_one_rm_kg, weeks)
+    improvement_needed = (target_one_rm_kg - current_one_rm_kg) / current_one_rm_kg
+    required_weekly_rate = improvement_needed / weeks
+    achievable_weekly_rate = STRENGTH_ACHIEVABLE_WEEKLY_RATE[training_age]
+    ratio = required_weekly_rate / achievable_weekly_rate
+    return FeasibilityResult(
+        improvement_needed=improvement_needed,
+        required_weekly_rate=required_weekly_rate,
+        achievable_weekly_rate=achievable_weekly_rate,
+        ratio=ratio,
+        probability=_logistic_probability(ratio),
     )
