@@ -2,6 +2,7 @@ import pytest
 
 import performance_agent.evidence.live_search as live_search_module
 from performance_agent.evidence.live_search import (
+    _SEARCH_LIMIT,
     LiveCandidate,
     LiveSearchOutcome,
     SearchFilters,
@@ -10,6 +11,7 @@ from performance_agent.evidence.live_search import (
     _map_pubmed_type,
     _openalex_abstract,
     _pubmed_term,
+    _tier_rank,
     run_live_search,
     search_crossref,
     search_openalex,
@@ -593,3 +595,52 @@ def test_run_live_search_passes_filters_to_every_source(monkeypatch):
     assert all(
         f == SearchFilters(year_from=2016, publication_types=("meta_analysis",)) for f in received
     )
+
+
+def test_search_limit_is_25():
+    assert _SEARCH_LIMIT == 25
+
+
+def test_tier_rank_orders_designs():
+    assert _tier_rank(_candidate(suggested_study_type=StudyType.META_ANALYSIS)) == 0
+    assert _tier_rank(_candidate(suggested_study_type=StudyType.SYSTEMATIC_REVIEW)) == 1
+    assert _tier_rank(_candidate(suggested_study_type=StudyType.RCT)) == 2
+    assert _tier_rank(_candidate(suggested_study_type=StudyType.COHORT)) == 3
+    assert _tier_rank(_candidate(suggested_study_type=None)) == 3
+
+
+def test_run_live_search_orders_by_tier_then_year(monkeypatch):
+    synthetic = [
+        _candidate(doi="10.1/rct-old", year=2010, suggested_study_type=StudyType.RCT),
+        _candidate(doi="10.1/none-2024", year=2024, suggested_study_type=None),
+        _candidate(doi="10.1/ma-2018", year=2018, suggested_study_type=StudyType.META_ANALYSIS),
+        _candidate(doi="10.1/sr-2022", year=2022, suggested_study_type=StudyType.SYSTEMATIC_REVIEW),
+        _candidate(doi="10.1/ma-2023", year=2023, suggested_study_type=StudyType.META_ANALYSIS),
+        _candidate(doi="10.1/none-undated", year=None, suggested_study_type=None),
+    ]
+
+    def fake_source(_term, _language, _filters):
+        return synthetic
+
+    monkeypatch.setattr(
+        live_search_module,
+        "_SOURCES",
+        (("pubmed", fake_source),),
+    )
+    monkeypatch.setattr(
+        live_search_module,
+        "resolve_reference",
+        lambda _doi, _pmid: ResolvedReference(True, "A study", "resolved via Crossref"),
+    )
+    monkeypatch.setattr(live_search_module, "_POLITE_DELAY_S", 0)
+
+    outcome = run_live_search({"en": "javelin"})
+
+    assert [c.doi for c in outcome.candidates] == [
+        "10.1/ma-2023",
+        "10.1/ma-2018",
+        "10.1/sr-2022",
+        "10.1/rct-old",
+        "10.1/none-2024",
+        "10.1/none-undated",
+    ]

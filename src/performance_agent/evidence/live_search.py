@@ -25,7 +25,7 @@ PUBMED_EFETCH_URL = (
     "?db=pubmed&id={ids}&rettype=abstract&retmode=xml"
 )
 
-_SEARCH_LIMIT = 5
+_SEARCH_LIMIT = 25
 _POLITE_DELAY_S = 0.5
 
 _ALLOWED_PUBLICATION_TYPES = ("meta_analysis", "systematic_review", "rct")
@@ -470,6 +470,26 @@ class LiveSearchOutcome:
     failed_sources: list[str]
 
 
+_TIER_ORDER: dict[StudyType, int] = {
+    StudyType.META_ANALYSIS: 0,
+    StudyType.SYSTEMATIC_REVIEW: 1,
+    StudyType.RCT: 2,
+}
+_DEFAULT_TIER = 3
+
+
+def _tier_rank(candidate: LiveCandidate) -> int:
+    """Evidence tier: meta-analysis → systematic review → RCT → everything else."""
+    if candidate.suggested_study_type is None:
+        return _DEFAULT_TIER
+    return _TIER_ORDER.get(candidate.suggested_study_type, _DEFAULT_TIER)
+
+
+def _ordering_key(candidate: LiveCandidate) -> tuple[int, int, int]:
+    year_missing = 1 if candidate.year is None else 0
+    return (_tier_rank(candidate), year_missing, -(candidate.year or 0))
+
+
 def run_live_search(
     language_terms: dict[str, str],
     year_from: int | None = None,
@@ -503,4 +523,6 @@ def run_live_search(
                 # malformed shape (e.g. items not a list, missing author keys)
                 # should only drop this source/language, not abort the run.
                 failed.append(f"{source_name}:{language}")
-    return LiveSearchOutcome(candidates=_verify_candidates(_dedup(raw)), failed_sources=failed)
+    verified = _verify_candidates(_dedup(raw))
+    verified.sort(key=_ordering_key)
+    return LiveSearchOutcome(candidates=verified, failed_sources=failed)
