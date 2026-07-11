@@ -1,8 +1,9 @@
 ---
 name: program-generation
-description: Use after a goal has been assessed as accepted. Builds the periodized
-  program from evidence and engine math, personalizes it to the athlete's real
-  constraints, and saves it through the versioned program store.
+description: Use after the needs analysis is saved and, normally, the research
+  dossier exists. Builds the periodized program from evidence and engine math,
+  personalizes it to the athlete's real constraints, and saves it through the
+  versioned program store.
 tools: [read_athlete, get_time_context, search_evidence, search_evidence_live,
         save_evidence, verify_reference, get_citation, check_citations,
         read_research_dossier, build_periodization_waves, prescribe_load,
@@ -98,10 +99,11 @@ to confirm the weekly layout before you save.
 
 - Run `check_citations` over the full program text; fix anything flagged.
 - `save_program` (markdown body; goal_id; v1 needs no reason). Quote the saved
-  version and path back. Check `read_athlete`'s program_version first: versioning
-  is GLOBAL across the athlete directory, so if ANY program already exists this
-  save is v2+ and REQUIRES a reason (e.g. "first program for new goal
-  sub-45-10k"). Only a truly first-ever program is v1.
+  version and path back. Check `read_athlete`'s program_version first: PROGRAM
+  versioning is global across goals (analyses and dossiers count separately),
+  so if ANY program already exists this save is v2+ and REQUIRES a reason
+  (e.g. "first program for new goal sub-45-10k"). Only a truly first-ever
+  program is v1.
 - Carry the assessment's named risks and checkpoints into the program's check-in
   triggers.
 - Close with: how to log sessions (`log_session`), when the first check-in happens

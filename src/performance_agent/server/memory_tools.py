@@ -17,12 +17,18 @@ from performance_agent.memory.time_context import TimeContext, build_time_contex
 
 
 class AthleteSnapshot(TypedDict):
-    """Everything stored about the athlete, in one read."""
+    """Everything stored about the athlete, in one read.
+
+    The three version fields tell you where the athlete is in the pipeline:
+    analysis but no dossier means the deep research has not run yet.
+    """
 
     athlete_dir: str
     profile: Profile
     goals: list[Goal]
     program_version: int | None
+    analysis_version: int | None
+    dossier_version: int | None
 
 
 class WrittenFile(TypedDict):
@@ -73,10 +79,11 @@ class VersionedDocView(TypedDict):
 
 
 def read_athlete() -> AthleteSnapshot:
-    """Return the athlete snapshot: profile, goals, latest program version.
+    """Return the athlete snapshot: profile, goals, latest artifact versions.
 
     Call this at the start of every coaching conversation — no conversation
-    starts from zero.
+    starts from zero. The analysis/dossier/program versions locate the
+    athlete in the pipeline (analysis without dossier = research not run).
     """
     base = resolve_athlete_dir()
     return AthleteSnapshot(
@@ -84,6 +91,8 @@ def read_athlete() -> AthleteSnapshot:
         profile=store.read_profile(base),
         goals=store.read_goals(base),
         program_version=store.latest_program_version(base),
+        analysis_version=store.latest_analysis_version(base),
+        dossier_version=store.latest_research_dossier_version(base),
     )
 
 

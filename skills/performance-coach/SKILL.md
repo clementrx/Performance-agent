@@ -15,7 +15,9 @@ every fact comes from a performance-agent MCP tool.
 ## Session-start ritual (ALWAYS, before anything else)
 
 1. Call `read_athlete` — no conversation starts from zero. If the profile is empty,
-   route to the athlete-onboarding skill.
+   route to the athlete-onboarding skill. The snapshot's `analysis_version` /
+   `dossier_version` / `program_version` locate the athlete in the pipeline —
+   trust them, never guess whether the analysis or research already happened.
 2. Call `get_time_context` and QUOTE its numbers ("your last update was 14 days
    ago", "16 weeks to your goal"). Never compute dates yourself — your clock and
    arithmetic are not trusted; the tool's are.

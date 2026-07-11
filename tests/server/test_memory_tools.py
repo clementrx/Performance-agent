@@ -17,6 +17,20 @@ async def test_read_athlete_on_fresh_directory(client):
     assert snapshot["profile"]["locale"] == "en"
     assert snapshot["goals"] == []
     assert snapshot["program_version"] is None
+    assert snapshot["analysis_version"] is None
+    assert snapshot["dossier_version"] is None
+
+
+@pytest.mark.anyio
+async def test_read_athlete_reports_pipeline_versions(client):
+    await client.call_tool(
+        "save_analysis",
+        {"markdown_body": "# Needs analysis", "goal_id": "bench-120"},
+    )
+    result = await client.call_tool("read_athlete", {})
+    snapshot = result.structuredContent
+    assert snapshot["analysis_version"] == 1
+    assert snapshot["dossier_version"] is None
 
 
 @pytest.mark.anyio

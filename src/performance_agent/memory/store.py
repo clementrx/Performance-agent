@@ -232,6 +232,16 @@ def latest_program_version(base_dir: Path) -> int | None:
     return _latest_doc_version(base_dir, PROGRAMS_DIR, "program")
 
 
+def latest_analysis_version(base_dir: Path) -> int | None:
+    """Return the highest existing needs-analysis version, or None."""
+    return _latest_doc_version(base_dir, ANALYSIS_DIR, "needs-analysis")
+
+
+def latest_research_dossier_version(base_dir: Path) -> int | None:
+    """Return the highest existing research-dossier version, or None."""
+    return _latest_doc_version(base_dir, RESEARCH_DIR, "dossier")
+
+
 def save_program(
     base_dir: Path,
     markdown_body: str,
