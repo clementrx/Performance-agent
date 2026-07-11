@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
@@ -20,7 +22,11 @@ from performance_agent.engine import (
     weekly_set_targets,
 )
 from performance_agent.engine.feasibility import TrainingAge
-from performance_agent.engine.periodization import build_block_periodization, build_undulating_week
+from performance_agent.engine.periodization import (
+    build_block_periodization,
+    build_strength_peaking,
+    build_undulating_week,
+)
 
 loads = st.floats(min_value=1, max_value=500, allow_nan=False)
 times = st.floats(min_value=60, max_value=36000, allow_nan=False)
@@ -177,3 +183,15 @@ def test_undulating_sessions_are_contiguous_with_sane_zones(sessions_per_week):
     assert [s.session for s in sessions] == list(range(1, sessions_per_week + 1))
     for session in sessions:
         assert 0 < session.intensity_low < session.intensity_high < 1
+
+
+@given(weeks=st.integers(min_value=1, max_value=3))
+def test_peaking_volume_falls_while_intensity_climbs(weeks):
+    taper = build_strength_peaking(weeks)
+    volumes = [w.volume_factor for w in taper]
+    intensities = [w.intensity_factor for w in taper]
+    # For weeks=1 there are no pairs and both hold trivially.
+    assert all(a > b for a, b in itertools.pairwise(volumes))
+    assert all(a < b for a, b in itertools.pairwise(intensities))
+    assert taper[-1].is_test_week
+    assert not any(w.is_test_week for w in taper[:-1])

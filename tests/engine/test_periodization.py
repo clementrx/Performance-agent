@@ -10,9 +10,11 @@ from performance_agent.engine.periodization import (
     UNDULATION_ZONES,
     BlockWeek,
     InseasonWeek,
+    PeakingWeek,
     WeekLoad,
     build_block_periodization,
     build_inseason_week,
+    build_strength_peaking,
     build_undulating_week,
     build_weekly_waves,
 )
@@ -225,3 +227,41 @@ def test_inseason_rejects_negative_matches():
 def test_inseason_rejects_non_whole_matches():
     with pytest.raises(ValueError, match="whole number"):
         build_inseason_week(matches_this_week=1.0)  # ty: ignore[invalid-argument-type]
+
+
+def test_peaking_one_week_schedule():
+    weeks = build_strength_peaking(weeks=1)
+    assert weeks == [
+        PeakingWeek(week=1, volume_factor=0.40, intensity_factor=1.00, is_test_week=True)
+    ]
+
+
+def test_peaking_two_week_schedule():
+    weeks = build_strength_peaking(weeks=2)
+    assert [(w.volume_factor, w.intensity_factor) for w in weeks] == [
+        (0.55, 0.95),
+        (0.35, 1.025),
+    ]
+    assert [w.is_test_week for w in weeks] == [False, True]
+
+
+def test_peaking_three_week_schedule():
+    weeks = build_strength_peaking(weeks=3)
+    assert [(w.volume_factor, w.intensity_factor) for w in weeks] == [
+        (0.65, 0.925),
+        (0.50, 0.975),
+        (0.35, 1.025),
+    ]
+    assert [w.week for w in weeks] == [1, 2, 3]
+    assert [w.is_test_week for w in weeks] == [False, False, True]
+
+
+@pytest.mark.parametrize("weeks", [0, 4])
+def test_peaking_rejects_out_of_range_lengths(weeks):
+    with pytest.raises(ValueError, match="detrain"):
+        build_strength_peaking(weeks=weeks)
+
+
+def test_peaking_rejects_non_whole_weeks():
+    with pytest.raises(ValueError, match="whole number"):
+        build_strength_peaking(weeks=2.0)  # ty: ignore[invalid-argument-type]

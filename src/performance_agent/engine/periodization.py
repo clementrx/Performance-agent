@@ -19,7 +19,9 @@ TAPER_INTENSITY = 1.0
 
 BlockPhase = Literal["accumulation", "intensification", "realization"]
 
-# Phase split of a block-periodized cycle (fractions of total weeks).
+# Phase split of a block-periodized cycle (fractions of total weeks). The
+# realization fraction is informational only — realization takes the
+# remainder in arithmetic below, not this literal fraction.
 # Team-chosen priors following classic block schemes (~50/35/15).
 BLOCK_PHASE_FRACTIONS: tuple[tuple[BlockPhase, float], ...] = (
     ("accumulation", 0.50),
@@ -74,6 +76,18 @@ INSEASON_MIN_INTENSITY = 0.80
 INSEASON_SESSIONS_ONE_MATCH = 2
 INSEASON_SESSIONS_TWO_MATCHES = 1
 MAX_INSEASON_MATCHES = 2
+
+# Peaking toward a 1RM test: volume drops hard while intensity climbs to
+# near-max, with the final days as full rest/openers. Team-chosen priors
+# consistent with powerlifting taper practice and the tapering meta-analysis
+# in the corpus (tapering-performance-meta-2007: ~2-week tapers with 41-60%
+# volume reduction perform best).
+PEAKING_MAX_WEEKS = 3
+PEAKING_SCHEDULE: dict[int, tuple[tuple[float, float], ...]] = {
+    1: ((0.40, 1.00),),
+    2: ((0.55, 0.95), (0.35, 1.025)),
+    3: ((0.65, 0.925), (0.50, 0.975), (0.35, 1.025)),
+}
 
 
 @dataclass(frozen=True)
@@ -155,10 +169,9 @@ def build_block_periodization(total_weeks: int) -> list[BlockWeek]:
 
     Phase lengths are round(total * fraction) for accumulation (0.50) and
     intensification (0.35), with realization taking the remainder; every
-    phase keeps at least one week (deterministic repair: while any phase is
-    below one week, one week moves from the currently largest phase to the
-    deficient one). Factors are constant within a phase — per-week ramps
-    stay the job of build_weekly_waves; this model sets the phase structure.
+    phase keeps at least one week for any total_weeks >= MIN_BLOCK_WEEKS.
+    Factors are constant within a phase — per-week ramps stay the job of
+    build_weekly_waves; this model sets the phase structure.
     """
     validate_whole_number("total_weeks", total_weeks)
     if total_weeks < MIN_BLOCK_WEEKS:
@@ -173,11 +186,12 @@ def build_block_periodization(total_weeks: int) -> list[BlockWeek]:
         "intensification": round(total_weeks * BLOCK_PHASE_FRACTIONS[1][1]),
     }
     counts["realization"] = total_weeks - counts["accumulation"] - counts["intensification"]
-    while any(count < 1 for count in counts.values()):
-        deficient = min(counts, key=lambda phase: counts[phase])
-        largest = max(counts, key=lambda phase: counts[phase])
-        counts[largest] -= 1
-        counts[deficient] += 1
+    # Invariant: for every total_weeks >= MIN_BLOCK_WEEKS (6), realization =
+    # total - round(0.50*total) - round(0.35*total) >= 1, so no phase can ever
+    # be below one week here. This guards against that invariant breaking.
+    if min(counts.values()) < 1:
+        msg = "internal error: block phase counts degenerated"
+        raise AssertionError(msg)
     weeks: list[BlockWeek] = []
     week = 1
     for phase, _fraction in BLOCK_PHASE_FRACTIONS:
@@ -266,3 +280,35 @@ def build_inseason_week(matches_this_week: int) -> InseasonWeek:
         volume_factor=INSEASON_VOLUME_TWO_MATCHES,
         min_intensity_factor=INSEASON_MIN_INTENSITY,
     )
+
+
+@dataclass(frozen=True)
+class PeakingWeek:
+    """One week of a 1RM peaking taper (week is 1-indexed, last week = test week)."""
+
+    week: int
+    volume_factor: float
+    intensity_factor: float
+    is_test_week: bool
+
+
+def build_strength_peaking(weeks: int) -> list[PeakingWeek]:
+    """Taper the final 1-3 weeks before a 1RM test.
+
+    Uses the fixed PEAKING_SCHEDULE (volume, intensity) pairs; the last
+    emitted week is the test week. intensity_factor above 1.0 on the final
+    week of the 2- and 3-week schedules represents openers/heavy singles
+    above training loads, not a projected new max.
+    """
+    validate_whole_number("weeks", weeks)
+    if not 1 <= weeks <= PEAKING_MAX_WEEKS:
+        msg = (
+            f"weeks must be between 1 and {PEAKING_MAX_WEEKS}, got {weeks!r}: peaking "
+            f"blocks longer than {PEAKING_MAX_WEEKS} weeks detrain; schedule a block "
+            "cycle first"
+        )
+        raise ValueError(msg)
+    return [
+        PeakingWeek(index + 1, volume, intensity, is_test_week=index + 1 == weeks)
+        for index, (volume, intensity) in enumerate(PEAKING_SCHEDULE[weeks])
+    ]
