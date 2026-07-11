@@ -10,6 +10,8 @@ from performance_agent.engine import (
     hypertrophy_feasibility,
     one_rm_brzycki,
     one_rm_epley,
+    percentage_for_reps_rir,
+    reps_for_percentage_rir,
     riegel_predict,
     strength_feasibility,
     weekly_loads,
@@ -133,3 +135,13 @@ def test_bodycomp_probability_is_a_probability(weight, current_bf, target_bf, we
     assume(target_bf < current_bf)
     result = bodycomp_feasibility(weight, current_bf, target_bf, weeks, sex)
     assert 0.0 < result.probability < 1.0
+
+
+@given(
+    reps=st.integers(min_value=1, max_value=18),
+    rir=st.integers(min_value=0, max_value=17),
+)
+def test_reps_rir_percentage_round_trips(reps, rir):
+    assume(reps + rir <= 18)
+    percentage = percentage_for_reps_rir(reps, rir)
+    assert reps_for_percentage_rir(percentage, rir) == reps

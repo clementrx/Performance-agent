@@ -24,6 +24,8 @@ from performance_agent.engine.strength import (
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
+    percentage_for_reps_rir,
+    reps_for_percentage_rir,
 )
 
 __all__ = [
@@ -40,6 +42,8 @@ __all__ = [
     "one_rm_brzycki",
     "one_rm_epley",
     "pace_s_per_km",
+    "percentage_for_reps_rir",
+    "reps_for_percentage_rir",
     "riegel_predict",
     "session_rpe_load",
     "strength_feasibility",

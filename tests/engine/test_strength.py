@@ -4,6 +4,8 @@ from performance_agent.engine.strength import (
     load_for_percentage,
     one_rm_brzycki,
     one_rm_epley,
+    percentage_for_reps_rir,
+    reps_for_percentage_rir,
 )
 
 
@@ -60,3 +62,50 @@ def test_load_for_percentage():
 def test_percentage_is_validated(percentage):
     with pytest.raises(ValueError, match="percentage"):
         load_for_percentage(one_rm_kg=150, percentage=percentage)
+
+
+def test_percentage_for_reps_rir_known_value():
+    # 5 reps with 2 in reserve = 7 effective reps -> 1/(1 + 7/30) = 30/37
+    assert percentage_for_reps_rir(reps=5, rir=2) == pytest.approx(30 / 37)
+    assert percentage_for_reps_rir(reps=5, rir=2) == pytest.approx(0.8108, abs=0.001)
+
+
+def test_percentage_for_single_all_out_rep_is_full_1rm():
+    assert percentage_for_reps_rir(reps=1, rir=0) == 1.0
+
+
+def test_reps_for_percentage_rir_known_value():
+    # 30/37 of 1RM leaves 7 effective reps; 2 in reserve -> 5 clean reps
+    assert reps_for_percentage_rir(percentage=30 / 37, rir=2) == 5
+
+
+def test_reps_for_full_1rm_with_zero_rir_is_one_rep():
+    assert reps_for_percentage_rir(percentage=1.0, rir=0) == 1
+
+
+def test_percentage_too_high_to_leave_reps_in_reserve():
+    with pytest.raises(ValueError, match="reserve"):
+        reps_for_percentage_rir(percentage=1.0, rir=2)
+
+
+def test_effective_reps_beyond_cap_rejected():
+    with pytest.raises(ValueError, match="18"):
+        percentage_for_reps_rir(reps=15, rir=4)
+
+
+@pytest.mark.parametrize(("reps", "rir"), [(0, 0), (-1, 2), (5, -1)])
+def test_reps_and_rir_bounds_rejected(reps, rir):
+    with pytest.raises(ValueError):
+        percentage_for_reps_rir(reps=reps, rir=rir)
+
+
+@pytest.mark.parametrize("percentage", [0, -0.5, 1.01])
+def test_reps_for_percentage_rir_percentage_validated(percentage):
+    with pytest.raises(ValueError, match="percentage"):
+        reps_for_percentage_rir(percentage=percentage, rir=1)
+
+
+@pytest.mark.parametrize(("reps", "rir"), [(2.5, 0), (True, 0), (5, 1.5)])
+def test_rir_functions_reject_non_whole_numbers(reps, rir):
+    with pytest.raises(ValueError, match="whole number"):
+        percentage_for_reps_rir(reps=reps, rir=rir)
