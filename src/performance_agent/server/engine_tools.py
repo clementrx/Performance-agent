@@ -172,9 +172,11 @@ def prescribe_reps_load(one_rm_kg: float, reps: int, rir: int) -> RepsLoadPrescr
     """Prescribe the %1RM and absolute load for a reps-at-RIR target.
 
     Epley-based: percentage = 1 / (1 + (reps + rir) / 30). Effective reps
-    (reps + rir) are capped at 18, and the model is only validated to ~12 —
-    when reps + rir is 13-18, label the prescription as carrying extra
-    uncertainty. Returns the fraction of 1RM and the load in kg.
+    (reps + rir) above 18 are REJECTED (enforced validity band), not
+    clamped, and the model is only validated to ~12 — when reps + rir is
+    13-18, label the prescription as carrying extra uncertainty. One all-out
+    rep (reps=1, rir=0) returns exactly 1.0 (100% of 1RM), not the raw
+    formula value. Returns the fraction of 1RM and the load in kg.
     """
     percentage = percentage_for_reps_rir(reps, rir)
     return RepsLoadPrescription(
@@ -206,8 +208,10 @@ def progress_double_progression(
     Fill the rep range first, then add load: when every set reached
     rep_range_high, the load goes up by increment_kg and the target resets
     to rep_range_low; otherwise the load holds and the target is one rep
-    above the lowest achieved set, capped at rep_range_high. Loads in kg;
-    rep range must satisfy 1 <= low < high <= 18.
+    above the lowest achieved set, capped at rep_range_high. A
+    next_target_reps below rep_range_low signals performance below the
+    range; load reduction (deload) is out of scope for this rule. Loads in
+    kg; rep range must satisfy 1 <= low < high <= 18.
     """
     return double_progression(reps_achieved, load_kg, rep_range_low, rep_range_high, increment_kg)
 
@@ -242,10 +246,11 @@ def estimate_1rm(
 ) -> OneRmEstimate:
     """Estimate a one-rep max in kg from a submaximal set (1-12 reps).
 
-    Epley is the general default; Brzycki is more conservative near the top
-    of the rep range; Lombardi gives the flattest (lowest) estimates at
-    moderate reps; Wathan the highest. Pick one formula per athlete and lift
-    and stay consistent; do not average them.
+    Epley is the general default; Brzycki is more conservative at
+    low-to-moderate reps but the most aggressive at 11-12; Lombardi gives
+    the lowest estimates at moderate-to-high reps; Wathan the highest
+    through ~10 reps. Pick one formula per athlete and lift and stay
+    consistent; do not average them.
     """
     return OneRmEstimate(one_rm_kg=_ONE_RM_FORMULAS[formula](load_kg, reps), formula=formula)
 
