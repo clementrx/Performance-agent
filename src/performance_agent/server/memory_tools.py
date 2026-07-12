@@ -12,7 +12,13 @@ from pydantic import Field
 
 from performance_agent.memory import store
 from performance_agent.memory.paths import resolve_athlete_dir
-from performance_agent.memory.schemas import CheckinEntry, Goal, Profile, SessionEntry
+from performance_agent.memory.schemas import (
+    CheckinEntry,
+    Goal,
+    Profile,
+    ProgramPlan,
+    SessionEntry,
+)
 from performance_agent.memory.time_context import TimeContext, build_time_context
 
 
@@ -78,6 +84,21 @@ class VersionedDocView(TypedDict):
     created_on: str
     reason: str | None
     body: str
+
+
+class ProgramView(TypedDict):
+    """A stored program version: rendered markdown plus its structured plan.
+
+    plan is null for legacy prose-only versions saved before the structured
+    format landed (still readable and adaptable).
+    """
+
+    version: int
+    goal_id: str
+    created_on: str
+    reason: str | None
+    markdown: str
+    plan: ProgramPlan | None
 
 
 def read_athlete() -> AthleteSnapshot:
@@ -171,26 +192,39 @@ def _doc_view(result: tuple[dict[str, object], str] | None, missing_msg: str) ->
     )
 
 
-def save_program(markdown_body: str, goal_id: str, reason: str | None = None) -> VersionedDocSaved:
-    """Write the NEXT program version (immutable audit trail).
+def save_program(plan: ProgramPlan, reason: str | None = None) -> VersionedDocSaved:
+    """Write the NEXT program version from a structured plan (immutable audit trail).
 
-    Version 1 needs no reason; every adaptation (v2+) requires a reason stating
-    the coaching decision. Existing versions are never overwritten.
+    Hand a full ProgramPlan (mesocycles → weeks → sessions → blocks, with a
+    progression rule and non-empty fallbacks per block). The store renders the
+    markdown from it and stamps the authoritative version, created_on, and
+    reason — the plan's own version/created_on/reason are placeholders. Version
+    1 needs no reason; every adaptation (v2+) requires a reason stating the
+    coaching decision. Existing versions are never overwritten. goal_id lives
+    on the plan.
     """
-    path, version = store.save_program(resolve_athlete_dir(), markdown_body, goal_id, reason)
+    path, version = store.save_program(resolve_athlete_dir(), plan, reason)
     return VersionedDocSaved(path=str(path), version=version)
 
 
-def read_program(version: int | None = None) -> VersionedDocView:
-    """Return the latest (or a specific) program version.
+def read_program(version: int | None = None) -> ProgramView:
+    """Return the latest (or a specific) program version: markdown plus plan.
 
-    Raises a readable error if no program has been saved yet — call
-    save_program first. Check read_athlete's program_version first: null
-    there means nothing to read yet.
+    plan is null for legacy prose-only versions. Raises a readable error if no
+    program has been saved yet — call save_program first. Check read_athlete's
+    program_version first: null there means nothing to read yet.
     """
-    return _doc_view(
-        store.read_program(resolve_athlete_dir(), version),
-        "no program has been saved yet; call save_program first",
+    program = store.read_program(resolve_athlete_dir(), version)
+    if program is None:
+        msg = "no program has been saved yet; call save_program first"
+        raise ValueError(msg)
+    return ProgramView(
+        version=program.version,
+        goal_id=program.goal_id,
+        created_on=program.created_on,
+        reason=program.reason,
+        markdown=program.markdown,
+        plan=program.plan,
     )
 
 

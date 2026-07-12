@@ -35,6 +35,12 @@ not the athlete names the problem.
    profile's static weight is updated via `write_profile` only when weight has
    durably moved.
 4. `log_checkin` with what you collected. Quote the stored days_since_last back.
+5. **Format-upgrade offer (once):** if `read_program` returns a `plan` of null,
+   the active program is a legacy prose version. Offer to regenerate it as a
+   structured version (route to program-adaptation, reason = "format upgrade",
+   passes program-review as usual) so day-of adjustment and response tracking
+   unlock without waiting for the next natural program change. It is an offer,
+   not a blocker — the athlete can decline and keep training.
 
 ## Structured-signal triggers — scan them at every check-in
 

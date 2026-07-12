@@ -6,13 +6,21 @@ never deletes history: logs are append-only and program versions are immutable.
 
 import os
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
 
-from performance_agent.memory.schemas import CheckinEntry, Goal, Profile, SessionEntry
+from performance_agent.memory.schemas import (
+    CheckinEntry,
+    Goal,
+    Profile,
+    ProgramPlan,
+    SessionEntry,
+)
+from performance_agent.programs.render import render_program
 
 PROFILE_FILE = "profile.yaml"
 GOALS_FILE = "goals.yaml"
@@ -248,36 +256,95 @@ def latest_nutrition_frame_version(base_dir: Path) -> int | None:
     return _latest_doc_version(base_dir, NUTRITION_DIR, "frame")
 
 
+@dataclass(frozen=True)
+class ProgramRead:
+    """A stored program version: rendered markdown plus its structured plan.
+
+    plan is None for legacy prose-only versions saved before the structured
+    format landed; those stay readable and adaptable forever.
+    """
+
+    version: int
+    goal_id: str
+    created_on: str
+    reason: str | None
+    markdown: str
+    plan: ProgramPlan | None
+
+
+def _plan_yaml_path(base_dir: Path, version: int) -> Path:
+    return base_dir / PROGRAMS_DIR / f"program-v{version}.plan.yaml"
+
+
 def save_program(
     base_dir: Path,
-    markdown_body: str,
-    goal_id: str,
+    plan: ProgramPlan,
     reason: str | None = None,
     today: date | None = None,
 ) -> tuple[Path, int]:
-    """Write the next program version; adapting an existing program requires a reason.
+    """Validate, render, and atomically write a program as a yaml+md pair.
 
-    Versions are immutable: this never overwrites, and the required reason on
-    v2+ is the coaching-decision audit trail.
+    The structured plan is the source of truth (program-v{N}.plan.yaml); the
+    markdown (program-v{N}.md) is rendered from it so the two can never drift.
+    Versions are immutable and never overwritten; adapting an existing program
+    (v2+) requires a reason (the coaching-decision audit trail). The store owns
+    version numbering — the plan's version/created_on/reason are stamped here.
     """
-    return _save_versioned_doc(
-        base_dir,
-        markdown_body,
-        goal_id,
-        subdir=PROGRAMS_DIR,
-        prefix="program",
-        label="program",
-        reason=reason,
-        today=today,
-    )
+    current = _latest_doc_version(base_dir, PROGRAMS_DIR, "program")
+    version = 1 if current is None else current + 1
+    if version > 1 and not reason:
+        msg = f"adapting program v{current} to v{version} requires a reason (audit trail)"
+        raise ValueError(msg)
+    created = today or date.today()
+    stamped = plan.model_copy(update={"version": version, "reason": reason, "created_on": created})
+    md_path = _doc_path(base_dir, PROGRAMS_DIR, "program", version)
+    yaml_path = _plan_yaml_path(base_dir, version)
+    for path in (md_path, yaml_path):
+        if path.exists():
+            msg = f"{path} already exists; program versions are immutable"
+            raise ValueError(msg)
+    frontmatter = {
+        "version": version,
+        "goal_id": stamped.goal_id,
+        "created_on": created.isoformat(),
+        "reason": reason,
+    }
+    content = "---\n" + _to_yaml(frontmatter) + "---\n\n" + render_program(stamped).strip() + "\n"
+    _atomic_write(yaml_path, _to_yaml(stamped.model_dump(mode="json")))
+    try:
+        _atomic_write(md_path, content)
+    except OSError:
+        yaml_path.unlink(missing_ok=True)
+        raise
+    return md_path, version
 
 
-def read_program(
-    base_dir: Path, version: int | None = None
-) -> tuple[dict[str, object], str] | None:
-    """Return (frontmatter, body) for the given or latest version; None when empty."""
-    return _read_versioned_doc(
+def read_program(base_dir: Path, version: int | None = None) -> ProgramRead | None:
+    """Return the given or latest program version, or None when none exists.
+
+    The structured plan is included when present; it is None for legacy
+    prose-only versions.
+    """
+    doc = _read_versioned_doc(
         base_dir, subdir=PROGRAMS_DIR, prefix="program", label="program", version=version
+    )
+    if doc is None:
+        return None
+    frontmatter, body = doc
+    resolved = int(str(frontmatter["version"]))
+    yaml_path = _plan_yaml_path(base_dir, resolved)
+    plan: ProgramPlan | None = None
+    if yaml_path.exists():
+        raw = _load_yaml(yaml_path)
+        plan = _validated(yaml_path, lambda: ProgramPlan.model_validate(raw))
+    reason = frontmatter.get("reason")
+    return ProgramRead(
+        version=resolved,
+        goal_id=str(frontmatter["goal_id"]),
+        created_on=str(frontmatter["created_on"]),
+        reason=str(reason) if reason is not None else None,
+        markdown=body,
+        plan=plan,
     )
 
 

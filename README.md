@@ -242,9 +242,10 @@ to periodize, when to deload). The MCP tools own every fact. The agent you alrea
 glues it together with your existing subscription — **zero additional LLM cost**.
 
 **Working today:** deterministic engine (1RM estimation, Riegel race prediction,
-session-RPE load & ACWR, goal feasibility, periodization waves; 597 tests incl.
-property-based) · 47 MCP tools · file-based athlete memory with versioned programs and
-an adaptation audit trail · DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
+session-RPE load & ACWR, goal feasibility, periodization waves; 617 tests incl.
+property-based) · 47 MCP tools · file-based athlete memory with versioned,
+machine-readable programs (structured plan + rendered markdown) and an adaptation
+audit trail · DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
 behind a double verification gate · eleven coaching skills incl. a mandatory delivery
 gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard

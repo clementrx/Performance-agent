@@ -30,6 +30,12 @@ MAX_WAVES = 4
 # CR-10 session-RPE scale bounds (published scale, not a tunable prior).
 MIN_RPE = 1.0
 MAX_RPE = 10.0
+# Standard ramp-up to a heavy working set, as (fraction of working load, reps).
+# The shape a coach writes before a top strength set; all team-chosen priors.
+WARMUP_RAMP: tuple[tuple[float, int], ...] = ((0.4, 5), (0.55, 4), (0.7, 3), (0.85, 2))
+# Ramp sets whose absolute load falls below an empty Olympic barbell are dropped:
+# ramping under the bar is not a warm-up (team-chosen prior).
+MIN_WARMUP_LOAD_KG = 20.0
 
 
 def _validate_load_and_reps(load_kg: float, reps: int) -> None:
@@ -417,6 +423,32 @@ def wave_loading(  # noqa: PLR0913 -- plan-approved signature; all call sites us
             )
             steps.append(WaveStep(wave, step, percentage, one_rm_kg * percentage))
     return steps
+
+
+def warmup_scheme(target_load_kg: float) -> list[tuple[float, int]]:
+    """Ramp-up sets leading to a heavy working load, as (fraction, reps) pairs.
+
+    Returns the standard progressively-heavier warm-up a coach writes before a
+    top strength set (WARMUP_RAMP), dropping any set whose absolute load would
+    fall below an empty barbell (MIN_WARMUP_LOAD_KG) — ramping under the bar is
+    not a warm-up. A light target may therefore yield a shorter ramp or none.
+
+    Args:
+        target_load_kg: The working load the ramp builds up to (positive).
+
+    Returns:
+        (fraction_of_target, reps) pairs in ascending order; each fraction is
+        strictly below 1.0 (the working set itself is not a warm-up set).
+    """
+    validate_finite("target_load_kg", target_load_kg)
+    if target_load_kg <= 0:
+        msg = f"target_load_kg must be positive, got {target_load_kg!r}"
+        raise ValueError(msg)
+    return [
+        (fraction, reps)
+        for fraction, reps in WARMUP_RAMP
+        if target_load_kg * fraction >= MIN_WARMUP_LOAD_KG
+    ]
 
 
 def rir_from_rpe(rpe: float) -> float:

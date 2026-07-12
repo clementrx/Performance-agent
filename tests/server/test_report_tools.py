@@ -4,6 +4,8 @@ import shutil
 
 import pytest
 
+from tests.program_plans import plan_dict
+
 HAS_TYPST = shutil.which("typst") is not None
 
 
@@ -18,9 +20,7 @@ async def _seed(client):
     await client.call_tool(
         "upsert_goal", {"goal": {"id": "sub-45-10k", "statement": "10K under 45:00"}}
     )
-    await client.call_tool(
-        "save_program", {"markdown_body": "# Week 1\n- easy run", "goal_id": "sub-45-10k"}
-    )
+    await client.call_tool("save_program", {"plan": plan_dict(goal_id="sub-45-10k")})
 
 
 @pytest.mark.anyio
@@ -29,7 +29,7 @@ async def test_fabricated_citation_aborts_render(client):
     await client.call_tool("upsert_goal", {"goal": {"id": "g", "statement": "goal"}})
     await client.call_tool(
         "save_program",
-        {"markdown_body": "Proven (doi:10.9999/fake).", "goal_id": "g"},
+        {"plan": plan_dict(goal_id="g", note="Proven (doi:10.9999/fake).")},
     )
     result = await client.call_tool("render_report", {"mode": "expert"})
     assert result.isError

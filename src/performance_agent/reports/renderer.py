@@ -63,7 +63,7 @@ def render_report_files(
     if program is None:
         msg = "no program has been saved yet; call save_program first"
         raise ValueError(msg)
-    frontmatter, body = program
+    body = program.markdown
 
     unknown = find_unknown_references(body, load_corpus())
     if unknown:
@@ -76,15 +76,15 @@ def render_report_files(
 
     profile = store.read_profile(base_dir)
     goals = {goal.id: goal for goal in store.read_goals(base_dir)}
-    goal = goals.get(str(frontmatter.get("goal_id", "")))
+    goal = goals.get(program.goal_id)
     context = ReportContext(
         locale=profile.locale,
         mode=mode,
         athlete_name=profile.display_name or "—",
-        goal_statement=goal.statement if goal else str(frontmatter.get("goal_id", "—")),
-        version=int(str(frontmatter["version"])),
-        created_on=str(frontmatter["created_on"]),
-        reason=str(frontmatter["reason"]) if frontmatter.get("reason") else None,
+        goal_statement=goal.statement if goal else program.goal_id,
+        version=program.version,
+        created_on=program.created_on,
+        reason=program.reason if mode == "expert" else None,
         body_markdown=body,
         citations=_citations_for(body) if mode == "expert" else [],
     )

@@ -7,6 +7,7 @@ import pytest
 from performance_agent.memory.schemas import Goal, Profile
 from performance_agent.memory.store import save_program, upsert_goal, write_profile
 from performance_agent.reports.renderer import render_report_files
+from tests.program_plans import minimal_plan
 
 TODAY = date(2026, 7, 10)
 HAS_TYPST = shutil.which("typst") is not None
@@ -15,7 +16,9 @@ HAS_TYPST = shutil.which("typst") is not None
 def _seed_athlete(tmp_path, body: str) -> None:
     write_profile(tmp_path, Profile(locale="fr", display_name="Clément"))
     upsert_goal(tmp_path, Goal(id="sub-45-10k", statement="10 km sous 45:00"))
-    save_program(tmp_path, body, "sub-45-10k", today=TODAY)
+    # body is rendered into the program via a block note so the citation gate
+    # sees whatever locator the test embeds.
+    save_program(tmp_path, minimal_plan(goal_id="sub-45-10k", note=body), today=TODAY)
 
 
 def test_fabricated_reference_aborts_before_any_file_is_written(tmp_path):

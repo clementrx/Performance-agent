@@ -20,7 +20,9 @@ every one carries a reason the athlete (and future you) can audit.
 
 - Start with `read_athlete` for current constraints (injuries, availability),
   `get_time_context` for the window, and `read_program` for the active plan you're
-  about to change.
+  about to change — it returns the structured `plan` (null only for a legacy
+  prose version; adapt those into a structured vN+1). Reuse the unchanged
+  mesocycles/weeks/sessions and edit only what the diagnosis touches.
 - `read_sessions` / `read_checkins` for the recent window.
 - Stall and failed-rep triggers arrive from training-checkin (le Vigile) with
   structured sessions behind them — diagnose from the exercise data, not the
@@ -93,8 +95,9 @@ route through program-planning instead of patching sessions in place.
   route through program-planning. No adapted version is delivered unreviewed.
 - Run `check_citations` if the proposal cites evidence. If it flags anything,
   the fix INVALIDATES the verdict — resubmit to program-review before saving.
-- `save_program` with a reason that states the diagnosis and the change (e.g.
-  "missed week 3 with a cold; shifted block back one week and cut week-4 volume").
-  If the review returned the proposal before approving, record it in the reason.
-  The store refuses v2+ without a reason — that is by design, not friction.
+- `save_program(plan, reason)` — hand the full edited `ProgramPlan` with a reason
+  that states the diagnosis and the change (e.g. "missed week 3 with a cold;
+  shifted block back one week and cut week-4 volume"). If the review returned the
+  proposal before approving, record it in the reason. The store refuses v2+
+  without a reason — that is by design, not friction.
 - Quote the new version number back, and state what the next check-in will watch.

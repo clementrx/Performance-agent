@@ -52,6 +52,7 @@ from performance_agent.engine.strength import (
     reps_for_percentage_rir,
     rir_from_rpe,
     top_set_backoff,
+    warmup_scheme,
     wave_loading,
     weekly_set_targets,
 )
@@ -96,6 +97,7 @@ __all__ = [
     "strength_feasibility",
     "tdee_from_bmr",
     "top_set_backoff",
+    "warmup_scheme",
     "wave_loading",
     "weekly_loads",
     "weekly_set_targets",

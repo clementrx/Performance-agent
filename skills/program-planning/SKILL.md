@@ -83,10 +83,12 @@ Structure without numbers is decoration:
 
 ## 4. Write the skeleton
 
-The skeleton is a markdown section of the EVENTUAL program — it is not saved
-separately and there is no skeleton store by design: it lives in this
-conversation and lands inside the saved program when program-optimization
-finishes. It carries:
+The skeleton is not saved separately and there is no skeleton store by design:
+it lives in this conversation and maps into the structured `ProgramPlan`
+program-optimization authors — the model becomes the mesocycle `phase`
+sequence, the weekly targets become each week's `volume_factor` /
+`intensity_factor` / `weekly_set_targets`, and the justification rides in the
+week/session notes. It carries:
 
 1. **Model & justification** — chosen model, the citation or coaching-judgment
    label on every structural choice.

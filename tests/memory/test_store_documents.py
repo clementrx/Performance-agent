@@ -12,6 +12,7 @@ from performance_agent.memory.store import (
     save_program,
     save_research_dossier,
 )
+from tests.program_plans import minimal_plan
 
 TODAY = date(2026, 7, 11)
 
@@ -72,7 +73,7 @@ def test_reading_a_missing_version_is_an_error(tmp_path, save, read, subdir, pre
 
 
 def test_document_families_version_independently(tmp_path):
-    save_program(tmp_path, "program", "squat-160", today=TODAY)
+    save_program(tmp_path, minimal_plan(), today=TODAY)
     save_analysis(tmp_path, "analysis", "squat-160", today=TODAY)
     save_research_dossier(tmp_path, "dossier", "squat-160", today=TODAY)
     save_nutrition_frame(tmp_path, "frame", "squat-160", today=TODAY)
@@ -82,9 +83,9 @@ def test_document_families_version_independently(tmp_path):
     )
     assert version == 2
     assert path == tmp_path / "analysis" / "needs-analysis-v2.md"
-    result = read_program(tmp_path)
-    assert result is not None
-    assert result[0]["version"] == 1
+    program = read_program(tmp_path)
+    assert program is not None
+    assert program.version == 1
     frame = read_nutrition_frame(tmp_path)
     assert frame is not None
     assert frame[0]["version"] == 1

@@ -2,6 +2,8 @@
 
 import pytest
 
+from tests.program_plans import plan_dict
+
 
 @pytest.fixture(autouse=True)
 def athlete_home(monkeypatch, tmp_path):
@@ -139,25 +141,17 @@ async def test_write_profile_is_a_full_replace(client):
 
 @pytest.mark.anyio
 async def test_program_versioning_through_tools(client):
-    v1 = await client.call_tool(
-        "save_program", {"markdown_body": "# Plan\nWeek 1", "goal_id": "sub-45-10k"}
-    )
+    v1 = await client.call_tool("save_program", {"plan": plan_dict(goal_id="sub-45-10k")})
     assert not v1.isError
     assert v1.structuredContent["version"] == 1
 
-    rejected = await client.call_tool(
-        "save_program", {"markdown_body": "# Plan v2", "goal_id": "sub-45-10k"}
-    )
+    rejected = await client.call_tool("save_program", {"plan": plan_dict(goal_id="sub-45-10k")})
     assert rejected.isError
     assert "reason" in rejected.content[0].text
 
     v2 = await client.call_tool(
         "save_program",
-        {
-            "markdown_body": "# Plan v2",
-            "goal_id": "sub-45-10k",
-            "reason": "plateau at week 4",
-        },
+        {"plan": plan_dict(goal_id="sub-45-10k"), "reason": "plateau at week 4"},
     )
     assert v2.structuredContent["version"] == 2
 
@@ -165,7 +159,8 @@ async def test_program_versioning_through_tools(client):
     assert latest.structuredContent["version"] == 2
     assert latest.structuredContent["reason"] == "plateau at week 4"
     first_version = await client.call_tool("read_program", {"version": 1})
-    assert first_version.structuredContent["body"] == "# Plan\nWeek 1"
+    assert "# Program v1 — sub-45-10k" in first_version.structuredContent["markdown"]
+    assert first_version.structuredContent["plan"]["goal_id"] == "sub-45-10k"
 
 
 @pytest.mark.anyio

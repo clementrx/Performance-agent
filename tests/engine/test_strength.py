@@ -15,6 +15,7 @@ from performance_agent.engine.strength import (
     reps_for_percentage_rir,
     rir_from_rpe,
     top_set_backoff,
+    warmup_scheme,
     wave_loading,
     weekly_set_targets,
 )
@@ -394,3 +395,32 @@ def test_rir_from_rpe_rejects_quarter_points():
 def test_rir_from_rpe_rejects_nan():
     with pytest.raises(ValueError, match="finite"):
         rir_from_rpe(float("nan"))
+
+
+def test_warmup_scheme_full_ramp_for_heavy_load():
+    ramp = warmup_scheme(120.0)
+    assert ramp == [(0.4, 5), (0.55, 4), (0.7, 3), (0.85, 2)]
+
+
+def test_warmup_scheme_drops_steps_below_the_bar():
+    # 40% of 40 kg = 16 kg < the 20 kg floor and is dropped; 55% (22) survives.
+    ramp = warmup_scheme(40.0)
+    assert ramp == [(0.55, 4), (0.7, 3), (0.85, 2)]
+
+
+def test_warmup_scheme_empty_for_very_light_target():
+    assert warmup_scheme(20.0) == []
+
+
+def test_warmup_scheme_fractions_are_below_one():
+    assert all(fraction < 1.0 for fraction, _ in warmup_scheme(200.0))
+
+
+def test_warmup_scheme_rejects_non_positive():
+    with pytest.raises(ValueError, match="positive"):
+        warmup_scheme(0.0)
+
+
+def test_warmup_scheme_rejects_nan():
+    with pytest.raises(ValueError, match="finite"):
+        warmup_scheme(float("nan"))

@@ -8,9 +8,16 @@ Timestamps are naive local wall-clock time; timezone-aware values are rejected.
 """
 
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from performance_agent.engine import TrainingAge
 
@@ -165,3 +172,175 @@ class CheckinEntry(BaseModel):
     notes: str | None = None
 
     _naive_at = field_validator("at")(staticmethod(_require_naive))
+
+
+# --- Structured programs (machine-readable source of truth) ---------------
+#
+# A program is a ProgramPlan tree; the markdown is a deterministic render of it
+# (programs/render.py). Legacy prose-only program-vN.md files stay readable —
+# a ProgramPlan is present only for versions saved after this format landed.
+
+Quality = Literal[
+    "strength_heavy",
+    "hypertrophy",
+    "power",
+    "hiit",
+    "tempo",
+    "endurance_long",
+    "endurance_easy",
+    "brick",
+    "recovery",
+    "match",
+    "club_practice",
+    "test",
+]
+MesocyclePhase = Literal[
+    "general_prep",
+    "specific_prep",
+    "accumulation",
+    "intensification",
+    "realization",
+    "maintenance",
+    "taper",
+    "return_to_load",
+]
+TestProtocol = Literal["amrap_rir1", "timetrial", "one_rm_test"]
+BlockPriority = Literal["primary", "secondary", "optional"]
+
+# A block prescribes intensity through exactly one of these channels; setting
+# more than one is contradictory (which number does the athlete chase?).
+_INTENSITY_FIELDS = ("load_kg", "pct_1rm", "rir", "rpe", "pace_s_per_km")
+# Every block must state its volume through at least one of these.
+_VOLUME_FIELDS = ("reps", "duration_min", "distance_m")
+
+
+class ExerciseBlock(BaseModel):
+    """One prescribed exercise inside a session, with a single intensity mode."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    exercise: str = Field(min_length=1)
+    priority: BlockPriority
+    warmup: Literal["auto", "none"] = "auto"
+    sets: int = Field(ge=1, le=20)
+    reps: str | None = Field(default=None, min_length=1, max_length=16)
+    duration_min: float | None = Field(default=None, gt=0, le=600)
+    distance_m: float | None = Field(default=None, gt=0, le=100000)
+    load_kg: float | None = Field(default=None, ge=0, le=1000)
+    pct_1rm: float | None = Field(default=None, gt=0, le=1.3)
+    rir: float | None = Field(default=None, ge=0, le=10)
+    rpe: float | None = Field(default=None, ge=1, le=10)
+    pace_s_per_km: float | None = Field(default=None, gt=0, le=3600)
+    rest_s: int | None = Field(default=None, ge=0, le=1800)
+    progression_rule: str = Field(min_length=1)
+    cite: str | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _one_intensity_and_some_volume(self) -> Self:
+        set_intensity = [f for f in _INTENSITY_FIELDS if getattr(self, f) is not None]
+        if len(set_intensity) > 1:
+            msg = (
+                "a block prescribes intensity through exactly one channel; "
+                f"got {set_intensity} — pick one of {list(_INTENSITY_FIELDS)}"
+            )
+            raise ValueError(msg)
+        if not any(getattr(self, f) is not None for f in _VOLUME_FIELDS):
+            msg = f"a block must state its volume via one of {list(_VOLUME_FIELDS)}"
+            raise ValueError(msg)
+        if self.pace_s_per_km is not None and self.reps is not None:
+            msg = "pace_s_per_km is an endurance prescription; it cannot pair with reps"
+            raise ValueError(msg)
+        return self
+
+
+class Fallbacks(BaseModel):
+    """Self-serve contingencies printed with the session (authored, non-empty)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    low_readiness: str = Field(min_length=1)
+    short_on_time: str = Field(min_length=1)
+    missing_equipment: str = Field(min_length=1)
+
+
+class SessionPlan(BaseModel):
+    """One planned session: qualities, movement patterns, blocks, fallbacks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    weekday: int | None = Field(default=None, ge=0, le=6)
+    qualities: list[Quality] = Field(min_length=1)
+    patterns: list[str] = Field(default_factory=list)
+    est_minutes: int = Field(ge=1, le=480)
+    purpose: str = Field(min_length=1)
+    blocks: list[ExerciseBlock] = Field(min_length=1)
+    fallbacks: Fallbacks
+
+
+class WeekPlan(BaseModel):
+    """One microcycle (7-day week is a documented modeling limit)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    week_index: int = Field(ge=1)
+    is_deload: bool = False
+    is_taper: bool = False
+    volume_factor: float = Field(gt=0, le=2)
+    intensity_factor: float = Field(gt=0, le=2)
+    weekly_set_targets: (
+        dict[
+            Annotated[str, StringConstraints(min_length=1)],
+            Annotated[int, Field(ge=0, le=60)],
+        ]
+        | None
+    ) = None
+    notes: str | None = None
+    sessions: list[SessionPlan] = Field(default_factory=list)
+
+
+class Mesocycle(BaseModel):
+    """A block of weeks sharing one periodization phase."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    index: int = Field(ge=1)
+    phase: MesocyclePhase
+    weeks: list[WeekPlan] = Field(min_length=1)
+
+
+class TestMilestone(BaseModel):
+    """A scheduled re-test that feeds the response profile and next version."""
+
+    __test__ = False  # not a pytest test class despite the Test* name
+
+    model_config = ConfigDict(extra="forbid")
+
+    week_index: int = Field(ge=1)
+    protocol: TestProtocol
+    targets: list[str] = Field(min_length=1)
+
+
+class ProgramPlan(BaseModel):
+    """Structured program: the source of truth the markdown is rendered from."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    version: int = Field(ge=1)
+    goal_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    created_on: date
+    reason: str | None = None
+    checkin_cadence_days: int = Field(default=7, ge=1, le=90)
+    season_ref: str | None = None
+    test_milestones: list[TestMilestone] = Field(default_factory=list)
+    mesocycles: list[Mesocycle] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _week_indices_are_globally_increasing(self) -> Self:
+        indices = [week.week_index for meso in self.mesocycles for week in meso.weeks]
+        if indices != sorted(indices) or len(set(indices)) != len(indices):
+            msg = f"week_index must be globally unique and increasing, got {indices}"
+            raise ValueError(msg)
+        return self

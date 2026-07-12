@@ -7,7 +7,8 @@ description: Use when program-optimization hands over an athlete-validated draft
   quoted objections. Nothing is delivered without its sign-off.
 tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         read_nutrition_frame, check_citations, get_citation, prescribe_load,
-        prescribe_reps_load, weekly_set_targets_for, compute_session_load]
+        prescribe_reps_load, weekly_set_targets_for, compute_session_load,
+        read_program]
 ---
 
 # Program Review — le Contrôleur
@@ -63,6 +64,14 @@ Work the list in order; every item is pass/fail with the evidence quoted.
    flagged (exceeds_safe_rate) or refused must not reappear anywhere in the
    program, and engine refusals relayed upstream must still be relayed, never
    papered over. Red-flagged injury patterns from the profile stay unloaded.
+6. **Structure (the plan is machine-readable now):** `read_program` and confirm
+   `plan` is present (not null) — a v2+ that lost the structured plan is a fail.
+   The schema already guarantees non-empty purpose and fallbacks per session and
+   one intensity mode per block; verify the coaching content on top of it — where
+   a week declares `weekly_set_targets`, the working sets it actually programs
+   across the week sum within those targets (and within the training-age
+   landmarks from item 1); every block's `cite` is a real corpus id (folded into
+   the `check_citations` pass in item 2, no `cite` left uncited-but-claimed).
 
 ## 3. Pass two — ADVERSARIAL second opinion
 
