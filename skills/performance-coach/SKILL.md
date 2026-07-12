@@ -73,7 +73,7 @@ After a skill hands back:
 - Skeleton handed over by program-planning → program-optimization
 - Draft validated by the athlete but not yet reviewed → program-review (the
   mandatory delivery gate; only its APPROVED verdict lets program-optimization
-  save and deliver)
+  — or program-adaptation for an adapted version — save and deliver)
 - Check-in shows poor adherence, plateau, pain, or schedule change → program-adaptation
 
 Re-evaluate routing after each skill completes.

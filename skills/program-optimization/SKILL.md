@@ -109,9 +109,13 @@ fourth time.
   objections (model, phases, weekly targets) go back to program-planning with
   the objection quoted. Never save a draft the Contrôleur has not approved.
 - On APPROVED: run `check_citations` over the full program text (skeleton
-  section included); fix anything flagged.
+  section included). If it flags anything, the fix INVALIDATES the verdict —
+  resubmit the corrected draft to program-review; never save text the
+  Contrôleur has not seen.
 - `save_program` (markdown body — the skeleton section plus the sessions;
-  goal_id; v1 needs no reason). Quote the saved version and path back. Check
+  goal_id; v1 needs no reason; if the review returned the draft before
+  approving, the reason records it — e.g. "approved after 2 RETURNED
+  rounds: volume objection"). Quote the saved version and path back. Check
   `read_athlete`'s program_version first: PROGRAM versioning is global across
   goals (analyses and dossiers count separately), so if ANY program already
   exists this save is v2+ and REQUIRES a reason (e.g. "first program for new

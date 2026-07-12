@@ -57,6 +57,16 @@ stay with their rationale.
   minutes (documented in the docstring). If latency ever matters, verify in
   tier order and stop at K.
 
+## Descoped with rationale (maintainer decision 2026-07-12)
+
+- **Pipeline end-to-end integration test** (spec §6 "a synthetic athlete
+  profile traverses all eight stages") — the stages are LLM skill protocols,
+  not code paths; a true traversal needs an LLM-judge eval harness, which the
+  original blueprint already defers post-MVP (maintainer key in CI). The
+  deterministic layers each have their own suites, and the skills harness
+  guards structure/tool-drift/fabrication. Revisit alongside the LLM-judge
+  eval work.
+
 ## Descoped with rationale (maintainer decision 2026-07-11)
 
 - **Minimum-population-size live-search filter** (spec §5 "where the source

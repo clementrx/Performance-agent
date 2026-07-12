@@ -91,8 +91,10 @@ route through program-planning instead of patching sessions in place.
   confirmed vN+1 to program-review (le Contrôleur) and save only on an
   APPROVED verdict — session-level objections are fixed here, structural ones
   route through program-planning. No adapted version is delivered unreviewed.
-- Run `check_citations` if the proposal cites evidence.
+- Run `check_citations` if the proposal cites evidence. If it flags anything,
+  the fix INVALIDATES the verdict — resubmit to program-review before saving.
 - `save_program` with a reason that states the diagnosis and the change (e.g.
   "missed week 3 with a cold; shifted block back one week and cut week-4 volume").
+  If the review returned the proposal before approving, record it in the reason.
   The store refuses v2+ without a reason — that is by design, not friction.
 - Quote the new version number back, and state what the next check-in will watch.
