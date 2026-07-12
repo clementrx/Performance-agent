@@ -262,7 +262,7 @@ Fakt. Der Agent, den du bereits nutzt, fügt alles mit deinem bestehenden Abo zu
 — **null zusätzliche LLM-Kosten**.
 
 **Heute verfügbar:** deterministische Engine (1RM-Schätzung, Riegel-Wettkampfprognose,
-Session-RPE-Last & ACWR, Zielmachbarkeit, Periodisierungswellen; 290 Tests inkl.
+Session-RPE-Last & ACWR, Zielmachbarkeit, Periodisierungswellen; 597 Tests inkl.
 property-based) · 47 MCP-Werkzeuge · dateibasiertes Athletengedächtnis mit
 versionierten Programmen und Anpassungs-Audit-Protokoll · DOI/PMID/ISBN-verifizierter
 Evidenzkorpus mit Anti-Fabrikations-Zitatprüfung · Live-Evidenzsuche (PubMed,
@@ -298,15 +298,14 @@ verdict = endurance_feasibility(
 verdict.probability  # 0.0023 — mit improvement_needed, erforderlicher und erreichbarer Rate
 ```
 
-Repository-Struktur: `src/performance_agent` (Engine + MCP-Server) ·
-`docs/superpowers/specs` (Architektur-Blueprint) · `docs/superpowers/plans`
-(Implementierungspläne mit As-built-Notizen).
+Repository-Struktur: `src/performance_agent` (Engine, Evidenz, Speicher, Reports,
+MCP-Server) · `skills/` (Coaching-Protokolle) · `docs/` (Installation & Nutzung) ·
+`examples/` (vollständige Beispielgespräche in fünf Sprachen).
 
 ## Mitwirken
 
 Frühe Entwicklung, hohes Tempo — siehe [CONTRIBUTING.md](../../CONTRIBUTING.md) für
-Dev-Setup und Review-Konventionen. Der Blueprint in `docs/superpowers/specs/` ist die
-Quelle der Wahrheit. Sportwissenschaftler und Athletiktrainer: Die
+Dev-Setup und Review-Konventionen. Sportwissenschaftler und Athletiktrainer: Die
 Evidenzbewertungs-Pipeline wird Fachgutachter brauchen.
 
 ## Lizenz

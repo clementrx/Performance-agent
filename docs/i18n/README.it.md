@@ -259,7 +259,7 @@ esistente — **zero costi LLM aggiuntivi**.
 
 **Disponibile oggi:** motore deterministico (stima dell'1RM, previsione di gara di
 Riegel, carico session-RPE e ACWR, fattibilità degli obiettivi, onde di
-periodizzazione; 290 test incl. property-based) · 47 strumenti MCP · memoria atleta su
+periodizzazione; 597 test incl. property-based) · 47 strumenti MCP · memoria atleta su
 file con programmi versionati e registro di audit degli adattamenti · corpus di
 evidenze verificate via DOI/PMID/ISBN con controllo anti-fabbricazione delle
 citazioni · ricerca di evidenze in tempo reale (PubMed, OpenAlex, Crossref, Semantic
@@ -295,16 +295,16 @@ verdict = endurance_feasibility(
 verdict.probability  # 0.0023 — con improvement_needed, tassi richiesto e raggiungibile
 ```
 
-Struttura del repository: `src/performance_agent` (motore + server MCP) ·
-`docs/superpowers/specs` (blueprint di architettura) · `docs/superpowers/plans`
-(piani di implementazione con note as-built).
+Struttura del repository: `src/performance_agent` (motore, evidenze, memoria, report,
+server MCP) · `skills/` (protocolli di coaching) · `docs/` (installazione e uso) ·
+`examples/` (conversazioni complete in cinque lingue).
 
 ## Contribuire
 
 Sviluppo iniziale, si avanza in fretta — vedi [CONTRIBUTING.md](../../CONTRIBUTING.md)
-per il setup e le convenzioni di review. Il blueprint in `docs/superpowers/specs/` è
-la fonte di verità. Scienziati dello sport e preparatori atletici: la pipeline di
-classificazione delle evidenze avrà bisogno di revisori esperti.
+per il setup e le convenzioni di review. Scienziati dello sport e preparatori
+atletici: la pipeline di classificazione delle evidenze avrà bisogno di revisori
+esperti.
 
 ## Licenza
 

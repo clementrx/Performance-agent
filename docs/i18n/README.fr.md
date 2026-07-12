@@ -261,7 +261,7 @@ fait. L'agent que vous utilisez déjà assemble le tout avec votre abonnement ex
 
 **Disponible aujourd'hui :** moteur déterministe (estimation de 1RM, prédiction de
 course de Riegel, charge session-RPE & ACWR, faisabilité d'objectif, vagues de
-périodisation ; 290 tests dont des tests par propriétés) · 47 outils MCP · mémoire
+périodisation ; 597 tests dont des tests par propriétés) · 47 outils MCP · mémoire
 athlète en fichiers avec programmes versionnés et journal d'audit des adaptations ·
 corpus de preuves vérifiées par DOI/PMID/ISBN avec contrôle anti-fabrication des
 citations · recherche bibliographique en direct (PubMed, OpenAlex, Crossref, Semantic
@@ -297,16 +297,16 @@ verdict = endurance_feasibility(
 verdict.probability  # 0.0023 — avec improvement_needed, taux requis et atteignable
 ```
 
-Organisation du dépôt : `src/performance_agent` (moteur + serveur MCP) ·
-`docs/superpowers/specs` (blueprint d'architecture) · `docs/superpowers/plans`
-(plans d'implémentation avec notes as-built).
+Organisation du dépôt : `src/performance_agent` (moteur, preuves, mémoire, rapports,
+serveur MCP) · `skills/` (protocoles de coaching) · `docs/` (installation & usage) ·
+`examples/` (conversations complètes dans cinq langues).
 
 ## Contribuer
 
 Développement précoce, ça avance vite — voir [CONTRIBUTING.md](../../CONTRIBUTING.md)
-pour la mise en place et les conventions de revue. Le blueprint dans
-`docs/superpowers/specs/` fait foi. Scientifiques du sport et préparateurs physiques :
-le pipeline de gradation des preuves aura besoin de relecteurs experts.
+pour la mise en place et les conventions de revue. Scientifiques du sport et
+préparateurs physiques : le pipeline de gradation des preuves aura besoin de
+relecteurs experts.
 
 ## Licence
 

@@ -242,7 +242,7 @@ to periodize, when to deload). The MCP tools own every fact. The agent you alrea
 glues it together with your existing subscription — **zero additional LLM cost**.
 
 **Working today:** deterministic engine (1RM estimation, Riegel race prediction,
-session-RPE load & ACWR, goal feasibility, periodization waves; 290 tests incl.
+session-RPE load & ACWR, goal feasibility, periodization waves; 597 tests incl.
 property-based) · 47 MCP tools · file-based athlete memory with versioned programs and
 an adaptation audit trail · DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
@@ -277,16 +277,15 @@ verdict = endurance_feasibility(
 verdict.probability  # 0.0023 — with improvement_needed, required and achievable rates
 ```
 
-Repository layout: `src/performance_agent` (engine + MCP server) ·
-`docs/superpowers/specs` (architecture blueprint) · `docs/superpowers/plans`
-(implementation plans with as-built notes).
+Repository layout: `src/performance_agent` (engine, evidence, memory, reports, MCP
+server) · `skills/` (coaching protocols) · `docs/` (install & usage) ·
+`examples/` (full sample conversations in five languages).
 
 ## Contributing
 
 Early development, moving fast — see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev
-setup and review conventions. The blueprint in `docs/superpowers/specs/` is the source
-of truth. Sports scientists and S&C coaches: the evidence-grading pipeline will need
-expert reviewers — watch this space.
+setup and review conventions. Sports scientists and S&C coaches: the evidence-grading
+pipeline will need expert reviewers — watch this space.
 
 ## License
 

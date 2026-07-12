@@ -258,7 +258,7 @@ cada hecho. El agente que ya usas lo une todo con tu suscripción existente — 
 coste adicional de LLM**.
 
 **Disponible hoy:** motor determinista (estimación de 1RM, predicción de carrera de
-Riegel, carga sesión-RPE y ACWR, viabilidad de objetivos, ondas de periodización; 290
+Riegel, carga sesión-RPE y ACWR, viabilidad de objetivos, ondas de periodización; 597
 tests, incl. basados en propiedades) · 47 herramientas MCP · memoria del atleta en
 archivos con programas versionados e historial de auditoría de adaptaciones · corpus
 de evidencia verificada por DOI/PMID/ISBN con control anti-fabricación de citas ·
@@ -296,15 +296,14 @@ verdict = endurance_feasibility(
 verdict.probability  # 0.0023 — con improvement_needed, tasas requerida y alcanzable
 ```
 
-Estructura del repositorio: `src/performance_agent` (motor + servidor MCP) ·
-`docs/superpowers/specs` (blueprint de arquitectura) · `docs/superpowers/plans`
-(planes de implementación con notas as-built).
+Estructura del repositorio: `src/performance_agent` (motor, evidencia, memoria,
+informes, servidor MCP) · `skills/` (protocolos de coaching) · `docs/` (instalación
+y uso) · `examples/` (conversaciones completas en cinco idiomas).
 
 ## Contribuir
 
 Desarrollo temprano, avanzando rápido — ver [CONTRIBUTING.md](../../CONTRIBUTING.md)
-para la configuración y las convenciones de revisión. El blueprint en
-`docs/superpowers/specs/` es la fuente de verdad. Científicos del deporte y
+para la configuración y las convenciones de revisión. Científicos del deporte y
 preparadores físicos: el pipeline de graduación de evidencia necesitará revisores
 expertos.
 
