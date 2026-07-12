@@ -11,7 +11,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from performance_agent.engine import SeasonModality
-from performance_agent.memory import monitoring, store
+from performance_agent.memory import monitoring, sequencing, store
 from performance_agent.memory import season as season_planner
 from performance_agent.memory.monitoring import PlausibilityFlag
 from performance_agent.memory.paths import resolve_athlete_dir
@@ -25,6 +25,7 @@ from performance_agent.memory.schemas import (
     ReadinessEntry,
     RecurringConstraint,
     SessionEntry,
+    WeekPlan,
 )
 from performance_agent.memory.season import SeasonPlanView
 from performance_agent.memory.time_context import TimeContext, build_time_context
@@ -440,6 +441,65 @@ def build_season_plan(modality: SeasonModality = "mixed") -> SeasonPlanView:
     return season_planner.build_season_plan(resolve_athlete_dir(), modality)
 
 
+class ViolationView(TypedDict):
+    """One broken intra-week sequencing rule.
+
+    severity is block (must be fixed before delivery) or warn (must be
+    acknowledged in the program notes). session_ids names the sessions involved;
+    rule_id is R1..R7; message states the problem and the fix.
+    """
+
+    rule_id: str
+    severity: str
+    session_ids: list[str]
+    message: str
+
+
+class SequencingReport(TypedDict):
+    """The sequencing check for one week: every violation plus block/warn counts.
+
+    block_count is the number to drive to zero; warn_count must be acknowledged
+    in the program notes. Empty violations with both counts zero means the week
+    is clean.
+    """
+
+    violations: list[ViolationView]
+    block_count: int
+    warn_count: int
+
+
+def check_week_sequencing(week: WeekPlan, strength_priority: bool = True) -> SequencingReport:
+    """Check one week's session order for spacing and interference problems.
+
+    Runs seven intra-week rules on the sessions' weekday field: same-pattern heavy
+    spacing >=48h/72h (R1), no HIIT the day before lower-body heavy (R2), same-day
+    strength-before-endurance when strength is the A goal (R3), at most two
+    consecutive high days (R4), the match day -1/+1 windows (R5), no long endurance
+    before a hard day (R6), and per-day minutes within the athlete's available time
+    (R7). Match days and available minutes come from the stored calendar and
+    profile. strength_priority=True when a strength/hypertrophy goal is A-priority.
+    Drive block_count to zero; acknowledge every warn in the program notes.
+    Sessions with no weekday are skipped -- assign weekdays first.
+    """
+    violations = sequencing.check_week_for_athlete(
+        resolve_athlete_dir(), week, strength_priority=strength_priority
+    )
+    views = [
+        ViolationView(
+            rule_id=v.rule_id,
+            severity=v.severity,
+            session_ids=list(v.session_ids),
+            message=v.message,
+        )
+        for v in violations
+    ]
+    return SequencingReport(
+        violations=views,
+        block_count=sum(1 for v in violations if v.severity == "block"),
+        warn_count=sum(1 for v in violations if v.severity == "warn"),
+    )
+
+
 def get_time_context() -> TimeContext:
     """Current date plus days-since deltas and goal countdowns.
 
@@ -475,6 +535,7 @@ def register(mcp: FastMCP) -> None:
         remove_calendar_event,
         set_recurring_constraints,
         build_season_plan,
+        check_week_sequencing,
         get_time_context,
     ):
         mcp.tool()(tool)

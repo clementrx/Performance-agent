@@ -15,7 +15,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 3 | 2 | Full monitoring | done (PR open) | `feat/phase-2-full-monitoring` — [PR #6](https://github.com/clementrx/Performance-agent/pull/6) (base: phase 1) | 749 tests; +9 tools (62 total) |
 | 4 | 9 | Activity file import | done (PR open) | `feat/phase-9-activity-import` — [PR #7](https://github.com/clementrx/Performance-agent/pull/7) | 782 tests; +1 tool (63 total); +fitdecode dep |
 | 5 | 3 | Day-of session autoregulation | done (PR open) | `feat/phase-3-session-autoregulation` — [PR #8](https://github.com/clementrx/Performance-agent/pull/8) | 823 tests; +5 tools (68 total) |
-| 6 | 4 | Intra-week sequencing & interference | pending | — | — |
+| 6 | 4 | Intra-week sequencing & interference | done (PR open) | `feat/phase-4-sequencing` — PR (base: phase 3) | 860 tests; +1 tool (69 total) |
 | 7 | 5 | Individual response profile | pending | — | — |
 | 8 | 6 | Deloads, adherence, return-to-load | pending | — | — |
 | 9 | 7 | Proactive follow-up | pending | — | — |
@@ -211,9 +211,59 @@ is broken.
   refresh. English README updated to 68 tools / 823 tests + a day-of-autoregulation
   phrase.
 
+## Phase 4 notes
+
+- **New tool (1, total 69):** `check_week_sequencing(week, strength_priority=True)`
+  in `server/memory_tools.py` (it needs a `WeekPlan` and reads the athlete's stored
+  calendar + profile, so it lives with the memory-layer tools, not `engine_tools.py`).
+  Returns `{violations: [{rule_id, severity, session_ids, message}], block_count,
+  warn_count}`.
+- **Engine/memory split (purity preserved):** `engine/sequencing.py` is pure — it
+  imports ONLY stdlib + `engine._validation` and operates on engine-local
+  `@dataclass`es (`SessionInput`/`RecurringInput`/`Violation`). It does NOT import
+  `memory.schemas`; `tests/engine/test_engine_purity.py` passes. `memory/sequencing.py`
+  converts `WeekPlan` + `list[RecurringConstraint]` → engine inputs, supplies the
+  per-day available minutes, and calls the pure `check_week_sequencing`;
+  `check_week_for_athlete` reads calendar/profile from the store. Mirrors the
+  `engine/season.py` ↔ `memory/season.py` pattern.
+- **Rules (all day-based on the `weekday` field, 0=Mon):** R1 same-pattern heavy
+  spacing (<48h block; 72h when the week's `volume_factor ≥ 1.1`), R2 HIIT the day
+  before lower-body `strength_heavy` (block), R3 same-day strength+endurance ordering
+  (warn, only when `strength_priority`), R4 >2 consecutive high days (block; high =
+  strength_heavy|hiit|match, match weekdays from `RecurringConstraint.match_day`), R5
+  match −1 low/priming & +1 recovery/low (block), R6 endurance_long before a
+  match/HIIT (warn), R7 per-day total `est_minutes` (sessions + recurring load) vs the
+  athlete's available minutes (block). block ↔ warn split: block = R1,R2,R4,R5,R7;
+  warn = R3,R6.
+- **Per-rule evidence decisions:** NO new corpus entries (no verified network). Every
+  rule constant is labeled `team-chosen prior` / coaching judgment in code. The plan
+  names Wilson et al. 2012 (concurrent-training meta) and Coffey & Hawley for the R1/R2
+  interference rules — these are NOT in the evidence corpus, so no corpus id is claimed;
+  the module docstring records that the thresholds reflect that literature in spirit
+  only, consistent with the anti-fabrication rule and Phase 2/3's approach.
+- **Unscheduled sessions:** a `SessionPlan` with `weekday=None` cannot be placed in the
+  week, so it is skipped by every day-based rule (R1–R7). Documented in the engine
+  docstring and the tool description — the coach must assign weekdays before the check
+  is meaningful. A week that leaves sessions unscheduled simply returns no violations
+  for them (not a false pass on scheduled ones).
+- **R7 available-minutes decision:** the per-day budget is `Profile.availability
+  .minutes_per_session` (the athlete's daily training window); None → R7 disabled.
+  Recurring club/match minutes on a day count toward that day's total. A day with two
+  sessions summing over the window is flagged — a defensible team decision, documented.
+- **Skills:** `program-optimization` gained §3b — after laying out each week it MUST run
+  `check_week_sequencing`, iterate to zero `block` (max 3 attempts, then surface the
+  constraint conflict honestly), and note every `warn` tradeoff in the week `notes`.
+  `program-review` compliance pass item 8 re-runs the check on EVERY week — any `block`
+  → RETURNED; an unacknowledged `warn` is itself a fail. `check_week_sequencing` added
+  to both skills' `tools:` frontmatter and to the structure-test needle lists.
+- **Report templates / i18n READMEs:** no new athlete-visible report section (sequencing
+  is a build-time gate, not a program artifact); the batched report pass and the 4
+  `docs/i18n/` READMEs stay DEFERRED to the pre-release refresh. English README updated
+  to 69 tools / 860 tests + a sequencing/interference phrase.
+
 ## Resume notes
 
-_Phase 3 complete. Next in execution order: **Phase 4 (intra-week sequencing &
-interference guard)** (order 0, 1, 2, 9, 3, **4**, 5, 6, 7, 8); depends on Phase 0's
-structured `ProgramPlan` and Phase 1's calendar/recurring constraints. Branch off
-`feat/phase-3-session-autoregulation` (stacked)._
+_Phase 4 complete. Next in execution order: **Phase 5 (individual response profile &
+recalibration)** (order 0, 1, 2, 9, 3, 4, **5**, 6, 7, 8); depends on Phase 0's
+structured `ProgramPlan`, Phase 2's monitoring, and Phase 3's autoregulation logs.
+Branch off `feat/phase-4-sequencing` (stacked)._

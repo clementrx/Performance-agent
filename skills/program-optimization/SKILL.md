@@ -11,7 +11,7 @@ tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         progress_double_progression, prescribe_top_set_backoff,
         prescribe_wave_loading, convert_rpe_to_rir, predict_race_time,
         compute_pace, read_nutrition_frame, read_calendar, budget_weekly_load,
-        substitute_exercise, save_program]
+        substitute_exercise, check_week_sequencing, save_program]
 ---
 
 # Program Optimization — l'Optimiseur
@@ -111,6 +111,29 @@ render any corpus id you quote with `get_citation`.
 - **Warm-ups are automatic.** Leave primary strength blocks at `warmup="auto"`;
   the renderer emits the ramp-up sets (via the engine) so the printed program
   carries them without you writing each ramp by hand.
+
+## 3b. Sequence-check every week before you present it
+
+The order of the week is coaching, not decoration. **After laying out each week,
+run `check_week_sequencing(week)`** (it reads the match days and available minutes
+from the stored calendar and profile; pass `strength_priority=false` only when the
+A-priority goal is not strength/hypertrophy). It returns spacing and interference
+violations:
+
+- **`block` violations MUST be zero before you present the week.** They are real
+  clashes: same-pattern heavy work inside 48h/72h (R1), HIIT the day before
+  lower-body heavy (R2), three-plus consecutive high days (R4), a hard session on
+  a match ±1 day (R5), a day that overruns the athlete's available minutes (R7).
+  Reschedule days/patterns and re-run — **up to three attempts**. If a `block`
+  still stands after three (the constraints genuinely conflict — too many high
+  qualities for too few days, or a match that boxes the week in), STOP re-shuffling
+  and surface the conflict to the athlete honestly ("your four heavy days and the
+  Saturday match cannot all fit the recovery rules — we drop one or accept the
+  interference"), then let them choose. Never silently ship a `block`.
+- **`warn` violations** (same-day strength+endurance without the 6h gap R3,
+  endurance_long the day before a hard day R6) don't block delivery but must be
+  acknowledged: write the tradeoff into the week `notes` so program-review sees you
+  chose it on purpose and the athlete reads why.
 
 ## 4. Iterate until the athlete validates
 

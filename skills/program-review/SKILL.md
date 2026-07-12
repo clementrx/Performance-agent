@@ -8,7 +8,7 @@ description: Use when program-optimization hands over an athlete-validated draft
 tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         read_nutrition_frame, check_citations, get_citation, prescribe_load,
         prescribe_reps_load, weekly_set_targets_for, compute_session_load,
-        read_program, read_calendar]
+        read_program, read_calendar, check_week_sequencing]
 ---
 
 # Program Review — le Contrôleur
@@ -77,6 +77,14 @@ Work the list in order; every item is pass/fail with the evidence quoted.
    it — a taper that is late, missing, or lands before a B/C event instead is a
    fail; B events got a mini-taper/light week, not a full taper; C events were
    trained through. The mesocycle phases follow the season plan's segments.
+8. **Intra-week sequencing:** run `check_week_sequencing(week)` on EVERY week of
+   the plan (pass `strength_priority` matching the A goal). ANY `block` violation
+   is a fail — RETURNED, no exceptions: R1 same-pattern heavy spacing, R2 HIIT
+   before lower-body heavy, R4 three-plus consecutive high days, R5 the match ±1
+   window, R7 a day over the athlete's available minutes. Every `warn` (R3 same-day
+   strength+endurance, R6 long-before-hard) must be acknowledged in that week's
+   `notes` — an unacknowledged `warn` is itself a fail (program-optimization is
+   required to note the tradeoff, so a missing note means the check was skipped).
 
 ## 3. Pass two — ADVERSARIAL second opinion
 
