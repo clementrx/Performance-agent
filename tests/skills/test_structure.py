@@ -7,6 +7,7 @@ EXPECTED_SKILLS = {
     "program-planning",
     "program-optimization",
     "nutrition-planning",
+    "program-review",
     "training-checkin",
     "program-adaptation",
     "program-report",
@@ -187,6 +188,32 @@ def test_research_skill_protocol(skills):
         "failed",
     ):
         assert needle in body, f"deep-research skill lost: {needle}"
+
+
+def test_review_skill_protocol(skills):
+    review = next(s for s in skills if s.frontmatter["name"] == "program-review")
+    body = review.body.casefold()
+    for needle in (
+        "compliance",
+        "adversarial",
+        "check_citations",
+        "get_citation",
+        "prescribe_load",
+        "prescribe_reps_load",
+        "weekly_set_targets_for",
+        "compute_session_load",
+        "read_nutrition_frame",
+        "read_research_dossier",
+        "exceeds_safe_rate",
+        "subagent",
+        "approved",
+        "returned",
+        "never saves",
+        "verbatim",
+        "program-planning",
+        "program-optimization",
+    ):
+        assert needle in body, f"program-review skill lost: {needle}"
 
 
 def test_nutrition_skill_protocol(skills):
