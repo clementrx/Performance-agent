@@ -153,6 +153,18 @@ def test_checkin_skill_protocol(skills):
         "pain",
         "adherence",
         "fatigue",
+        "vigile",
+        "stall",
+        "failed reps",
+        "read_sessions",
+        "read_checkins",
+        "read_nutrition_frame",
+        "bodyweight_kg",
+        "weekly_change_kg",
+        "drift",
+        "recurring_fixtures",
+        "refer out",
+        "stop prescribing",
     ):
         assert needle in body, f"checkin skill lost: {needle}"
 
@@ -170,6 +182,11 @@ def test_adaptation_skill_protocol(skills):
         "confirm",
         "program-review",
         "approved",
+        "vigile",
+        "under-recovery",
+        "under-stimulus",
+        "weekly_set_targets_for",
+        "rir",
     ):
         assert needle in body, f"adaptation skill lost: {needle}"
 

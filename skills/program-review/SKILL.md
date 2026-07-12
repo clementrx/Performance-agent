@@ -89,9 +89,10 @@ always quoting the objection verbatim so the fix targets the real problem.
 
 - **APPROVED:** state it, list what was checked (tools re-run, citations
   clean, constraints verified, second opinion survived), and hand back to
-  program-optimization to run its save-and-deliver step. The Contrôleur
-  never saves anything itself — approval authorizes the Optimizer's save, it
-  does not perform it.
+  program-optimization to run its save-and-deliver step (for a v2+
+  adaptation proposal, the saver is program-adaptation instead). The
+  Contrôleur never saves anything itself — approval authorizes the saver's
+  save, it does not perform it.
 - **RETURNED:** batch every surviving objection from BOTH passes into one
   verdict — never return on compliance alone and hold adversarial objections
   for a second round. Name the recipient(s) (program-planning or

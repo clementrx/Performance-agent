@@ -6,7 +6,7 @@ description: Use when a check-in fires a trigger (missed sessions, high fatigue,
 tools: [read_athlete, get_time_context, read_program, read_sessions, read_checkins,
         compute_session_load, compute_weekly_loads, compute_acwr,
         assess_endurance_goal, assess_strength_goal, assess_hypertrophy_goal,
-        assess_bodycomp_goal, prescribe_load, estimate_1rm,
+        assess_bodycomp_goal, weekly_set_targets_for, prescribe_load, estimate_1rm,
         build_periodization_waves, search_evidence, search_evidence_live,
         save_evidence, verify_reference, get_citation, check_citations, save_program]
 ---
@@ -22,6 +22,12 @@ every one carries a reason the athlete (and future you) can audit.
   `get_time_context` for the window, and `read_program` for the active plan you're
   about to change.
 - `read_sessions` / `read_checkins` for the recent window.
+- Stall and failed-rep triggers arrive from training-checkin (le Vigile) with
+  structured sessions behind them — diagnose from the exercise data, not the
+  trigger label: loads falling ACROSS THE BOARD (multiple exercises, reps
+  missed at previously handled loads) reads as under-recovery; everything
+  completed easily (RIR consistently high, rep targets exceeded) reads as
+  under-stimulus.
 - Build the daily-load series from logged sessions (rpe × duration via
   `compute_session_load` values, zeros for rest days) → `compute_weekly_loads` and
   `compute_acwr`. Build the series date-indexed: from `get_time_context`'s today
@@ -58,6 +64,12 @@ rebuilds follow program-optimization's load and formatting rules; if the
 STRUCTURE itself must change (new periodization model, changed calendar),
 route through program-planning instead of patching sessions in place.
 
+- Plateaus split by goal. A STRENGTH plateau is addressed through intensity
+  and specificity (heavier exposures, work closer to the tested lift), not
+  more sets. A HYPERTROPHY plateau is addressed through volume — raise the
+  weekly sets within the `weekly_set_targets_for` landmarks for the athlete's
+  training age, never past maximum_adaptive_sets.
+
 - Citation repair: when a render was refused for unknown references, locate the
   offending claims, replace each with a `search_evidence`-backed citation rendered
   via `get_citation` (or drop the claim). If nothing in the corpus covers the
@@ -68,8 +80,9 @@ route through program-planning instead of patching sessions in place.
   empty, fall back to a web search per language; anything found that way MUST
   pass `verify_reference` before you propose `save_evidence` — never propose an
   entry from an unverified web result, and never patch a refused render by
-  weakening the claim into something unverifiable. Save vN+1 with reason
-  "citation repair".
+  weakening the claim into something unverifiable. The repaired vN+1 carries
+  the reason "citation repair" and goes through §3 like every other
+  proposal — it is not saved here.
 
 ## 3. Confirm, then version
 
