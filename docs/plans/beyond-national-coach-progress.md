@@ -12,7 +12,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 |---|---|---|---|---|---|
 | 1 | 0 | Machine-readable programs | done (PR open) | `feat/phase-0-machine-readable-programs` — [PR #4](https://github.com/clementrx/Performance-agent/pull/4) | 617 tests green |
 | 2 | 1 | Season calendar & backward planning | done (PR open) | `feat/phase-1-season-calendar` — [PR #5](https://github.com/clementrx/Performance-agent/pull/5) | 659 tests; +6 tools (53 total) |
-| 3 | 2 | Full monitoring | done (PR open) | `feat/phase-2-full-monitoring` — PR vs `feat/phase-1-season-calendar` | 749 tests; +9 tools (62 total) |
+| 3 | 2 | Full monitoring | done (PR open) | `feat/phase-2-full-monitoring` — [PR #6](https://github.com/clementrx/Performance-agent/pull/6) (base: phase 1) | 749 tests; +9 tools (62 total) |
 | 4 | 9 | Activity file import | pending | — | — |
 | 5 | 3 | Day-of session autoregulation | pending | — | — |
 | 6 | 4 | Intra-week sequencing & interference | pending | — | — |
