@@ -74,6 +74,10 @@ route through program-planning instead of patching sessions in place.
 ## 3. Confirm, then version
 
 - Present the proposed vN+1 and ASK the athlete to confirm before saving.
+- **Adapted programs pass the same delivery gate as new ones:** hand the
+  confirmed vN+1 to program-review (le Contrôleur) and save only on an
+  APPROVED verdict — session-level objections are fixed here, structural ones
+  route through program-planning. No adapted version is delivered unreviewed.
 - Run `check_citations` if the proposal cites evidence.
 - `save_program` with a reason that states the diagnosis and the change (e.g.
   "missed week 3 with a cold; shifted block back one week and cut week-4 volume").

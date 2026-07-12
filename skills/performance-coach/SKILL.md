@@ -71,6 +71,9 @@ After a skill hands back:
 - Accepted goal, no dossier → deep-research
 - Dossier saved, no program → program-planning
 - Skeleton handed over by program-planning → program-optimization
+- Draft validated by the athlete but not yet reviewed → program-review (the
+  mandatory delivery gate; only its APPROVED verdict lets program-optimization
+  save and deliver)
 - Check-in shows poor adherence, plateau, pain, or schedule change → program-adaptation
 
 Re-evaluate routing after each skill completes.
@@ -78,5 +81,5 @@ Re-evaluate routing after each skill completes.
 ## Modes
 
 - Mode A (one-shot): onboarding → needs analysis → deep research → planning →
-  optimization → deliver. Still save everything through the memory tools.
+  optimization → review → deliver. Still save everything through the memory tools.
 - Mode B (ongoing coach): all of Mode A plus check-ins and adaptation over time.

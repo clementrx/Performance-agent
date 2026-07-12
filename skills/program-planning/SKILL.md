@@ -53,7 +53,11 @@ The choice follows calendar_type + goal + what the dossier says:
   late-season date (cup final, playoffs) may still get a short
   `build_peaking_block` appended before it, on top of the in-season weeks —
   justify that hybrid the same way as any other model choice, cited from the
-  dossier or labeled coaching judgment.
+  dossier or labeled coaching judgment. The tool's test week assumes a 1RM
+  test day: its supra-maximal (above-1.0) intensities are for test-day openers
+  ONLY, so keep them only when the decisive date IS a 1RM test. Before a
+  fixture, cap the final week at high but submaximal intensity and state
+  plainly that this deviates from the tool's test-week numbers, and why.
 - **open_ended**, or concurrent qualities with no deadline pressure →
   `build_undulating_sessions` to structure intensity within the week, and/or
   `build_periodization_waves` across weeks.
@@ -90,7 +94,10 @@ finishes. It carries:
    tapers marked.
 3. **Weekly targets** — per-muscle set targets and/or endurance
    volume/intensity per week, as numbers.
-4. **Constraints the Optimizer must respect** — availability (sessions per
+4. **Intensity mode per cycle** — state whether each cycle prescribes by RIR
+   or by %1RM; the Optimizer's prescription path follows this declaration,
+   not a per-exercise choice.
+5. **Constraints the Optimizer must respect** — availability (sessions per
    week), equipment, injuries, split_preferences, and the analysis' injury
    flags.
 
@@ -104,4 +111,9 @@ finishes. It carries:
   synchronization. The frame must exist (and match) before sessions are
   finalized, so training and deficit are synchronized (no aggressive deficit
   during an intensification block).
+- **The Nutritionniste can refuse.** If nutrition-planning came back with NO
+  frame saved and a red flag recorded (an engine refusal, or disordered-eating
+  signals), do not loop the frame gate and do not proceed to sessions: route
+  the GOAL back to needs-analysis — a goal whose nutrition side was refused
+  needs renegotiation, not a program.
 - Then route onward to program-optimization, skeleton in the conversation.

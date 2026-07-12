@@ -3,8 +3,9 @@ name: program-optimization
 description: Use when program-planning has handed over a quantified skeleton.
   Builds the concrete sessions with the athlete under their real constraints,
   computes every load and pace through the engine, states a progression rule per
-  exercise, iterates until the athlete validates, and saves the program through
-  the versioned store.
+  exercise, iterates until the athlete validates, hands the draft to
+  program-review, and saves through the versioned store only on an APPROVED
+  verdict.
 tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         check_citations, prescribe_load, prescribe_reps_load, estimate_1rm,
         progress_double_progression, prescribe_top_set_backoff,
@@ -95,14 +96,20 @@ revision rounds on the same session with no resolution, stop looping — name th
 disagreement plainly and hand back to performance-coach instead of iterating a
 fourth time.
 
-## 5. Save and deliver
+## 5. The gate, then save and deliver
 
 - **Nutrition annex:** call `read_nutrition_frame`. If a frame exists, quote
   its daily kcal and protein target in the program header ("nutrition frame vN:
   X kcal/day, Y g protein/day"); if it errors, there is no annex — never invent
   one.
-- Run `check_citations` over the full program text (skeleton section included);
-  fix anything flagged.
+- **Hand the athlete-validated draft to program-review (le Contrôleur) — the
+  mandatory delivery gate.** Only an APPROVED verdict authorizes the save. A
+  RETURNED verdict comes back with quoted objections: fix session-level
+  objections (loads, exercise choice, layout) here and resubmit; structural
+  objections (model, phases, weekly targets) go back to program-planning with
+  the objection quoted. Never save a draft the Contrôleur has not approved.
+- On APPROVED: run `check_citations` over the full program text (skeleton
+  section included); fix anything flagged.
 - `save_program` (markdown body — the skeleton section plus the sessions;
   goal_id; v1 needs no reason). Quote the saved version and path back. Check
   `read_athlete`'s program_version first: PROGRAM versioning is global across

@@ -49,6 +49,7 @@ def test_coach_skill_carries_the_global_rules(skills):
         "program-planning",
         "program-optimization",
         "nutrition-planning",
+        "program-review",
     ):
         assert needle in body, f"coach skill lost the rule: {needle}"
 
@@ -108,6 +109,9 @@ def test_planning_skill_protocol(skills):
         "check_citations",
         "nutrition-planning",
         "program-optimization",
+        "submaximal",
+        "intensity mode",
+        "needs-analysis",
     ):
         assert needle in body, f"program-planning skill lost: {needle}"
 
@@ -132,6 +136,9 @@ def test_optimization_skill_protocol(skills):
         "rest",
         "purpose",
         "stars",
+        "program-review",
+        "approved",
+        "returned",
     ):
         assert needle in body, f"program-optimization skill lost: {needle}"
 
@@ -161,6 +168,8 @@ def test_adaptation_skill_protocol(skills):
         "save_program",
         "reason",
         "confirm",
+        "program-review",
+        "approved",
     ):
         assert needle in body, f"adaptation skill lost: {needle}"
 
