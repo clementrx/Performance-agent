@@ -10,15 +10,21 @@ from typing import Annotated, TypedDict
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
+from performance_agent.engine import SeasonModality
+from performance_agent.memory import season as season_planner
 from performance_agent.memory import store
 from performance_agent.memory.paths import resolve_athlete_dir
 from performance_agent.memory.schemas import (
+    Calendar,
+    CalendarEvent,
     CheckinEntry,
     Goal,
     Profile,
     ProgramPlan,
+    RecurringConstraint,
     SessionEntry,
 )
+from performance_agent.memory.season import SeasonPlanView
 from performance_agent.memory.time_context import TimeContext, build_time_context
 
 
@@ -314,6 +320,71 @@ def read_nutrition_frame(version: int | None = None) -> VersionedDocView:
     )
 
 
+class CalendarSummary(TypedDict):
+    """Event and recurring-constraint counts after a calendar write."""
+
+    total_events: int
+    total_recurring: int
+
+
+def read_calendar() -> Calendar:
+    """Return the athlete's season calendar (dated events + recurring constraints).
+
+    Empty when nothing has been recorded. Events are date-sorted. The season
+    planner (build_season_plan) reads this as its scheduling source of truth.
+    """
+    return store.read_calendar(resolve_athlete_dir())
+
+
+def upsert_calendar_event(event: CalendarEvent) -> CalendarSummary:
+    """Add a dated event, or replace the event with the same id.
+
+    Each event carries a slug id, a date, a kind (competition/test/camp/
+    travel/holiday/other), an A/B/C priority, a label, and optionally the
+    goal_id it serves. A-priority competitions drive the season backward plan.
+    """
+    calendar = store.upsert_calendar_event(resolve_athlete_dir(), event)
+    return CalendarSummary(
+        total_events=len(calendar.events), total_recurring=len(calendar.recurring)
+    )
+
+
+def remove_calendar_event(event_id: str) -> CalendarSummary:
+    """Remove the dated event with this id (no-op when it is absent)."""
+    calendar = store.remove_calendar_event(resolve_athlete_dir(), event_id)
+    return CalendarSummary(
+        total_events=len(calendar.events), total_recurring=len(calendar.recurring)
+    )
+
+
+def set_recurring_constraints(recurring: list[RecurringConstraint]) -> CalendarSummary:
+    """Replace the whole weekly recurring-constraint list (whole-list replace).
+
+    Each constraint is a weekday (0=Monday), a kind (club_practice/match_day/
+    unavailable), an optional duration and estimated session-RPE (CR-10), and
+    a label. This is a replace, not a merge — pass the FULL current list.
+    """
+    calendar = store.set_recurring_constraints(resolve_athlete_dir(), recurring)
+    return CalendarSummary(
+        total_events=len(calendar.events), total_recurring=len(calendar.recurring)
+    )
+
+
+def build_season_plan(modality: SeasonModality = "mixed") -> SeasonPlanView:
+    """Plan the season backward from the calendar's dated events.
+
+    Reserves a taper immediately before each A-priority competition and fills
+    the gaps with block (>= 6 weeks) or wave development; two A events closer
+    than 6 weeks yield a maintenance bridge flagged as a compromise (surface it
+    honestly). With no dated event, returns one open-ended development segment.
+    modality (strength/endurance/mixed) sets taper lengths. Each segment carries
+    week indices, calendar dates, its phase_type, and a rationale to quote;
+    B/C events are surfaced separately (B gets a mini-taper, C is trained
+    through). Chain the periodization builders per segment's phase_type.
+    """
+    return season_planner.build_season_plan(resolve_athlete_dir(), modality)
+
+
 def get_time_context() -> TimeContext:
     """Current date plus days-since deltas and goal countdowns.
 
@@ -342,6 +413,11 @@ def register(mcp: FastMCP) -> None:
         read_research_dossier,
         save_nutrition_frame,
         read_nutrition_frame,
+        read_calendar,
+        upsert_calendar_event,
+        remove_calendar_event,
+        set_recurring_constraints,
+        build_season_plan,
         get_time_context,
     ):
         mcp.tool()(tool)

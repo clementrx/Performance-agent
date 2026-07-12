@@ -8,7 +8,8 @@ description: Use after the research dossier is saved (or the athlete has explici
 tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         search_evidence, get_citation, check_citations, build_periodization_waves,
         build_block_cycle, build_undulating_sessions, build_inseason_maintenance,
-        build_peaking_block, weekly_set_targets_for, read_nutrition_frame]
+        build_peaking_block, weekly_set_targets_for, read_nutrition_frame,
+        read_calendar, build_season_plan, recommend_taper]
 ---
 
 # Program Planning — le Planificateur
@@ -38,9 +39,27 @@ qualities) and render any id you quote with `get_citation`. What the corpus
 does not cover is labeled coaching judgment. State plainly in the skeleton
 that it was built without a research dossier.
 
-## 2. Choose the periodization model — and justify it
+## 2. Plan the season backward when the calendar has dated events
 
-The choice follows calendar_type + goal + what the dossier says:
+`read_calendar`: if it holds **one or more dated events**, the season is planned
+backward from them — you MUST call `build_season_plan` (pass the modality:
+strength / endurance / mixed) BEFORE choosing per-block models. It returns
+tiled segments (each with a `phase_type`, week indices, dates, and a rationale)
+plus B/C events. Then chain the builders below per segment: `block` →
+`build_block_cycle`, `waves` → `build_periodization_waves`, `peaking` →
+`build_peaking_block`, `in_season` → `build_inseason_maintenance`; `taper`
+segments use `recommend_taper`'s length; `maintenance`/`transition` are light
+bridges. **Quote each segment's rationale in the skeleton** — especially any
+`compromise` flag (two A events too close): the athlete must hear that honestly.
+B events get a mini-taper/light week inside their block, never a full taper; C
+events are trained through. Record the season plan reference in the eventual
+`ProgramPlan.season_ref`. With no dated event, `build_season_plan` returns one
+open-ended development segment — fall back to the per-goal model choice below.
+
+## 3. Choose the periodization model — and justify it
+
+The choice follows calendar_type + goal + what the dossier says (within each
+season segment when a season plan exists):
 
 - **single_deadline** 6+ weeks out → `build_block_cycle` (accumulation →
   intensification → realization). A scheduled 1RM test date → append
@@ -67,7 +86,7 @@ Name the model you chose and WHY — cited from the dossier's periodization face
 judgment. Where the dossier shows a live disagreement, say which camp the
 structure follows and why; a facet it marked thin stays coaching judgment here.
 
-## 3. Per-cycle volume and intensity targets
+## 4. Per-cycle volume and intensity targets
 
 Structure without numbers is decoration:
 
@@ -81,7 +100,7 @@ Structure without numbers is decoration:
   from the model. A wave you don't apply to the numbers is decoration.
 - Deloads and tapers land where the model puts them — never silently dropped.
 
-## 4. Write the skeleton
+## 5. Write the skeleton
 
 The skeleton is not saved separately and there is no skeleton store by design:
 it lives in this conversation and maps into the structured `ProgramPlan`
@@ -103,7 +122,7 @@ week/session notes. It carries:
    week), equipment, injuries, split_preferences, and the analysis' injury
    flags.
 
-## 5. Hand off
+## 6. Hand off
 
 - Run `check_citations` over the skeleton text; fix anything flagged.
 - Goal touches body composition (cut, gain, recomp): route to nutrition-planning

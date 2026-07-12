@@ -1,7 +1,19 @@
 from datetime import date, datetime
 
-from performance_agent.memory.schemas import CheckinEntry, Goal, SessionEntry
-from performance_agent.memory.store import append_checkin, append_session, upsert_goal
+from performance_agent.memory.schemas import (
+    CalendarEvent,
+    CheckinEntry,
+    Goal,
+    RecurringConstraint,
+    SessionEntry,
+)
+from performance_agent.memory.store import (
+    append_checkin,
+    append_session,
+    set_recurring_constraints,
+    upsert_calendar_event,
+    upsert_goal,
+)
 from performance_agent.memory.time_context import build_time_context
 
 TODAY = date(2026, 7, 10)
@@ -13,6 +25,54 @@ def test_empty_directory_yields_null_deltas(tmp_path):
     assert context["days_since_last_session"] is None
     assert context["days_since_last_checkin"] is None
     assert context["goals"] == []
+    assert context["next_events"] == []
+    assert context["recurring_constraints"] == []
+
+
+def test_next_events_lists_future_ab_events_soonest_first(tmp_path):
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="race-a", date=date(2026, 11, 1), kind="competition", priority="A", label="Marathon"
+        ),
+    )
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="tuneup", date=date(2026, 9, 1), kind="competition", priority="B", label="10k"
+        ),
+    )
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="past", date=date(2026, 6, 1), kind="competition", priority="A", label="old"
+        ),
+    )
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="fun", date=date(2026, 10, 1), kind="other", priority="C", label="parkrun"
+        ),
+    )
+    events = build_time_context(tmp_path, today=TODAY)["next_events"]
+    # C events and past events are excluded; soonest first.
+    assert [e["event_id"] for e in events] == ["tuneup", "race-a"]
+    assert events[0]["days_until"] == (date(2026, 9, 1) - TODAY).days
+
+
+def test_recurring_constraints_are_surfaced(tmp_path):
+    set_recurring_constraints(
+        tmp_path,
+        [
+            RecurringConstraint(
+                weekday=2, kind="club_practice", est_minutes=90, est_srpe=6, label="Club run"
+            )
+        ],
+    )
+    recurring = build_time_context(tmp_path, today=TODAY)["recurring_constraints"]
+    assert len(recurring) == 1
+    assert recurring[0]["kind"] == "club_practice"
+    assert recurring[0]["est_srpe"] == 6
 
 
 def test_deltas_come_from_the_most_recent_entries(tmp_path):

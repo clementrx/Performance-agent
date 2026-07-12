@@ -14,16 +14,20 @@ import yaml
 from pydantic import ValidationError
 
 from performance_agent.memory.schemas import (
+    Calendar,
+    CalendarEvent,
     CheckinEntry,
     Goal,
     Profile,
     ProgramPlan,
+    RecurringConstraint,
     SessionEntry,
 )
 from performance_agent.programs.render import render_program
 
 PROFILE_FILE = "profile.yaml"
 GOALS_FILE = "goals.yaml"
+CALENDAR_FILE = "calendar.yaml"
 SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
 PROGRAMS_DIR = "programs"
@@ -105,6 +109,49 @@ def upsert_goal(base_dir: Path, goal: Goal) -> list[Goal]:
         _to_yaml([g.model_dump(mode="json") for g in goals]),
     )
     return goals
+
+
+def read_calendar(base_dir: Path) -> Calendar:
+    """Return the stored season calendar, or an empty one when none exists."""
+    path = base_dir / CALENDAR_FILE
+    if not path.exists():
+        return Calendar()
+    return _validated(path, lambda: Calendar.model_validate(_load_yaml(path) or {}))
+
+
+def write_calendar(base_dir: Path, calendar: Calendar) -> Path:
+    """Persist the whole calendar as readable YAML; returns the file path."""
+    path = base_dir / CALENDAR_FILE
+    _atomic_write(path, _to_yaml(calendar.model_dump(mode="json")))
+    return path
+
+
+def upsert_calendar_event(base_dir: Path, event: CalendarEvent) -> Calendar:
+    """Add a dated event or replace the one with the same id; events stay date-sorted."""
+    calendar = read_calendar(base_dir)
+    events = [e for e in calendar.events if e.id != event.id]
+    events.append(event)
+    events.sort(key=lambda e: e.date)
+    updated = calendar.model_copy(update={"events": events})
+    write_calendar(base_dir, updated)
+    return updated
+
+
+def remove_calendar_event(base_dir: Path, event_id: str) -> Calendar:
+    """Remove the dated event with this id (no-op when absent)."""
+    calendar = read_calendar(base_dir)
+    events = [e for e in calendar.events if e.id != event_id]
+    updated = calendar.model_copy(update={"events": events})
+    write_calendar(base_dir, updated)
+    return updated
+
+
+def set_recurring_constraints(base_dir: Path, recurring: list[RecurringConstraint]) -> Calendar:
+    """Replace the whole recurring-constraint list (whole-list replace, not merge)."""
+    calendar = read_calendar(base_dir)
+    updated = calendar.model_copy(update={"recurring": list(recurring)})
+    write_calendar(base_dir, updated)
+    return updated
 
 
 def _append_jsonl(path: Path, json_line: str) -> None:

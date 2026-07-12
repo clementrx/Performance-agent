@@ -7,7 +7,7 @@ description: Use when a returning athlete with an active program shows up — or
   adaptation when triggers fire.
 tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         read_sessions, read_checkins, read_nutrition_frame, compute_session_load,
-        write_profile]
+        write_profile, upsert_calendar_event, remove_calendar_event]
 ---
 
 # Training Check-in — le Vigile
@@ -60,6 +60,12 @@ After logging, scan `read_sessions` and `read_checkins` for the recent window:
   program-adaptation (the training side may need to move too).
 - **Fixture pile-up:** calendar_type is recurring_fixtures and the athlete
   reports extra matches beyond what the program assumed → program-adaptation.
+- **Calendar change:** always ask "any change to your dated events — races moved,
+  added, or dropped?". Quote `get_time_context`'s next_events so the question is
+  concrete. On any change, persist it (`upsert_calendar_event` /
+  `remove_calendar_event`) and route to program-adaptation to replan the affected
+  season segments — the new program version's reason names the calendar change
+  (e.g. "race moved two weeks later; taper shifted").
 
 ## Red flags
 

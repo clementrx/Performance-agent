@@ -37,6 +37,13 @@ from performance_agent.engine.periodization import (
     build_undulating_week,
     build_weekly_waves,
 )
+from performance_agent.engine.season import (
+    SeasonEvent,
+    SeasonModality,
+    SeasonSegment,
+    plan_season,
+    recommend_taper_length,
+)
 from performance_agent.engine.strength import (
     ProgressionDecision,
     TopSetBackoff,
@@ -65,6 +72,9 @@ __all__ = [
     "InseasonWeek",
     "PeakingWeek",
     "ProgressionDecision",
+    "SeasonEvent",
+    "SeasonModality",
+    "SeasonSegment",
     "TopSetBackoff",
     "TrainingAge",
     "UndulatingSession",
@@ -89,7 +99,9 @@ __all__ = [
     "one_rm_wathan",
     "pace_s_per_km",
     "percentage_for_reps_rir",
+    "plan_season",
     "prescribe_energy_target",
+    "recommend_taper_length",
     "reps_for_percentage_rir",
     "riegel_predict",
     "rir_from_rpe",

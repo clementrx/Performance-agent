@@ -429,4 +429,15 @@ async def test_all_engine_tools_are_listed(client):
         "prescribe_top_set_backoff",
         "prescribe_wave_loading",
         "convert_rpe_to_rir",
+        "recommend_taper",
     } <= names
+
+
+@pytest.mark.anyio
+async def test_recommend_taper_tool(client):
+    result = await client.call_tool(
+        "recommend_taper",
+        {"buildup_weeks": 12, "modality": "endurance", "event_priority": "A"},
+    )
+    assert not result.isError
+    assert 4 <= result.structuredContent["taper_days"] <= 14

@@ -8,7 +8,7 @@ description: Use when program-optimization hands over an athlete-validated draft
 tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         read_nutrition_frame, check_citations, get_citation, prescribe_load,
         prescribe_reps_load, weekly_set_targets_for, compute_session_load,
-        read_program]
+        read_program, read_calendar]
 ---
 
 # Program Review — le Contrôleur
@@ -72,6 +72,11 @@ Work the list in order; every item is pass/fail with the evidence quoted.
    across the week sum within those targets (and within the training-age
    landmarks from item 1); every block's `cite` is a real corpus id (folded into
    the `check_citations` pass in item 2, no `cite` left uncited-but-claimed).
+7. **Calendar coherence (when dated events exist):** `read_calendar`. Every
+   A-priority competition has a taper landing in the week(s) immediately before
+   it — a taper that is late, missing, or lands before a B/C event instead is a
+   fail; B events got a mini-taper/light week, not a full taper; C events were
+   trained through. The mesocycle phases follow the season plan's segments.
 
 ## 3. Pass two — ADVERSARIAL second opinion
 

@@ -23,6 +23,9 @@ from performance_agent.engine import TrainingAge
 
 Locale = Literal["en", "fr", "es"]
 
+_MONDAY = 0
+_SUNDAY = 6
+
 
 def _require_naive(value: datetime) -> datetime:
     if value.tzinfo is not None:
@@ -52,6 +55,20 @@ class Availability(BaseModel):
 
     sessions_per_week: int = Field(ge=1, le=14)
     minutes_per_session: int = Field(ge=10, le=480)
+    weekdays: list[int] | None = None  # real training weekdays (0=Mon..6=Sun)
+
+    @field_validator("weekdays")
+    @classmethod
+    def _weekdays_in_range_and_unique(cls, value: list[int] | None) -> list[int] | None:
+        if value is None:
+            return value
+        if any(day < _MONDAY or day > _SUNDAY for day in value):
+            msg = f"weekdays must each be 0-6 (Mon-Sun), got {value}"
+            raise ValueError(msg)
+        if len(set(value)) != len(value):
+            msg = f"weekdays must be unique, got {value}"
+            raise ValueError(msg)
+        return sorted(value)
 
 
 class SetPerformed(BaseModel):
@@ -344,3 +361,49 @@ class ProgramPlan(BaseModel):
             msg = f"week_index must be globally unique and increasing, got {indices}"
             raise ValueError(msg)
         return self
+
+
+# --- Season calendar (dated events + weekly recurring constraints) --------
+#
+# calendar.yaml is the scheduling source of truth; the season planner reads it
+# to build the program backward from real dates.
+
+CalendarEventKind = Literal["competition", "test", "camp", "travel", "holiday", "other"]
+RecurringKind = Literal["club_practice", "match_day", "unavailable"]
+
+
+class CalendarEvent(BaseModel):
+    """One dated event on the athlete's season calendar."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    date: date
+    kind: CalendarEventKind
+    priority: Literal["A", "B", "C"]
+    label: str = Field(min_length=1)
+    goal_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    sport: str | None = None
+    notes: str | None = None
+
+
+class RecurringConstraint(BaseModel):
+    """A weekly recurring commitment the program must plan around."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    weekday: int = Field(ge=0, le=6)  # 0 = Monday
+    kind: RecurringKind
+    est_minutes: int | None = Field(default=None, ge=1, le=480)
+    est_srpe: float | None = Field(default=None, ge=1, le=10)  # CR-10 session RPE
+    label: str = Field(min_length=1)
+
+
+class Calendar(BaseModel):
+    """The athlete's dated events and weekly recurring constraints."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    events: list[CalendarEvent] = Field(default_factory=list)
+    recurring: list[RecurringConstraint] = Field(default_factory=list)

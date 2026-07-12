@@ -17,6 +17,27 @@ class GoalTimeView(TypedDict):
     weeks_remaining: float | None
 
 
+class CalendarEventView(TypedDict):
+    """Countdown view of one upcoming A/B calendar event."""
+
+    event_id: str
+    date: str
+    priority: str
+    kind: str
+    days_until: int
+    label: str
+
+
+class RecurringView(TypedDict):
+    """One weekly recurring constraint active every week."""
+
+    weekday: int
+    kind: str
+    est_minutes: int | None
+    est_srpe: float | None
+    label: str
+
+
 class TimeContext(TypedDict):
     """Everything date-related the coach needs at conversation start."""
 
@@ -26,6 +47,8 @@ class TimeContext(TypedDict):
     last_checkin_on: str | None
     days_since_last_checkin: int | None
     goals: list[GoalTimeView]
+    next_events: list[CalendarEventView]
+    recurring_constraints: list[RecurringView]
 
 
 def _goal_view(goal_id: str, statement: str, deadline: date | None, current: date) -> GoalTimeView:
@@ -37,6 +60,38 @@ def _goal_view(goal_id: str, statement: str, deadline: date | None, current: dat
         days_remaining=days,
         weeks_remaining=round(days / 7, 1) if days is not None else None,
     )
+
+
+def _next_events(base_dir: Path, current: date) -> list[CalendarEventView]:
+    """Upcoming A/B events (today or later), soonest first."""
+    calendar = store.read_calendar(base_dir)
+    upcoming = [
+        CalendarEventView(
+            event_id=event.id,
+            date=event.date.isoformat(),
+            priority=event.priority,
+            kind=event.kind,
+            days_until=(event.date - current).days,
+            label=event.label,
+        )
+        for event in calendar.events
+        if event.priority in ("A", "B") and event.date >= current
+    ]
+    upcoming.sort(key=lambda view: view["date"])
+    return upcoming
+
+
+def _recurring(base_dir: Path) -> list[RecurringView]:
+    return [
+        RecurringView(
+            weekday=constraint.weekday,
+            kind=constraint.kind,
+            est_minutes=constraint.est_minutes,
+            est_srpe=constraint.est_srpe,
+            label=constraint.label,
+        )
+        for constraint in store.read_calendar(base_dir).recurring
+    ]
 
 
 def build_time_context(base_dir: Path, today: date | None = None) -> TimeContext:
@@ -56,4 +111,6 @@ def build_time_context(base_dir: Path, today: date | None = None) -> TimeContext
         last_checkin_on=last_checkin.isoformat() if last_checkin else None,
         days_since_last_checkin=(current - last_checkin).days if last_checkin else None,
         goals=goals,
+        next_events=_next_events(base_dir, current),
+        recurring_constraints=_recurring(base_dir),
     )

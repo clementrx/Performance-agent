@@ -218,7 +218,58 @@ async def test_memory_tools_are_listed(client):
         "read_research_dossier",
         "save_nutrition_frame",
         "read_nutrition_frame",
+        "read_calendar",
+        "upsert_calendar_event",
+        "remove_calendar_event",
+        "set_recurring_constraints",
+        "build_season_plan",
     } <= names
+
+
+@pytest.mark.anyio
+async def test_calendar_and_season_plan_through_tools(client):
+    await client.call_tool(
+        "upsert_calendar_event",
+        {
+            "event": {
+                "id": "race-a",
+                "date": "2026-11-02",
+                "kind": "competition",
+                "priority": "A",
+                "label": "Marathon",
+            }
+        },
+    )
+    await client.call_tool(
+        "set_recurring_constraints",
+        {"recurring": [{"weekday": 2, "kind": "club_practice", "label": "club run"}]},
+    )
+    calendar = await client.call_tool("read_calendar", {})
+    assert len(calendar.structuredContent["events"]) == 1
+    assert len(calendar.structuredContent["recurring"]) == 1
+
+    plan = await client.call_tool("build_season_plan", {"modality": "endurance"})
+    assert not plan.isError
+    phases = [s["phase_type"] for s in plan.structuredContent["segments"]]
+    assert "taper" in phases and phases[-1] == "competition"
+
+
+@pytest.mark.anyio
+async def test_remove_calendar_event_through_tools(client):
+    await client.call_tool(
+        "upsert_calendar_event",
+        {
+            "event": {
+                "id": "race",
+                "date": "2026-11-02",
+                "kind": "competition",
+                "priority": "A",
+                "label": "M",
+            }
+        },
+    )
+    removed = await client.call_tool("remove_calendar_event", {"event_id": "race"})
+    assert removed.structuredContent["total_events"] == 0
 
 
 @pytest.mark.anyio

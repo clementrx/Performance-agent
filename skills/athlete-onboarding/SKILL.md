@@ -2,7 +2,8 @@
 name: athlete-onboarding
 description: Use when the athlete profile is empty or missing key facts. Runs the
   structured intake questionnaire and persists everything through the memory tools.
-tools: [read_athlete, write_profile, upsert_goal, log_session, estimate_1rm]
+tools: [read_athlete, write_profile, upsert_goal, log_session, estimate_1rm,
+        upsert_calendar_event, set_recurring_constraints]
 ---
 
 # Athlete Onboarding — l'Entretien
@@ -49,6 +50,23 @@ insist more than once. Collect, in this order:
    both are present — fixtures means recurring competitions, not recurring
    training, so record single_deadline whenever there is one specific date to
    peak for.
+7b. **Season calendar (MANDATORY — this is the scheduling source of truth).** The
+   goal deadline lives on the goal; the *calendar* is what the season is planned
+   backward from. Collect EVERY dated event and persist each with
+   `upsert_calendar_event`: competitions (with an A/B/C priority — A = peak for
+   it, B = perform but don't fully taper, C = train through), test days, training
+   camps, travel, holidays, exam periods. For each, set the kind, the date, the
+   priority, a label, and the goal_id it serves when it maps to a goal. Then
+   collect the WEEKLY recurring commitments and persist them together with
+   `set_recurring_constraints` (whole-list): club practices (with typical duration
+   and an estimated CR-10 session-RPE), match days, and days the athlete is
+   unavailable. Finally record the athlete's REAL training weekdays in
+   profile.availability.weekdays (0 = Monday), not just a count. This step is not
+   optional for a serious competitor: if the athlete truly has no dated event,
+   they must explicitly confirm that before you accept an open_ended calendar —
+   say plainly that a dated calendar is the professional standard and unlocks
+   backward season planning. The code still coaches on partial data; it just
+   follows up for what is missing.
 8. **Environment** — equipment (be concrete: barbell? rack? treadmill? track
    access?), sessions per week, minutes per session, and split_preferences (e.g.
    "upper/lower", "full body", "push/pull/legs" — scheduling quirks go to notes).

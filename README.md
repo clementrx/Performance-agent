@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 47 tools. If so, you're done — just talk to it.
+You should see 53 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -242,10 +242,11 @@ to periodize, when to deload). The MCP tools own every fact. The agent you alrea
 glues it together with your existing subscription — **zero additional LLM cost**.
 
 **Working today:** deterministic engine (1RM estimation, Riegel race prediction,
-session-RPE load & ACWR, goal feasibility, periodization waves; 617 tests incl.
-property-based) · 47 MCP tools · file-based athlete memory with versioned,
-machine-readable programs (structured plan + rendered markdown) and an adaptation
-audit trail · DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
+session-RPE load & ACWR, goal feasibility, periodization waves, backward season
+planning from a dated calendar; 659 tests incl. property-based) · 53 MCP tools ·
+file-based athlete memory with a season calendar, versioned machine-readable
+programs (structured plan + rendered markdown) and an adaptation audit trail ·
+DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
 behind a double verification gate · eleven coaching skills incl. a mandatory delivery
 gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard

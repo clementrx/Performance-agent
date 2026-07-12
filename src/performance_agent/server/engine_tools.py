@@ -17,6 +17,7 @@ from performance_agent.engine import (
     InseasonWeek,
     PeakingWeek,
     ProgressionDecision,
+    SeasonModality,
     TopSetBackoff,
     TrainingAge,
     UndulatingSession,
@@ -42,6 +43,7 @@ from performance_agent.engine import (
     pace_s_per_km,
     percentage_for_reps_rir,
     prescribe_energy_target,
+    recommend_taper_length,
     riegel_predict,
     rir_from_rpe,
     session_rpe_load,
@@ -153,6 +155,28 @@ class RirValue(TypedDict):
     """Reps in reserve equivalent to a session RPE."""
 
     rir: float
+
+
+class TaperLength(TypedDict):
+    """Recommended taper length in days."""
+
+    taper_days: int
+
+
+def recommend_taper(
+    buildup_weeks: int,
+    modality: SeasonModality,
+    event_priority: Literal["A", "B", "C"],
+) -> TaperLength:
+    """Recommend a taper length in days (4-14) before a competition.
+
+    Endurance events taper longest and strength shortest (corpus taper
+    meta-analysis, tapering-performance-meta-2007); a short buildup shortens
+    it, and a B event gets a mini-taper (never a full one). modality is
+    strength, endurance or mixed; buildup_weeks is the weeks of loading before
+    the taper (non-negative). Returns days, clamped to [4, 14].
+    """
+    return TaperLength(taper_days=recommend_taper_length(buildup_weeks, modality, event_priority))
 
 
 def assess_endurance_goal(
@@ -543,5 +567,6 @@ def register(mcp: FastMCP) -> None:
         prescribe_top_set_backoff,
         prescribe_wave_loading,
         convert_rpe_to_rir,
+        recommend_taper,
     ):
         mcp.tool()(tool)
