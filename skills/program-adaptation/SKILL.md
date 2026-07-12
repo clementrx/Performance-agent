@@ -4,7 +4,7 @@ description: Use when a check-in fires a trigger (missed sessions, high fatigue,
   pain, plateau, schedule change). Diagnoses from logged data and writes the next
   program version with an explicit reason.
 tools: [read_athlete, get_time_context, read_program, read_sessions, read_checkins,
-        compute_session_load, compute_weekly_loads, compute_acwr,
+        read_session_adjustments, compute_session_load, compute_weekly_loads, compute_acwr,
         assess_endurance_goal, assess_strength_goal, assess_hypertrophy_goal,
         assess_bodycomp_goal, weekly_set_targets_for, prescribe_load, estimate_1rm,
         build_periodization_waves, search_evidence, search_evidence_live,
@@ -48,6 +48,11 @@ every one carries a reason the athlete (and future you) can audit.
   weeks); route to needs-analysis to renegotiate the deadline first.
 - Re-run the goal-type-matched assessment tool with today's numbers if the goal's
   feasibility may have moved (quote the new drivers vs the old ones).
+- Call `read_session_adjustments` and read the day-of history: it is direct evidence
+  of where the plan meets friction. Repeated time compressions point to a schedule
+  mismatch (the program asks for more minutes than the life has); repeated readiness
+  downgrades point to under-recovery (the load is landing harder than planned). An
+  escalate=true signal is often what routed here — name which pattern it is.
 - Name the diagnosis in one sentence: under-recovery / under-stimulus / interrupted
   training / life-constraint change / pain-driven (map check-in triggers loosely:
   fatigue ≥ 8 → under-recovery; adherence < 70% → interrupted training; but

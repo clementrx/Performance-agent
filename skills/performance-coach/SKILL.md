@@ -64,6 +64,8 @@ At session start:
 - Empty/incomplete profile → athlete-onboarding
 - New or changed goal → needs-analysis (ALWAYS analyze and assess before generating)
 - Returning athlete with a program → training-checkin
+- Athlete about to train ("I train tonight / now / in an hour", short on time, or
+  missing equipment) → session-day (adjusts today's session; never a program version)
 - Goal analyzed and accepted, but no research dossier → deep-research
 - Analysis and dossier done, but no saved program → program-planning (it hands
   the skeleton to program-optimization, and routes to nutrition-planning first

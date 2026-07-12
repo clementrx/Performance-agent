@@ -12,6 +12,7 @@ EXPECTED_SKILLS = {
     "program-adaptation",
     "program-report",
     "deep-research",
+    "session-day",
 }
 
 
@@ -259,3 +260,22 @@ def test_nutrition_skill_protocol(skills):
         "intensification",
     ):
         assert needle in body, f"nutrition-planning skill lost: {needle}"
+
+
+def test_session_day_skill_protocol(skills):
+    session_day = next(s for s in skills if s.frontmatter["name"] == "session-day")
+    body = session_day.body.casefold()
+    for needle in (
+        "read_program",
+        "compute_readiness",
+        "adjust_session",
+        "compress_session",
+        "substitute_exercise",
+        "log_session_adjustment",
+        "read_session_adjustments",
+        "escalat",
+        "program-adaptation",
+        "never",
+        "hooper",
+    ):
+        assert needle in body, f"session-day skill lost: {needle}"

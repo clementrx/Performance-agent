@@ -10,7 +10,8 @@ tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         read_nutrition_frame, compute_session_load, compute_monotony_strain,
         compute_fitness_fatigue, compute_acwr, compute_readiness,
         estimate_srpe_from_hr, budget_weekly_load, import_activity_file,
-        write_profile, upsert_calendar_event, remove_calendar_event]
+        read_session_adjustments, write_profile, upsert_calendar_event,
+        remove_calendar_event]
 ---
 
 # Training Check-in — le Vigile
@@ -89,6 +90,11 @@ After logging, scan `read_sessions` and `read_checkins` for the recent window:
 - **Failed reps:** logged reps land well below the program's target range
   (`read_program` for the targets) on repeated exposures → program-adaptation.
 - **Fatigue ≥ 8** → program-adaptation.
+- **Day-of adjustments piling up:** call `read_session_adjustments` and read its
+  `escalation` block. escalate=true — 3+ downward readiness adjustments or 3+ time
+  compressions in 14 days — is a diagnostic signal: repeated compressions mean a
+  schedule mismatch, repeated readiness downgrades mean under-recovery. Route to
+  program-adaptation; the plan, not just tonight's session, needs to change.
 - **Bodyweight drift:** when a nutrition frame exists, call
   `read_nutrition_frame` and compare the check-ins' bodyweight_kg series
   against the frame's weekly_change_kg trajectory. Drift >2% of bodyweight off

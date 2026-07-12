@@ -227,6 +227,42 @@ class ReadinessEntry(BaseModel):
     _naive_at = field_validator("at")(staticmethod(_require_naive))
 
 
+ReadinessBand = Literal["green", "amber", "red"]
+AdjustmentKind = Literal["readiness", "time", "equipment", "manual"]
+
+
+class AdjustmentInputs(BaseModel):
+    """The trigger values behind a day-of adjustment (band / minutes / missing kit)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    band: ReadinessBand | None = None
+    available_minutes: int | None = Field(default=None, ge=1, le=480)
+    missing_equipment: list[str] = Field(default_factory=list)
+
+
+class SessionAdjustmentEntry(BaseModel):
+    """One day-of session adjustment (never a program version).
+
+    kind records what drove it (readiness/time/equipment/manual); inputs holds
+    the trigger values; deltas_summary is the machine-readable list of what
+    changed; applied says whether the athlete took the adjusted session.
+    Appended to session_adjustments.jsonl (schema_version 1).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    at: datetime
+    session_plan_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    kind: AdjustmentKind
+    inputs: AdjustmentInputs = Field(default_factory=AdjustmentInputs)
+    deltas_summary: list[str] = Field(default_factory=list)
+    applied: bool = True
+
+    _naive_at = field_validator("at")(staticmethod(_require_naive))
+
+
 # --- Structured programs (machine-readable source of truth) ---------------
 #
 # A program is a ProgramPlan tree; the markdown is a deterministic render of it

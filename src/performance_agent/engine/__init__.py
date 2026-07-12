@@ -4,6 +4,20 @@ Public API re-exports. Agents call these functions as tools; they never
 compute training numbers themselves.
 """
 
+from performance_agent.engine.autoregulation import (
+    AdjustedSession,
+    AdjustmentRecord,
+    Block,
+    BlockDelta,
+    CompressedSession,
+    CutBlock,
+    EscalationSignals,
+    Session,
+    adjust_session_for_readiness,
+    compress_session,
+    count_escalation_signals,
+    substitute_exercise,
+)
 from performance_agent.engine.endurance import (
     PaceZone,
     pace_s_per_km,
@@ -80,13 +94,21 @@ from performance_agent.engine.strength import (
     wave_loading,
     weekly_set_targets,
 )
+from performance_agent.engine.substitutions import Substitute
 
 __all__ = [
     "AcwrMethod",
+    "AdjustedSession",
+    "AdjustmentRecord",
+    "Block",
+    "BlockDelta",
     "BlockWeek",
     "BodycompFeasibility",
+    "CompressedSession",
+    "CutBlock",
     "DayState",
     "EnergyTarget",
+    "EscalationSignals",
     "FeasibilityResult",
     "ImplausibilityFlag",
     "InseasonWeek",
@@ -98,6 +120,8 @@ __all__ = [
     "SeasonEvent",
     "SeasonModality",
     "SeasonSegment",
+    "Session",
+    "Substitute",
     "TopSetBackoff",
     "TrainingAge",
     "UndulatingSession",
@@ -105,6 +129,7 @@ __all__ = [
     "WeekLoad",
     "WeeklySetTargets",
     "acute_chronic_ratio",
+    "adjust_session_for_readiness",
     "bmr_mifflin_st_jeor",
     "bodycomp_feasibility",
     "budget_weekly_load",
@@ -113,6 +138,8 @@ __all__ = [
     "build_strength_peaking",
     "build_undulating_week",
     "build_weekly_waves",
+    "compress_session",
+    "count_escalation_signals",
     "double_progression",
     "endurance_feasibility",
     "estimate_srpe_from_hr",
@@ -135,6 +162,7 @@ __all__ = [
     "rir_from_rpe",
     "session_rpe_load",
     "strength_feasibility",
+    "substitute_exercise",
     "tdee_from_bmr",
     "top_set_backoff",
     "training_zones_from_race",

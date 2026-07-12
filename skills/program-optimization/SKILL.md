@@ -11,7 +11,7 @@ tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         progress_double_progression, prescribe_top_set_backoff,
         prescribe_wave_loading, convert_rpe_to_rir, predict_race_time,
         compute_pace, read_nutrition_frame, read_calendar, budget_weekly_load,
-        save_program]
+        substitute_exercise, save_program]
 ---
 
 # Program Optimization — l'Optimiseur
@@ -94,10 +94,20 @@ render any corpus id you quote with `get_citation`.
   labeled coaching judgment in its `progression_rule`/`notes`, never given a
   fake `cite`.
 - **Fallbacks are mandatory per session** (`low_readiness`, `short_on_time`,
-  `missing_equipment` — all non-empty). Author them as the concrete self-serve
-  version the athlete follows offline: "tired: top set at RPE 7, skip block C",
-  "35 min: A + B1 only", "no rack: goblet squat 3×10 @ RIR 2". The schema
-  rejects an empty fallback, so a session is not done until all three are real.
+  `missing_equipment` — all non-empty). Author them with the SAME engine logic the
+  day-of session-day skill applies, so the printed program is self-serve when the
+  athlete is offline:
+  - `low_readiness`: the amber step — top set down one step (RPE −1 / RIR +1 /
+    −5% 1RM), back-off and secondary volume cut ~25%, optional blocks dropped
+    ("tired: top set at RPE 7, skip block C").
+  - `short_on_time`: the compression cut order — keep the primary top work, drop
+    optional then secondary ("35 min: A + B1 only").
+  - `missing_equipment`: a real same-pattern swap — call `substitute_exercise`
+    (exercise, movement pattern, the athlete's other equipment) and write the first
+    doable option ("no rack: goblet squat 3×10 @ RIR 2"). It is coaching judgment,
+    not a cited prescription.
+  The schema rejects an empty fallback, so a session is not done until all three are
+  real.
 - **Warm-ups are automatic.** Leave primary strength blocks at `warmup="auto"`;
   the renderer emits the ramp-up sets (via the engine) so the printed program
   carries them without you writing each ramp by hand.

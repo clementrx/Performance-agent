@@ -22,7 +22,9 @@ from performance_agent.memory.schemas import (
     ProgramPlan,
     ReadinessEntry,
     RecurringConstraint,
+    SessionAdjustmentEntry,
     SessionEntry,
+    SessionPlan,
 )
 from performance_agent.programs.render import render_program
 
@@ -32,6 +34,7 @@ CALENDAR_FILE = "calendar.yaml"
 SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
 READINESS_FILE = "readiness.jsonl"
+SESSION_ADJUSTMENTS_FILE = "session_adjustments.jsonl"
 PROGRAMS_DIR = "programs"
 ANALYSIS_DIR = "analysis"
 RESEARCH_DIR = "research"
@@ -218,6 +221,38 @@ def read_readiness(base_dir: Path) -> list[ReadinessEntry]:
         path,
         lambda: [ReadinessEntry.model_validate_json(line) for line in lines if line.strip()],
     )
+
+
+def append_session_adjustment(base_dir: Path, entry: SessionAdjustmentEntry) -> None:
+    """Append one day-of session adjustment to the append-only log."""
+    _append_jsonl(base_dir / SESSION_ADJUSTMENTS_FILE, entry.model_dump_json())
+
+
+def read_session_adjustments(base_dir: Path) -> list[SessionAdjustmentEntry]:
+    """Return all logged session adjustments in insertion order."""
+    path = base_dir / SESSION_ADJUSTMENTS_FILE
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return _validated(
+        path,
+        lambda: [
+            SessionAdjustmentEntry.model_validate_json(line) for line in lines if line.strip()
+        ],
+    )
+
+
+def find_session_plan(base_dir: Path, session_plan_id: str) -> SessionPlan | None:
+    """Locate a SessionPlan by id in the latest structured program (None if absent)."""
+    program = read_program(base_dir)
+    if program is None or program.plan is None:
+        return None
+    for meso in program.plan.mesocycles:
+        for week in meso.weeks:
+            for session in week.sessions:
+                if session.id == session_plan_id:
+                    return session
+    return None
 
 
 def _doc_path(base_dir: Path, subdir: str, prefix: str, version: int) -> Path:

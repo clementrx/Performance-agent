@@ -14,7 +14,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 2 | 1 | Season calendar & backward planning | done (PR open) | `feat/phase-1-season-calendar` — [PR #5](https://github.com/clementrx/Performance-agent/pull/5) | 659 tests; +6 tools (53 total) |
 | 3 | 2 | Full monitoring | done (PR open) | `feat/phase-2-full-monitoring` — [PR #6](https://github.com/clementrx/Performance-agent/pull/6) (base: phase 1) | 749 tests; +9 tools (62 total) |
 | 4 | 9 | Activity file import | done (PR open) | `feat/phase-9-activity-import` — [PR #7](https://github.com/clementrx/Performance-agent/pull/7) | 782 tests; +1 tool (63 total); +fitdecode dep |
-| 5 | 3 | Day-of session autoregulation | pending | — | — |
+| 5 | 3 | Day-of session autoregulation | done (PR open) | `feat/phase-3-session-autoregulation` (base: phase 9) | 823 tests; +5 tools (68 total) |
 | 6 | 4 | Intra-week sequencing & interference | pending | — | — |
 | 7 | 5 | Individual response profile | pending | — | — |
 | 8 | 6 | Deloads, adherence, return-to-load | pending | — | — |
@@ -163,9 +163,57 @@ is broken.
   READMEs stay for the single batched pre-release refresh. English README updated
   to 63 tools / 782 tests and a line about activity-file import.
 
+## Phase 3 notes
+
+- **New tools (5, total 68):** `adjust_session`, `compress_session`,
+  `substitute_exercise`, `log_session_adjustment`, `read_session_adjustments` — all
+  in the new `server/autoregulation_tools.py` (registered in `server/app.py`).
+  `adjust_session`/`compress_session` look the session up by id in the latest
+  structured program (`store.find_session_plan`); `read_session_adjustments` and
+  `log_session_adjustment` also return the rolling-window `escalation` block.
+- **Engine/memory split (purity preserved):** `engine/autoregulation.py` is pure —
+  it imports ONLY stdlib + engine siblings (`engine/load.ReadinessBand`,
+  `engine/strength.warmup_scheme`, `engine/substitutions`) and operates on
+  engine-local `@dataclass`es (`Session`/`Block`/`BlockDelta`/`CompressedSession`/
+  `AdjustmentRecord`). It NEVER imports `memory.schemas`, mirroring the
+  `engine/season.py` ↔ `memory/season.py` pattern; `tests/engine/test_engine_purity.py`
+  passes. `memory/autoregulation.py` owns all `SessionPlan` ↔ engine conversion,
+  builds the red-readiness recovery `SessionPlan`, and does the file I/O for
+  escalation counting (`datetime`-based days-ago). `engine/substitutions.py` holds
+  the per-movement-pattern swap table.
+- **Escalation logic location:** deterministic and pure in
+  `engine.count_escalation_signals` (≥3 downward readiness adjustments OR ≥3 time
+  compressions in a rolling 14-day window); `memory.autoregulation.escalation_signals`
+  only converts stored entries → engine records with a reference datetime. Unit-tested
+  with fixtures at both layers.
+- **Schema/storage:** new `SessionAdjustmentEntry` (schema_version 1) with a bounded
+  `AdjustmentInputs` submodel → append-only `session_adjustments.jsonl`, mirroring
+  `append_session`/`read_sessions`. A day-of adjustment is NEVER a program version.
+- **Evidence decisions:** no new corpus entries (no verified network). The RIR/RPE
+  adjustment step sizes (RPE −1 / RIR +1 / −5% 1RM) are labeled team-chosen prior /
+  coaching judgment in code (Helms et al. named in-spirit only, NOT added to the
+  corpus unverified). The per-set time model, the −25% volume cut, escalation
+  thresholds, and every substitution-table entry are labeled team-chosen prior /
+  coaching judgment — no fabricated citations.
+- **Skills:** new `skills/session-day/SKILL.md` (pre-session ritual, escalation
+  route to program-adaptation, never versions a program); `session-day` added to
+  `EXPECTED_SKILLS` in `tests/skills/test_structure.py` with a focused protocol test.
+  `performance-coach` routes to it; `training-checkin` and `program-adaptation` read
+  `read_session_adjustments` as a diagnostic signal; `program-optimization` now
+  authors each session's `Fallbacks` via the same engine logic (and calls
+  `substitute_exercise` for the missing-equipment line).
+- **Substring guard:** `log_session` is a substring of `log_session_adjustment`, so
+  the session-day skill declares `log_session` too (the tool-reference test matches
+  substrings); the skill text distinguishes them explicitly.
+- **Report templates / i18n READMEs:** no new athlete-visible report section this
+  phase (day-of adjustments are ephemeral, not a program artifact); the batched
+  report pass and the 4 `docs/i18n/` READMEs stay DEFERRED to the pre-release
+  refresh. English README updated to 68 tools / 823 tests + a day-of-autoregulation
+  phrase.
+
 ## Resume notes
 
-_Phase 9 complete. Next in execution order: **Phase 3 (day-of session
-autoregulation)** (order 0, 1, 2, 9, **3**, 4, 5, 6, 7, 8); depends on Phase 0's
-structured `ProgramPlan` and Phase 2's readiness/monitoring. Branch off
-`feat/phase-9-activity-import` (stacked)._
+_Phase 3 complete. Next in execution order: **Phase 4 (intra-week sequencing &
+interference guard)** (order 0, 1, 2, 9, 3, **4**, 5, 6, 7, 8); depends on Phase 0's
+structured `ProgramPlan` and Phase 1's calendar/recurring constraints. Branch off
+`feat/phase-3-session-autoregulation` (stacked)._

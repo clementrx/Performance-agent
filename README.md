@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 63 tools. If so, you're done — just talk to it.
+You should see 68 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -230,7 +230,7 @@ flowchart TB
     U[You] <--> H[Your agent CLI<br/>Claude Code · Gemini CLI · Codex<br/>= the coach: converses, reasons, adapts]
     H <-->|MCP| S[performance-agent server]
     H -.follows.-> SK[Coaching skills<br/>onboarding · needs analysis · deep research ·
-planning · optimization · nutrition · review · check-ins · adaptation]
+planning · optimization · nutrition · review · check-ins · session-day · adaptation]
     S --> E[Sports science engine<br/>deterministic · property-tested · zero LLM]
     S --> EV[(Evidence corpus<br/>graded studies, SQLite FTS5)]
     S --> M[(Athlete directory<br/>profile · programs · logs — plain files)]
@@ -244,14 +244,17 @@ glues it together with your existing subscription — **zero additional LLM cost
 **Working today:** deterministic engine (1RM estimation, Riegel race prediction,
 session-RPE load & ACWR, monotony/strain, fitness-fatigue CTL/ATL/TSB, readiness
 banding, external-load budgeting, goal feasibility, periodization waves, backward
-season planning from a dated calendar; 782 tests incl. property-based) · 63 MCP
+season planning from a dated calendar, day-of session autoregulation
+(readiness-based adjustment, time compression, exercise substitution); 823 tests
+incl. property-based) · 68 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
-logs, versioned machine-readable programs (structured plan + rendered markdown)
-and an adaptation audit trail · activity-file import (.fit/.tcx/.gpx/CSV) that
+logs, versioned machine-readable programs (structured plan + rendered markdown),
+a day-of adjustment log with escalation signals, and an adaptation audit trail ·
+activity-file import (.fit/.tcx/.gpx/CSV) that
 proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
-behind a double verification gate · eleven coaching skills incl. a mandatory delivery
+behind a double verification gate · twelve coaching skills incl. a mandatory delivery
 gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard
 citation gate.
 
