@@ -209,6 +209,8 @@ async def test_memory_tools_are_listed(client):
         "upsert_goal",
         "log_session",
         "log_checkin",
+        "log_readiness",
+        "read_readiness",
         "save_program",
         "read_program",
         "get_time_context",
@@ -374,3 +376,79 @@ async def test_log_session_round_trips_structured_exercises(client):
     read_back = await client.call_tool("read_sessions", {})
     sessions = read_back.structuredContent["sessions"]
     assert sessions[0]["exercises"][0]["sets"][1]["rir"] == 1
+
+
+@pytest.mark.anyio
+async def test_log_session_returns_empty_flags_for_clean_entry(client):
+    result = await client.call_tool(
+        "log_session",
+        {"entry": {"performed_at": "2026-07-08T18:00:00", "rpe": 7, "duration_min": 60}},
+    )
+    assert not result.isError
+    assert result.structuredContent["flags"] == []
+    assert result.structuredContent["total_sessions"] == 1
+
+
+@pytest.mark.anyio
+async def test_log_session_flags_an_implausible_e1rm_jump(client):
+    baseline = {
+        "performed_at": "2026-07-01T18:00:00",
+        "exercises": [{"name": "back squat", "sets": [{"reps": 3, "load_kg": 100.0}]}],
+    }
+    await client.call_tool("log_session", {"entry": baseline})
+    spike = {
+        "performed_at": "2026-07-08T18:00:00",
+        "exercises": [{"name": "back squat", "sets": [{"reps": 3, "load_kg": 150.0}]}],
+    }
+    result = await client.call_tool("log_session", {"entry": spike})
+    assert not result.isError
+    codes = [f["code"] for f in result.structuredContent["flags"]]
+    assert "e1rm_jump" in codes
+    # the entry is still logged despite the flag
+    assert result.structuredContent["total_sessions"] == 2
+
+
+@pytest.mark.anyio
+async def test_log_session_external_source_is_stored(client):
+    entry = {
+        "performed_at": "2026-07-08T20:00:00",
+        "kind": "club practice",
+        "source": "external",
+        "avg_hr": 150.0,
+        "rpe": 6,
+        "duration_min": 90,
+    }
+    await client.call_tool("log_session", {"entry": entry})
+    read_back = await client.call_tool("read_sessions", {})
+    assert read_back.structuredContent["sessions"][0]["source"] == "external"
+
+
+@pytest.mark.anyio
+async def test_log_and_read_readiness(client):
+    logged = await client.call_tool(
+        "log_readiness",
+        {
+            "entry": {
+                "at": "2026-07-12T07:00:00",
+                "sleep": 2,
+                "fatigue": 3,
+                "soreness": 2,
+                "stress": 2,
+            }
+        },
+    )
+    assert not logged.isError
+    assert logged.structuredContent["total_readiness"] == 1
+
+    read_back = await client.call_tool("read_readiness", {})
+    assert not read_back.isError
+    reads = read_back.structuredContent["readiness"]
+    assert len(reads) == 1
+    assert reads[0]["sleep"] == 2
+
+
+@pytest.mark.anyio
+async def test_read_readiness_empty_on_fresh_dir(client):
+    result = await client.call_tool("read_readiness", {})
+    assert not result.isError
+    assert result.structuredContent["readiness"] == []

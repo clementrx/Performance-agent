@@ -11,8 +11,9 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from performance_agent.engine import SeasonModality
+from performance_agent.memory import monitoring, store
 from performance_agent.memory import season as season_planner
-from performance_agent.memory import store
+from performance_agent.memory.monitoring import PlausibilityFlag
 from performance_agent.memory.paths import resolve_athlete_dir
 from performance_agent.memory.schemas import (
     Calendar,
@@ -21,6 +22,7 @@ from performance_agent.memory.schemas import (
     Goal,
     Profile,
     ProgramPlan,
+    ReadinessEntry,
     RecurringConstraint,
     SessionEntry,
 )
@@ -57,10 +59,29 @@ class GoalCount(TypedDict):
     total_goals: int
 
 
-class SessionCount(TypedDict):
-    """Number of logged sessions after the operation."""
+class SessionLogResult(TypedDict):
+    """Sessions logged so far, plus any data-quality flags on this entry.
+
+    flags is empty when the entry looks clean. A non-empty flags list means a
+    value (an implausible 1RM jump, a load above a known max, an outlier
+    duration) needs confirming with the athlete before it is treated as fact —
+    the entry is still logged regardless.
+    """
 
     total_sessions: int
+    flags: list[PlausibilityFlag]
+
+
+class ReadinessCount(TypedDict):
+    """Number of logged readiness reads after the operation."""
+
+    total_readiness: int
+
+
+class ReadinessHistory(TypedDict):
+    """Logged readiness reads, oldest first."""
+
+    readiness: list[ReadinessEntry]
 
 
 class SessionHistory(TypedDict):
@@ -142,16 +163,24 @@ def upsert_goal(goal: Goal) -> GoalCount:
     return GoalCount(total_goals=len(store.upsert_goal(resolve_athlete_dir(), goal)))
 
 
-def log_session(entry: SessionEntry) -> SessionCount:
-    """Append one completed training session to the athlete's history.
+def log_session(entry: SessionEntry) -> SessionLogResult:
+    """Append one completed training session; returns the count and any flags.
 
     Strength sessions should carry structured exercises → sets
-    {reps, load_kg, rir}; endurance sessions may omit exercises entirely.
-    Timestamps are naive local wall-clock time (no timezone offset).
+    {reps, load_kg, rir}; endurance sessions may omit exercises entirely. Set
+    source="external" for load the coach did not program (club practice, matches,
+    physical work) and session_plan_id to link a session back to the program.
+    Timestamps are naive local wall-clock time (no timezone offset). The result
+    carries data-quality flags (implausible 1RM jumps, loads above a known max,
+    outlier durations); confirm any flagged value with the athlete before
+    treating it as fact — the entry is logged either way.
     """
     base = resolve_athlete_dir()
+    history = store.read_sessions(base)
+    profile = store.read_profile(base)
+    flags = monitoring.session_plausibility_flags(entry, history, profile)
     store.append_session(base, entry)
-    return SessionCount(total_sessions=len(store.read_sessions(base)))
+    return SessionLogResult(total_sessions=len(history) + 1, flags=flags)
 
 
 def log_checkin(entry: CheckinEntry) -> CheckinEntry:
@@ -182,6 +211,32 @@ def read_checkins(last_n: Annotated[int, Field(ge=1)] | None = None) -> CheckinH
     if last_n is not None:
         checkins = checkins[-last_n:]
     return CheckinHistory(checkins=checkins)
+
+
+def log_readiness(entry: ReadinessEntry) -> ReadinessCount:
+    """Append one pre-session readiness read (Hooper items, optional HRV).
+
+    Each Hooper item is 1 (best) to 7 (worst): sleep, fatigue, soreness, stress.
+    hrv_ms is an optional raw HRV value. For a serious competitor this is the
+    DEFAULT on training days — pass compute_readiness the same four items to get
+    the score and green/amber/red band. Timestamps are naive local wall-clock
+    time.
+    """
+    base = resolve_athlete_dir()
+    store.append_readiness(base, entry)
+    return ReadinessCount(total_readiness=len(store.read_readiness(base)))
+
+
+def read_readiness(last_n: Annotated[int, Field(ge=1)] | None = None) -> ReadinessHistory:
+    """Return logged readiness reads, oldest first (last_n limits to the most recent N).
+
+    Feed these to compute_readiness for the band and to build the daily-load and
+    freshness (TSB) picture alongside sessions.
+    """
+    readiness = store.read_readiness(resolve_athlete_dir())
+    if last_n is not None:
+        readiness = readiness[-last_n:]
+    return ReadinessHistory(readiness=readiness)
 
 
 def _doc_view(result: tuple[dict[str, object], str] | None, missing_msg: str) -> VersionedDocView:
@@ -403,8 +458,10 @@ def register(mcp: FastMCP) -> None:
         upsert_goal,
         log_session,
         log_checkin,
+        log_readiness,
         read_sessions,
         read_checkins,
+        read_readiness,
         save_program,
         read_program,
         save_analysis,

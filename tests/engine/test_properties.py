@@ -7,18 +7,24 @@ from hypothesis import strategies as st
 from performance_agent.engine import (
     acute_chronic_ratio,
     bodycomp_feasibility,
+    budget_weekly_load,
     build_weekly_waves,
     endurance_feasibility,
+    estimate_srpe_from_hr,
+    fitness_fatigue_series,
     hypertrophy_feasibility,
     one_rm_brzycki,
     one_rm_epley,
     one_rm_lombardi,
     one_rm_wathan,
     percentage_for_reps_rir,
+    readiness_score,
     reps_for_percentage_rir,
     riegel_predict,
     strength_feasibility,
+    training_zones_from_race,
     weekly_loads,
+    weekly_monotony,
     weekly_set_targets,
 )
 from performance_agent.engine.feasibility import TrainingAge
@@ -123,6 +129,76 @@ def test_weekly_loads_conserve_total(daily):
 def test_acwr_is_none_or_non_negative(daily):
     ratio = acute_chronic_ratio(daily)
     assert ratio is None or ratio >= 0
+
+
+@given(
+    week=st.lists(st.floats(min_value=0, max_value=2000, allow_nan=False), min_size=7, max_size=7)
+)
+def test_monotony_is_none_or_positive(week):
+    monotony = weekly_monotony(week)
+    assert monotony is None or monotony > 0
+
+
+@given(
+    daily=st.lists(st.floats(min_value=0, max_value=2000, allow_nan=False), max_size=120),
+)
+def test_fitness_fatigue_states_are_non_negative(daily):
+    for state in fitness_fatigue_series(daily):
+        assert state.ctl >= 0
+        assert state.atl >= 0
+        assert state.tsb == pytest.approx(state.ctl - state.atl)
+
+
+@given(load=st.floats(min_value=1, max_value=1000, allow_nan=False))
+def test_fitness_fatigue_converges_to_the_constant_load(load):
+    last = fitness_fatigue_series([load] * 800)[-1]
+    assert last.ctl == pytest.approx(load, rel=0.01)
+    assert last.atl == pytest.approx(load, rel=0.001)
+
+
+@given(
+    sleep=st.integers(min_value=1, max_value=7),
+    fatigue=st.integers(min_value=1, max_value=7),
+    soreness=st.integers(min_value=1, max_value=7),
+    stress=st.integers(min_value=1, max_value=7),
+    hrv=st.one_of(st.none(), st.floats(min_value=-50, max_value=50, allow_nan=False)),
+)
+def test_readiness_score_stays_in_range_with_consistent_band(sleep, fatigue, soreness, stress, hrv):
+    result = readiness_score(sleep, fatigue, soreness, stress, hrv)
+    assert 0.0 <= result.score_0_100 <= 100.0
+    if result.score_0_100 >= 75:
+        assert result.band == "green"
+    elif result.score_0_100 >= 50:
+        assert result.band == "amber"
+    else:
+        assert result.band == "red"
+
+
+@given(
+    avg_hr=st.floats(min_value=60, max_value=230, allow_nan=False),
+    hr_max=st.floats(min_value=100, max_value=230, allow_nan=False),
+)
+def test_srpe_from_hr_stays_on_the_cr10_scale(avg_hr, hr_max):
+    assume(avg_hr <= hr_max)
+    assert 1.0 <= estimate_srpe_from_hr(avg_hr, hr_max) <= 10.0
+
+
+@given(
+    target=st.floats(min_value=0, max_value=10000, allow_nan=False),
+    external=st.lists(st.floats(min_value=0, max_value=1000, allow_nan=False), max_size=10),
+)
+def test_budget_is_target_minus_external(target, external):
+    result = budget_weekly_load(target, external)
+    assert result.programmable_budget == pytest.approx(target - sum(external))
+    assert result.external_total == pytest.approx(sum(external))
+
+
+@given(distance=riegel_distances, time_s=times)
+def test_race_zones_are_ordered_fastest_to_slowest(distance, time_s):
+    zones = training_zones_from_race(distance, time_s)
+    edges = [z.low_pace_s_per_km for z in zones]
+    assert edges == sorted(edges)
+    assert all(z.low_pace_s_per_km < z.high_pace_s_per_km for z in zones)
 
 
 @given(

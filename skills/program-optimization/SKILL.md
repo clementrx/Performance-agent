@@ -10,7 +10,8 @@ tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         check_citations, prescribe_load, prescribe_reps_load, estimate_1rm,
         progress_double_progression, prescribe_top_set_backoff,
         prescribe_wave_loading, convert_rpe_to_rir, predict_race_time,
-        compute_pace, read_nutrition_frame, save_program]
+        compute_pace, read_nutrition_frame, read_calendar, budget_weekly_load,
+        save_program]
 ---
 
 # Program Optimization — l'Optimiseur
@@ -70,6 +71,12 @@ render any corpus id you quote with `get_citation`.
   athlete's available days, respecting split_preferences and sessions_per_week
   strictly — a plan the athlete cannot attend is a failed plan. Confirm
   availability is still current before laying out the week.
+- **Fit within the external-load budget:** `read_calendar`'s recurring
+  constraints (club practice, matches) are load the athlete already carries.
+  Keep programmed volume within the budget program-planning sized; if you need
+  to re-check while reshaping a week, `budget_weekly_load` (weekly target minus
+  those external loads) shows the remaining room and flags a conflict to surface
+  honestly rather than overshoot.
 - **Substitutions:** missing equipment → propose the substitution, state the
   expected difference in stimulus, ask the athlete. Active injury → adapt
   around it (performance-coach red-flag rules), never through it. Preferences

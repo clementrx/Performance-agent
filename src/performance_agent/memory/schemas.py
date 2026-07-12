@@ -145,7 +145,15 @@ class Goal(BaseModel):
 
 
 class SessionEntry(BaseModel):
-    """One completed training session (raw facts; loads are computed by engine tools)."""
+    """One completed training session (raw facts; loads are computed by engine tools).
+
+    source distinguishes work the coach programmed from external load the coach
+    does not (club practice, matches, physical work) — external load still
+    counts toward weekly totals. session_plan_id links a logged session back to
+    its SessionPlan.id in the active program. avg_hr feeds sRPE estimation for
+    sessions logged without a rated RPE. All three are optional for backward
+    compatibility with pre-Phase-2 logs.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -154,6 +162,11 @@ class SessionEntry(BaseModel):
     rpe: int | None = Field(default=None, ge=1, le=10)
     duration_min: int | None = Field(default=None, ge=1)
     exercises: list[ExercisePerformed] = Field(default_factory=list)
+    source: Literal["programmed", "external"] = "programmed"
+    session_plan_id: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64
+    )
+    avg_hr: float | None = Field(default=None, gt=0, le=230)
     notes: str | None = None
 
     _naive_performed_at = field_validator("performed_at")(staticmethod(_require_naive))
@@ -186,6 +199,29 @@ class CheckinEntry(BaseModel):
         Annotated[float, Field(gt=0, le=500, allow_inf_nan=False)],
     ] = Field(default_factory=dict)
     prs: list[RepPR] = Field(default_factory=list)
+    notes: str | None = None
+
+    _naive_at = field_validator("at")(staticmethod(_require_naive))
+
+
+class ReadinessEntry(BaseModel):
+    """One pre-session wellness read (Hooper items, optional HRV).
+
+    Each Hooper item is 1 (best) to 7 (worst): sleep quality, fatigue, muscle
+    soreness, stress. hrv_ms is an optional raw HRV measurement (e.g. rMSSD);
+    the engine interprets HRV as a percent delta from baseline, computed by the
+    caller. Appended to readiness.jsonl (schema_version 1).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    at: datetime
+    sleep: int = Field(ge=1, le=7)
+    fatigue: int = Field(ge=1, le=7)
+    soreness: int = Field(ge=1, le=7)
+    stress: int = Field(ge=1, le=7)
+    hrv_ms: float | None = Field(default=None, gt=0, le=1000)
     notes: str | None = None
 
     _naive_at = field_validator("at")(staticmethod(_require_naive))

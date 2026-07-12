@@ -20,6 +20,7 @@ from performance_agent.memory.schemas import (
     Goal,
     Profile,
     ProgramPlan,
+    ReadinessEntry,
     RecurringConstraint,
     SessionEntry,
 )
@@ -30,6 +31,7 @@ GOALS_FILE = "goals.yaml"
 CALENDAR_FILE = "calendar.yaml"
 SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
+READINESS_FILE = "readiness.jsonl"
 PROGRAMS_DIR = "programs"
 ANALYSIS_DIR = "analysis"
 RESEARCH_DIR = "research"
@@ -198,6 +200,23 @@ def read_checkins(base_dir: Path) -> list[CheckinEntry]:
     return _validated(
         path,
         lambda: [CheckinEntry.model_validate_json(line) for line in lines if line.strip()],
+    )
+
+
+def append_readiness(base_dir: Path, entry: ReadinessEntry) -> None:
+    """Append one pre-session readiness read to the append-only log."""
+    _append_jsonl(base_dir / READINESS_FILE, entry.model_dump_json())
+
+
+def read_readiness(base_dir: Path) -> list[ReadinessEntry]:
+    """Return all logged readiness reads in insertion order."""
+    path = base_dir / READINESS_FILE
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return _validated(
+        path,
+        lambda: [ReadinessEntry.model_validate_json(line) for line in lines if line.strip()],
     )
 
 

@@ -10,6 +10,7 @@ from typing import Literal, TypedDict
 from mcp.server.fastmcp import FastMCP
 
 from performance_agent.engine import (
+    AcwrMethod,
     BlockWeek,
     BodycompFeasibility,
     EnergyTarget,
@@ -34,6 +35,7 @@ from performance_agent.engine import (
     build_weekly_waves,
     double_progression,
     endurance_feasibility,
+    fitness_fatigue_series,
     hypertrophy_feasibility,
     load_for_percentage,
     one_rm_brzycki,
@@ -43,6 +45,7 @@ from performance_agent.engine import (
     pace_s_per_km,
     percentage_for_reps_rir,
     prescribe_energy_target,
+    readiness_score,
     recommend_taper_length,
     riegel_predict,
     rir_from_rpe,
@@ -50,9 +53,15 @@ from performance_agent.engine import (
     strength_feasibility,
     tdee_from_bmr,
     top_set_backoff,
+    training_zones_from_race,
     wave_loading,
     weekly_loads,
+    weekly_monotony,
+    weekly_strain,
 )
+from performance_agent.engine import budget_weekly_load as engine_budget_weekly_load
+from performance_agent.engine import estimate_srpe_from_hr as engine_estimate_srpe_from_hr
+from performance_agent.engine import flag_implausible_session as engine_flag_implausible_session
 from performance_agent.engine import weekly_set_targets as engine_weekly_set_targets
 
 _ONE_RM_FORMULAS = {
@@ -361,14 +370,16 @@ def compute_weekly_loads(daily_loads: list[float]) -> WeeklyLoads:
     return WeeklyLoads(weekly_totals=weekly_loads(daily_loads))
 
 
-def compute_acwr(daily_loads: list[float]) -> AcwrResult:
+def compute_acwr(daily_loads: list[float], method: AcwrMethod = "rolling") -> AcwrResult:
     """Acute:chronic workload ratio over the most recent 28 days (coupled variant).
 
-    Returns null when history is shorter than 28 days or the chronic load is
+    method "rolling" (default) is the classic 7-day-mean over 28-day-mean ratio;
+    "ewma" is the exponentially-weighted variant (weights recent days more).
+    Returns null when history is shorter than 28 days or the chronic term is
     zero. Descriptive trend only — its injury-prediction validity is contested;
     never present it as an injury probability.
     """
-    return AcwrResult(acute_chronic_ratio=acute_chronic_ratio(daily_loads))
+    return AcwrResult(acute_chronic_ratio=acute_chronic_ratio(daily_loads, method))
 
 
 def build_periodization_waves(
@@ -530,6 +541,208 @@ def prescribe_wave_loading(  # noqa: PLR0913 -- plan-approved signature; all cal
     )
 
 
+class MonotonyStrain(TypedDict):
+    """Foster monotony and strain for a 7-day block (null when the week is uniform)."""
+
+    weekly_load: float
+    monotony: float | None
+    strain: float | None
+
+
+class DayStateView(TypedDict):
+    """One day of the fitness-fatigue model."""
+
+    date_index: int
+    ctl: float
+    atl: float
+    tsb: float
+
+
+class FitnessFatigueSeries(TypedDict):
+    """Day-by-day CTL/ATL/TSB fitness-fatigue trend."""
+
+    days: list[DayStateView]
+
+
+class ReadinessResult(TypedDict):
+    """Pre-session readiness score, band, and per-item drivers."""
+
+    score_0_100: float
+    band: Literal["green", "amber", "red"]
+    drivers: dict[str, float]
+
+
+class SrpeEstimate(TypedDict):
+    """Estimated session-RPE (CR-10) from average heart rate."""
+
+    estimated_srpe: float
+
+
+class PaceZoneView(TypedDict):
+    """One training pace zone in seconds per kilometre."""
+
+    name: str
+    low_pace_s_per_km: float
+    high_pace_s_per_km: float
+
+
+class PaceZones(TypedDict):
+    """Five race-derived training pace zones, Z5 (fastest) to Z1 (slowest)."""
+
+    zones: list[PaceZoneView]
+
+
+class LoadBudgetResult(TypedDict):
+    """Programmable weekly load left after committed external load."""
+
+    programmable_budget: float
+    external_total: float
+    conflict: bool
+    drivers: dict[str, float]
+
+
+class FlagView(TypedDict):
+    """One data-quality concern to confirm with the athlete."""
+
+    code: str
+    message: str
+
+
+class PlausibilityResult(TypedDict):
+    """Data-quality flags for a session value (empty list = looks clean)."""
+
+    flags: list[FlagView]
+
+
+def compute_monotony_strain(daily_loads_7: list[float]) -> MonotonyStrain:
+    """Foster training monotony and strain for one 7-day block (descriptive).
+
+    Pass exactly 7 daily session-RPE loads (rest days as 0). Monotony is
+    mean/SD (a flat, samey week scores high); strain is weekly load x monotony.
+    Both are null when the week is perfectly uniform (SD 0). Present them as
+    trends the coach reads, never as an injury probability.
+    """
+    return MonotonyStrain(
+        weekly_load=sum(daily_loads_7),
+        monotony=weekly_monotony(daily_loads_7),
+        strain=weekly_strain(daily_loads_7),
+    )
+
+
+def compute_fitness_fatigue(daily_loads: list[float]) -> FitnessFatigueSeries:
+    """Day-by-day CTL/ATL/TSB fitness-fatigue trend from a daily-load series.
+
+    CTL (42-day EWMA) is the fitness trend, ATL (7-day EWMA) the fatigue trend,
+    TSB = CTL - ATL the freshness trend (positive = fresh, negative = fatigued).
+    Both EWMAs start cold at zero, so the first weeks ramp up. Descriptive
+    trends only, never a performance prediction; narrate the direction of the
+    last few days, not the absolute number.
+    """
+    return FitnessFatigueSeries(
+        days=[
+            DayStateView(date_index=d.date_index, ctl=d.ctl, atl=d.atl, tsb=d.tsb)
+            for d in fitness_fatigue_series(daily_loads)
+        ]
+    )
+
+
+def compute_readiness(
+    sleep: int, fatigue: int, soreness: int, stress: int, hrv_delta_pct: float | None = None
+) -> ReadinessResult:
+    """Score pre-session readiness 0-100 from the four Hooper items (+ optional HRV).
+
+    Each item is rated 1 (best) to 7 (worst): sleep quality, fatigue, muscle
+    soreness, stress. hrv_delta_pct is optional HRV vs the athlete's baseline as
+    a percent (+10 = 10% above), nudging the score up to +/-10 points. Bands:
+    >= 75 green, 50-74 amber, < 50 red. Descriptive read for autoregulation, not
+    a diagnosis; quote the drivers (per-item sub-scores) alongside the band.
+    """
+    result = readiness_score(sleep, fatigue, soreness, stress, hrv_delta_pct)
+    return ReadinessResult(score_0_100=result.score_0_100, band=result.band, drivers=result.drivers)
+
+
+def estimate_srpe_from_hr(avg_hr: float, hr_max: float) -> SrpeEstimate:
+    """Estimate a session-RPE (CR-10, 1-10) from average heart rate as %HRmax.
+
+    For club sessions and imported files that carry HR but no rated RPE. avg_hr
+    must be positive and <= hr_max; hr_max a plausible 100-230 bpm. This is an
+    ESTIMATE from Foster's HR/RPE table — confirm it with the athlete before
+    logging it as a fact.
+    """
+    return SrpeEstimate(estimated_srpe=engine_estimate_srpe_from_hr(avg_hr, hr_max))
+
+
+def endurance_zones(distance_m: float, time_s: float) -> PaceZones:
+    """Derive five running pace zones (s/km) from a recent race performance.
+
+    Estimates threshold pace by Riegel-projecting the race to 10 km, then scales
+    it into five contiguous zones from Z5 (interval, fastest) to Z1 (recovery,
+    slowest). Race distance must be within the Riegel band (1500-42195 m).
+    Population-model guidance, not a physiological test — say so.
+    """
+    return PaceZones(
+        zones=[
+            PaceZoneView(
+                name=z.name,
+                low_pace_s_per_km=z.low_pace_s_per_km,
+                high_pace_s_per_km=z.high_pace_s_per_km,
+            )
+            for z in training_zones_from_race(distance_m, time_s)
+        ]
+    )
+
+
+def budget_weekly_load(
+    target_weekly_load: float, external_loads: list[float], min_programmed_load: float = 0.0
+) -> LoadBudgetResult:
+    """Size programmable load after subtracting committed external load.
+
+    target_weekly_load is the intended weekly session-RPE total; external_loads
+    are the session-RPE loads the coach does NOT program (club practice, matches,
+    physical work). Returns programmable_budget = target - sum(external), the
+    external total and its share, and conflict=True when the budget falls below
+    min_programmed_load (external commitments already fill the week). Surface a
+    conflict honestly: cut the target or accept a higher total with monitoring.
+    """
+    result = engine_budget_weekly_load(target_weekly_load, external_loads, min_programmed_load)
+    return LoadBudgetResult(
+        programmable_budget=result.programmable_budget,
+        external_total=result.external_total,
+        conflict=result.conflict,
+        drivers=result.drivers,
+    )
+
+
+def flag_implausible_session(  # noqa: PLR0913 -- optional numeric guards, all keyword at call sites
+    session_e1rm_kg: float | None = None,
+    recent_best_e1rm_kg: float | None = None,
+    top_load_kg: float | None = None,
+    known_1rm_kg: float | None = None,
+    is_test: bool = False,
+    duration_min: float | None = None,
+    median_duration_min: float | None = None,
+) -> PlausibilityResult:
+    """Flag logged values that look like data-entry noise (never auto-rejects them).
+
+    Guards (team-chosen priors): a session estimated 1RM >15% above the recent
+    best; a working load above 115% of a known 1RM outside a test; a duration
+    more than 3x or below a third of the recent median. Pass only the numbers
+    the session has. log_session already runs these automatically — call this
+    directly only for ad-hoc checks. Confirm every flag with the athlete before
+    trusting the value.
+    """
+    flags = engine_flag_implausible_session(
+        session_e1rm_kg=session_e1rm_kg,
+        recent_best_e1rm_kg=recent_best_e1rm_kg,
+        top_load_kg=top_load_kg,
+        known_1rm_kg=known_1rm_kg,
+        is_test=is_test,
+        duration_min=duration_min,
+        median_duration_min=median_duration_min,
+    )
+    return PlausibilityResult(flags=[FlagView(code=f.code, message=f.message) for f in flags])
+
+
 def convert_rpe_to_rir(rpe: float) -> RirValue:
     """Convert a session RPE (1-10, half points allowed) to reps in reserve.
 
@@ -557,6 +770,13 @@ def register(mcp: FastMCP) -> None:
         compute_session_load,
         compute_weekly_loads,
         compute_acwr,
+        compute_monotony_strain,
+        compute_fitness_fatigue,
+        compute_readiness,
+        estimate_srpe_from_hr,
+        endurance_zones,
+        budget_weekly_load,
+        flag_implausible_session,
         build_periodization_waves,
         build_block_cycle,
         build_undulating_sessions,

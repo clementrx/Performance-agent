@@ -430,6 +430,13 @@ async def test_all_engine_tools_are_listed(client):
         "prescribe_wave_loading",
         "convert_rpe_to_rir",
         "recommend_taper",
+        "compute_monotony_strain",
+        "compute_fitness_fatigue",
+        "compute_readiness",
+        "estimate_srpe_from_hr",
+        "endurance_zones",
+        "budget_weekly_load",
+        "flag_implausible_session",
     } <= names
 
 
@@ -441,3 +448,91 @@ async def test_recommend_taper_tool(client):
     )
     assert not result.isError
     assert 4 <= result.structuredContent["taper_days"] <= 14
+
+
+@pytest.mark.anyio
+async def test_compute_acwr_ewma_method(client):
+    history = [100.0] * 30 + [200.0] * 7
+    result = await client.call_tool("compute_acwr", {"daily_loads": history, "method": "ewma"})
+    assert not result.isError
+    assert result.structuredContent["acute_chronic_ratio"] > 1.0
+
+
+@pytest.mark.anyio
+async def test_compute_monotony_strain_tool(client):
+    week = [100.0, 50.0, 0.0, 80.0, 0.0, 120.0, 0.0]
+    result = await client.call_tool("compute_monotony_strain", {"daily_loads_7": week})
+    assert not result.isError
+    content = result.structuredContent
+    assert content["weekly_load"] == pytest.approx(350.0)
+    assert content["monotony"] > 0
+    assert content["strain"] > 0
+
+
+@pytest.mark.anyio
+async def test_compute_monotony_strain_uniform_week_is_null(client):
+    result = await client.call_tool("compute_monotony_strain", {"daily_loads_7": [80.0] * 7})
+    assert not result.isError
+    assert result.structuredContent["monotony"] is None
+    assert result.structuredContent["strain"] is None
+
+
+@pytest.mark.anyio
+async def test_compute_fitness_fatigue_tool(client):
+    result = await client.call_tool("compute_fitness_fatigue", {"daily_loads": [100.0] * 60})
+    assert not result.isError
+    days = result.structuredContent["days"]
+    assert len(days) == 60
+    assert days[-1]["ctl"] > days[0]["ctl"]
+    assert "tsb" in days[-1]
+
+
+@pytest.mark.anyio
+async def test_compute_readiness_tool(client):
+    result = await client.call_tool(
+        "compute_readiness",
+        {"sleep": 2, "fatigue": 2, "soreness": 2, "stress": 2, "hrv_delta_pct": 5},
+    )
+    assert not result.isError
+    content = result.structuredContent
+    assert content["band"] == "green"
+    assert 0 <= content["score_0_100"] <= 100
+    assert "sleep" in content["drivers"]
+
+
+@pytest.mark.anyio
+async def test_estimate_srpe_from_hr_tool(client):
+    result = await client.call_tool("estimate_srpe_from_hr", {"avg_hr": 152, "hr_max": 190})
+    assert not result.isError
+    assert result.structuredContent["estimated_srpe"] == pytest.approx(6.0)
+
+
+@pytest.mark.anyio
+async def test_endurance_zones_tool(client):
+    result = await client.call_tool("endurance_zones", {"distance_m": 5000, "time_s": 1200})
+    assert not result.isError
+    zones = result.structuredContent["zones"]
+    assert len(zones) == 5
+    assert zones[0]["name"].startswith("Z5")
+
+
+@pytest.mark.anyio
+async def test_budget_weekly_load_tool(client):
+    result = await client.call_tool(
+        "budget_weekly_load",
+        {"target_weekly_load": 2000, "external_loads": [500, 600], "min_programmed_load": 1000},
+    )
+    assert not result.isError
+    content = result.structuredContent
+    assert content["programmable_budget"] == pytest.approx(900.0)
+    assert content["conflict"] is True
+
+
+@pytest.mark.anyio
+async def test_flag_implausible_session_tool(client):
+    result = await client.call_tool(
+        "flag_implausible_session",
+        {"session_e1rm_kg": 150, "recent_best_e1rm_kg": 120},
+    )
+    assert not result.isError
+    assert [f["code"] for f in result.structuredContent["flags"]] == ["e1rm_jump"]

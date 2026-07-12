@@ -12,7 +12,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 |---|---|---|---|---|---|
 | 1 | 0 | Machine-readable programs | done (PR open) | `feat/phase-0-machine-readable-programs` — [PR #4](https://github.com/clementrx/Performance-agent/pull/4) | 617 tests green |
 | 2 | 1 | Season calendar & backward planning | done (PR open) | `feat/phase-1-season-calendar` — [PR #5](https://github.com/clementrx/Performance-agent/pull/5) | 659 tests; +6 tools (53 total) |
-| 3 | 2 | Full monitoring | pending (subagent) | — | stacked on phase 1 |
+| 3 | 2 | Full monitoring | done (PR open) | `feat/phase-2-full-monitoring` — PR vs `feat/phase-1-season-calendar` | 749 tests; +9 tools (62 total) |
 | 4 | 9 | Activity file import | pending | — | — |
 | 5 | 3 | Day-of session autoregulation | pending | — | — |
 | 6 | 4 | Intra-week sequencing & interference | pending | — | — |
@@ -65,7 +65,58 @@ is broken.
 - **Report templates:** season-overview section deferred to a batched report pass
   (no athlete-visible report change wired this phase).
 
+## Phase 2 notes
+
+- **New tools (9, total 62):** engine — `compute_monotony_strain`,
+  `compute_fitness_fatigue`, `compute_readiness`, `estimate_srpe_from_hr`,
+  `endurance_zones`, `budget_weekly_load`, `flag_implausible_session`; memory —
+  `log_readiness`, `read_readiness`. `compute_acwr` gained a `method`
+  ("rolling"/"ewma") argument, and `log_session` now returns data-quality flags
+  alongside its count (its result type changed from `SessionCount` to
+  `SessionLogResult` = `{total_sessions, flags}`; the `total_sessions` field is
+  unchanged so existing callers keep working).
+- **New engine functions (`engine/load.py`):** `weekly_monotony`, `weekly_strain`,
+  `fitness_fatigue_series` (EWMA CTL/ATL/TSB, taus 42/7 labeled conventions),
+  `readiness_score` (Hooper items, optional HRV modifier, green≥75/amber≥50/red
+  bands — all team-chosen priors), `estimate_srpe_from_hr` (%HRmax→CR10 linear map
+  anchored on Foster's table), `budget_weekly_load`, `flag_implausible_session`
+  (e1RM-jump / load-over-1RM / duration-outlier guards). `engine/endurance.py`:
+  `training_zones_from_race` (Riegel-projected 10 km threshold proxy → 5 pace
+  zones). All new module-level constants are labeled `team-chosen prior` or tie to
+  the corpus.
+- **Data-quality glue:** `memory/monitoring.py` extracts the numbers
+  `flag_implausible_session` needs (best estimated 1RM per lift from history, known
+  1RM from the profile, recent median duration) so the pure engine guard stays
+  numeric; `log_session` runs it and returns the flags. Flags never block a
+  write — the entry is logged, the coach confirms flagged values.
+- **Schema/storage:** `SessionEntry` gained optional `source`
+  ("programmed"/"external"), `session_plan_id`, `avg_hr` (all backward-compatible;
+  legacy `sessions.jsonl` lines still load). New `ReadinessEntry` (schema_version 1)
+  → append-only `readiness.jsonl`, mirroring `append_session`/`read_sessions`.
+- **Tool-name collisions:** the engine functions `budget_weekly_load`,
+  `estimate_srpe_from_hr`, `flag_implausible_session` are imported into
+  `server/engine_tools.py` under `engine_*` aliases so the MCP tools can keep the
+  plan's exact names.
+- **Evidence:** no new corpus entries (no verified network to confirm DOIs/PMIDs).
+  Foster monotony/strain and readiness reuse the existing
+  `session-rpe-training-load-2001` where genuinely applicable; every new threshold
+  (EWMA taus, readiness bands, HRV slope, plausibility guards, HR→RPE slope, zone
+  multipliers, 10 km threshold proxy) is labeled `team-chosen prior` in code, per
+  the plan's anti-fabrication fallback. Foster 1998, Hooper 1995, Banister/Coggan
+  and the ACWR-EWMA (Williams) references named in the plan's evidence corpus
+  section were NOT added to the corpus for the same reason — deferred to a future
+  online verification pass.
+- **Report templates:** the P2/P9 load-trend section (weekly load with external
+  share, monotony/strain, CTL/ATL/TSB) is DEFERRED to a batched report pass, like
+  Phase 1's season overview (plan-sanctioned follow-up; no athlete-visible report
+  change wired this phase).
+- **i18n READMEs:** the 4 translated READMEs in `docs/i18n/` are left for the
+  single batched pre-release refresh (unchanged this phase). English README updated
+  to 62 tools / 749 tests.
+
 ## Resume notes
 
-_Phase 1 complete. Next: Phase 2 (full monitoring) — first phase to run via a
-background subagent, branching off `feat/phase-1-season-calendar` (stacked)._
+_Phase 2 complete. Next in execution order: **Phase 9 (activity file import)** —
+pulled forward per the locked decision (0, 1, 2, 9, 3, ...); depends on Phase 2's
+`SessionEntry` fields, `estimate_srpe_from_hr`, `flag_implausible_session` and
+`readiness.jsonl`. Branch off `feat/phase-2-full-monitoring` (stacked)._

@@ -9,7 +9,7 @@ tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         search_evidence, get_citation, check_citations, build_periodization_waves,
         build_block_cycle, build_undulating_sessions, build_inseason_maintenance,
         build_peaking_block, weekly_set_targets_for, read_nutrition_frame,
-        read_calendar, build_season_plan, recommend_taper]
+        read_calendar, build_season_plan, recommend_taper, budget_weekly_load]
 ---
 
 # Program Planning — le Planificateur
@@ -98,6 +98,13 @@ Structure without numbers is decoration:
 - **Endurance volume/intensity:** define the baseline week (week-1 durations
   and efforts), then scale every week by its volume_factor and intensity_factor
   from the model. A wave you don't apply to the numbers is decoration.
+- **External-load budget:** `read_calendar`'s recurring constraints (club
+  practice, matches) are load the coach does not program but the athlete still
+  performs. Estimate their weekly session-RPE total and call `budget_weekly_load`
+  (target weekly load, those external loads) to size the programmed volume within
+  what's left. When it flags a conflict — external commitments already fill the
+  week — surface it honestly to the athlete (reduce the target, or accept a higher
+  total with monitoring); never silently overshoot.
 - Deloads and tapers land where the model puts them — never silently dropped.
 
 ## 5. Write the skeleton

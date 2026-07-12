@@ -4,7 +4,12 @@ Public API re-exports. Agents call these functions as tools; they never
 compute training numbers themselves.
 """
 
-from performance_agent.engine.endurance import pace_s_per_km, riegel_predict
+from performance_agent.engine.endurance import (
+    PaceZone,
+    pace_s_per_km,
+    riegel_predict,
+    training_zones_from_race,
+)
 from performance_agent.engine.feasibility import (
     BodycompFeasibility,
     FeasibilityResult,
@@ -15,9 +20,21 @@ from performance_agent.engine.feasibility import (
     strength_feasibility,
 )
 from performance_agent.engine.load import (
+    AcwrMethod,
+    DayState,
+    ImplausibilityFlag,
+    LoadBudget,
+    ReadinessAssessment,
     acute_chronic_ratio,
+    budget_weekly_load,
+    estimate_srpe_from_hr,
+    fitness_fatigue_series,
+    flag_implausible_session,
+    readiness_score,
     session_rpe_load,
     weekly_loads,
+    weekly_monotony,
+    weekly_strain,
 )
 from performance_agent.engine.nutrition import (
     EnergyTarget,
@@ -65,13 +82,19 @@ from performance_agent.engine.strength import (
 )
 
 __all__ = [
+    "AcwrMethod",
     "BlockWeek",
     "BodycompFeasibility",
+    "DayState",
     "EnergyTarget",
     "FeasibilityResult",
+    "ImplausibilityFlag",
     "InseasonWeek",
+    "LoadBudget",
+    "PaceZone",
     "PeakingWeek",
     "ProgressionDecision",
+    "ReadinessAssessment",
     "SeasonEvent",
     "SeasonModality",
     "SeasonSegment",
@@ -84,6 +107,7 @@ __all__ = [
     "acute_chronic_ratio",
     "bmr_mifflin_st_jeor",
     "bodycomp_feasibility",
+    "budget_weekly_load",
     "build_block_periodization",
     "build_inseason_week",
     "build_strength_peaking",
@@ -91,6 +115,9 @@ __all__ = [
     "build_weekly_waves",
     "double_progression",
     "endurance_feasibility",
+    "estimate_srpe_from_hr",
+    "fitness_fatigue_series",
+    "flag_implausible_session",
     "hypertrophy_feasibility",
     "load_for_percentage",
     "one_rm_brzycki",
@@ -101,6 +128,7 @@ __all__ = [
     "percentage_for_reps_rir",
     "plan_season",
     "prescribe_energy_target",
+    "readiness_score",
     "recommend_taper_length",
     "reps_for_percentage_rir",
     "riegel_predict",
@@ -109,8 +137,11 @@ __all__ = [
     "strength_feasibility",
     "tdee_from_bmr",
     "top_set_backoff",
+    "training_zones_from_race",
     "warmup_scheme",
     "wave_loading",
     "weekly_loads",
+    "weekly_monotony",
     "weekly_set_targets",
+    "weekly_strain",
 ]

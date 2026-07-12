@@ -6,8 +6,11 @@ description: Use when a returning athlete with an active program shows up — or
   bodyweight drift off the nutrition frame, fixture pile-up), and routes to
   adaptation when triggers fire.
 tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
-        read_sessions, read_checkins, read_nutrition_frame, compute_session_load,
-        write_profile, upsert_calendar_event, remove_calendar_event]
+        log_readiness, read_readiness, read_sessions, read_checkins,
+        read_nutrition_frame, compute_session_load, compute_monotony_strain,
+        compute_fitness_fatigue, compute_acwr, compute_readiness,
+        estimate_srpe_from_hr, budget_weekly_load, write_profile,
+        upsert_calendar_event, remove_calendar_event]
 ---
 
 # Training Check-in — le Vigile
@@ -34,13 +37,38 @@ not the athlete names the problem.
    bodyweight_kg logged at check-ins is the time series the triggers read; the
    profile's static weight is updated via `write_profile` only when weight has
    durably moved.
+3b. **External load — always ask:** "anything I didn't program? club practice,
+   matches, physical work?" Log each as a session with `source="external"` and an
+   estimated sRPE — when the athlete gives an average HR instead of an RPE, call
+   `estimate_srpe_from_hr` and confirm the estimate before logging it. External
+   load counts toward every weekly total below.
 4. `log_checkin` with what you collected. Quote the stored days_since_last back.
+   If any session this window carried an implausibility flag on `log_session`,
+   confirm the value with the athlete before you treat it as fact.
 5. **Format-upgrade offer (once):** if `read_program` returns a `plan` of null,
    the active program is a legacy prose version. Offer to regenerate it as a
    structured version (route to program-adaptation, reason = "format upgrade",
    passes program-review as usual) so day-of adjustment and response tracking
    unlock without waiting for the next natural program change. It is an offer,
    not a blocker — the athlete can decline and keep training.
+
+## Load narration — descriptive trends, never predictions
+
+After logging, build the daily-load series from `read_sessions` (programmed +
+external) and narrate the picture — every number is a DESCRIPTIVE trend, never an
+injury probability:
+
+- **Weekly load & external share:** state the week's total and how much of it was
+  external ("of 2400 load this week, 900 was club practice you didn't program").
+  When sizing the next week, `budget_weekly_load` shows what programmable budget is
+  left once the recurring external load is subtracted.
+- **Monotony & strain:** `compute_monotony_strain` on the last 7 daily loads — a
+  high, flat week (high monotony) with a strain spike is Foster's early warning.
+- **Fitness-fatigue:** `compute_fitness_fatigue` for the CTL/ATL/TSB trend; quote
+  the direction of freshness (TSB) over the last few days, alongside `compute_acwr`.
+- **Readiness:** if the athlete logged readiness (`read_readiness`) or gives you the
+  four Hooper items now, `log_readiness` and `compute_readiness` for the green/amber/
+  red band; a red streak feeds the fatigue trigger below.
 
 ## Structured-signal triggers — scan them at every check-in
 
