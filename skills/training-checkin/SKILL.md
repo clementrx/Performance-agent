@@ -9,8 +9,8 @@ tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         log_readiness, read_readiness, read_sessions, read_checkins,
         read_nutrition_frame, compute_session_load, compute_monotony_strain,
         compute_fitness_fatigue, compute_acwr, compute_readiness,
-        estimate_srpe_from_hr, budget_weekly_load, write_profile,
-        upsert_calendar_event, remove_calendar_event]
+        estimate_srpe_from_hr, budget_weekly_load, import_activity_file,
+        write_profile, upsert_calendar_event, remove_calendar_event]
 ---
 
 # Training Check-in — le Vigile
@@ -42,6 +42,16 @@ not the athlete names the problem.
    estimated sRPE — when the athlete gives an average HR instead of an RPE, call
    `estimate_srpe_from_hr` and confirm the estimate before logging it. External
    load counts toward every weekly total below.
+3c. **Activity-file import — offer it to cut logging friction:** if the athlete
+   has a watch/app export (a `.fit`, `.tcx`, `.gpx`, or a Garmin/Strava/HRV
+   `.csv`), call `import_activity_file(path)`. It PROPOSES a session (duration,
+   distance, average HR, a match to a planned session or `source="external"`, and
+   an sRPE estimated from HR when possible) — it never logs. Read the proposal
+   back, confirm the values with the athlete (especially any data-quality flags,
+   and the RPE when `needs_srpe` is true), then `log_session` the confirmed entry.
+   For an HRV CSV the proposal returns dated readings; collect the four Hooper
+   items for each before `log_readiness`. A malformed file returns a readable
+   error — tell the athlete what to re-export, never guess the numbers.
 4. `log_checkin` with what you collected. Quote the stored days_since_last back.
    If any session this window carried an implausibility flag on `log_session`,
    confirm the value with the athlete before you treat it as fact.

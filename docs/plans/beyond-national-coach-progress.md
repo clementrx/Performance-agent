@@ -13,7 +13,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 1 | 0 | Machine-readable programs | done (PR open) | `feat/phase-0-machine-readable-programs` — [PR #4](https://github.com/clementrx/Performance-agent/pull/4) | 617 tests green |
 | 2 | 1 | Season calendar & backward planning | done (PR open) | `feat/phase-1-season-calendar` — [PR #5](https://github.com/clementrx/Performance-agent/pull/5) | 659 tests; +6 tools (53 total) |
 | 3 | 2 | Full monitoring | done (PR open) | `feat/phase-2-full-monitoring` — [PR #6](https://github.com/clementrx/Performance-agent/pull/6) (base: phase 1) | 749 tests; +9 tools (62 total) |
-| 4 | 9 | Activity file import | pending | — | — |
+| 4 | 9 | Activity file import | done (PR open) | `feat/phase-9-activity-import` (base: phase 2) | 782 tests; +1 tool (63 total); +fitdecode dep |
 | 5 | 3 | Day-of session autoregulation | pending | — | — |
 | 6 | 4 | Intra-week sequencing & interference | pending | — | — |
 | 7 | 5 | Individual response profile | pending | — | — |
@@ -114,9 +114,58 @@ is broken.
   single batched pre-release refresh (unchanged this phase). English README updated
   to 62 tools / 749 tests.
 
+## Phase 9 notes
+
+- **New tool (1, total 63):** `import_activity_file(path)` in the new
+  `server/import_tools.py` (registered in `server/app.py`). It PARSES and
+  PROPOSES only — it never logs. It returns a proposed `SessionEntry` (matched to
+  a planned session or `source="external"`), whether the sRPE was estimated from
+  HR / whether the athlete still owes one, data-quality flags, and — for an HRV
+  CSV — dated readings to attach Hooper items to. Logging still goes through the
+  existing `log_session` / `log_readiness` after the athlete confirms.
+- **New modules (outside `engine/`, as required — parsing files is I/O):**
+  `importers/activity.py` (pure file parsing: `.fit` via fitdecode, `.tcx`/`.gpx`
+  via stdlib `xml.etree`, and activity/HRV `.csv`; normalizes to a
+  `ParsedActivity`; malformed files raise `ActivityImportError` with actionable
+  messages) and `importers/proposal.py` (athlete-aware: reads the active
+  `ProgramPlan`, profile and session history to match the activity, estimate
+  sRPE, and run the plausibility guard).
+- **Phase-2 reuse:** sRPE from `engine.estimate_srpe_from_hr` (HR present +
+  age-predicted HRmax derivable from `profile.birth_date`); the proposed entry
+  runs through `memory.monitoring.session_plausibility_flags`, which wraps
+  `engine.flag_implausible_session` (duration-outlier guard fires on imports —
+  see deviation on distance below). Uses the Phase-2 `SessionEntry.source` /
+  `session_plan_id` / `avg_hr` fields; HRV → `readiness.jsonl` via `log_readiness`.
+- **Dependency decision:** added **`fitdecode==0.11.0`** (exact pin; current
+  stable, released 2025-08-06, maintained) for `.fit` (binary) parsing —
+  `.fit` was NOT descoped. `.tcx`/`.gpx` are XML and use the stdlib (no
+  dependency). The `.fit` fixture is a hand-built 50-byte binary; its generator
+  is committed at `tests/importers/make_fit_fixture.py` so the binary is
+  reproducible and reviewable.
+- **Session matching:** duration/distance proximity across all `SessionPlan`s in
+  the active plan (mean relative error ≤ 0.20, halved when the planned weekday
+  matches — both team-chosen priors); best match → `source="programmed"` +
+  `session_plan_id`, else `external`. No structured plan (or a legacy prose-only
+  program) → `external`.
+- **Deviations:** (a) `SessionEntry` has no distance field, so only the
+  duration-outlier plausibility guard flows through an imported entry; the
+  distance guard in `flag_implausible_session` is not reachable from imports
+  (documented, not a silent skip). (b) HRmax for the HR→sRPE estimate is derived
+  as `220 - age` (Fox age-predicted, labeled team-chosen prior) from
+  `profile.birth_date`; with no birth date the tool sets `needs_srpe=true` and
+  asks the athlete rather than guessing. (c) Timestamps from tz-aware files
+  (.fit/.tcx/.gpx are UTC) are converted to naive local wall-clock to match the
+  schema convention.
+- **Skill updated:** `training-checkin` gained step 3c (offer file import, always
+  confirm before logging) and `import_activity_file` in its `tools:` frontmatter.
+- **Report templates / i18n READMEs:** the P2/P9 load-trend report section stays
+  DEFERRED to the batched report pass (unchanged this phase); the 4 `docs/i18n/`
+  READMEs stay for the single batched pre-release refresh. English README updated
+  to 63 tools / 782 tests and a line about activity-file import.
+
 ## Resume notes
 
-_Phase 2 complete. Next in execution order: **Phase 9 (activity file import)** —
-pulled forward per the locked decision (0, 1, 2, 9, 3, ...); depends on Phase 2's
-`SessionEntry` fields, `estimate_srpe_from_hr`, `flag_implausible_session` and
-`readiness.jsonl`. Branch off `feat/phase-2-full-monitoring` (stacked)._
+_Phase 9 complete. Next in execution order: **Phase 3 (day-of session
+autoregulation)** (order 0, 1, 2, 9, **3**, 4, 5, 6, 7, 8); depends on Phase 0's
+structured `ProgramPlan` and Phase 2's readiness/monitoring. Branch off
+`feat/phase-9-activity-import` (stacked)._

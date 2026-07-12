@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 62 tools. If so, you're done — just talk to it.
+You should see 63 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -244,10 +244,11 @@ glues it together with your existing subscription — **zero additional LLM cost
 **Working today:** deterministic engine (1RM estimation, Riegel race prediction,
 session-RPE load & ACWR, monotony/strain, fitness-fatigue CTL/ATL/TSB, readiness
 banding, external-load budgeting, goal feasibility, periodization waves, backward
-season planning from a dated calendar; 749 tests incl. property-based) · 62 MCP
+season planning from a dated calendar; 782 tests incl. property-based) · 63 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown)
-and an adaptation audit trail ·
+and an adaptation audit trail · activity-file import (.fit/.tcx/.gpx/CSV) that
+proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
 behind a double verification gate · eleven coaching skills incl. a mandatory delivery
