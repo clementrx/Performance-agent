@@ -47,8 +47,9 @@ After logging, scan `read_sessions` and `read_checkins` for the recent window:
 - **Fatigue ≥ 8** → program-adaptation.
 - **Bodyweight drift:** when a nutrition frame exists, call
   `read_nutrition_frame` and compare the check-ins' bodyweight_kg series
-  against the frame's weekly_change_kg trajectory. Drift >2% off trajectory,
-  or movement in the wrong direction across 2+ consecutive check-ins → route
+  against the frame's weekly_change_kg trajectory. Drift >2% of bodyweight off
+  the projected line, or movement in the wrong direction across 2+ consecutive
+  check-ins → route
   to nutrition-planning for a frame recalculation AND flag it to
   program-adaptation (the training side may need to move too).
 - **Fixture pile-up:** calendar_type is recurring_fixtures and the athlete
