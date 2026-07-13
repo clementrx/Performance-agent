@@ -70,6 +70,10 @@ insist more than once. Collect, in this order:
 8. **Environment** — equipment (be concrete: barbell? rack? treadmill? track
    access?), sessions per week, minutes per session, and split_preferences (e.g.
    "upper/lower", "full body", "push/pull/legs" — scheduling quirks go to notes).
+   Also ask about MEASUREMENT hardware and record it in `equipment_sensors` (e.g.
+   vbt bar sensor, force plate / jump mat, timing gates, power meter). It is
+   optional and raises the data ceiling when present (velocity-based loads,
+   jump/sprint KPIs, power/splits from rides); absent, nothing changes.
 9. **Injuries & flags** — current or recent injuries, pain, medical constraints.
    Anything active: call `write_profile` immediately with the flag (don't wait for
    the batch), then continue, applying the red-flag rules from performance-coach.

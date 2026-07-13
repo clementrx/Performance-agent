@@ -97,7 +97,7 @@ esegui di nuovo `claude`.
 > Elenca gli strumenti di performance-agent.
 ```
 
-Dovresti vedere 76 strumenti. Se sì, hai finito — parlagli e basta.
+Dovresti vedere 93 strumenti. Se sì, hai finito — parlagli e basta.
 
 ## Come usarlo, passo dopo passo
 
@@ -268,7 +268,7 @@ dell'atleta (tasso di progressione misurato onesto su n, conformità prescritto-
 tolleranza al volume, profilo di risposta versionato) che ricalcola la fattibilità,
 raccomandazioni di scarico basate sui dati e rampa progressiva di ritorno al carico
 dopo una pausa, follow-up proattivo che fa emergere ciò che è dovuto, e una simulazione
-deterministica end-to-end (senza LLM); 1016 test incl. property-based) · 76 strumenti
+deterministica end-to-end (senza LLM); 1243 test incl. property-based) · 93 strumenti
 MCP · memoria atleta su file con calendario di stagione, log di readiness, programmi
 versionati leggibili dalla macchina, registro degli aggiustamenti in giornata, profilo
 di risposta versionato e registro di audit degli adattamenti · import di file di
