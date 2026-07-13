@@ -1,0 +1,83 @@
+schema_version: 1
+version: 1
+discipline: athletics
+event: 100m sprint
+qualities:
+  - quality: reactive_strength
+    weight: 0.25
+    provenance: {kind: prior}
+    rationale: Stretch-shortening cycle drives ground-contact force at top speed.
+  - quality: acceleration
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: The first 30 m is decided by horizontal force production.
+  - quality: speed
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: Maximum velocity phase (30-60 m) is the largest time contributor.
+  - quality: explosive_strength
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: Rate of force development underpins block clearance and drive.
+  - quality: max_strength
+    weight: 0.15
+    provenance: {kind: prior}
+    rationale: A strength floor supports force output but is not the ceiling.
+kpis:
+  - id: sprint-100m-time
+    name: 100 m time
+    quality: speed
+    protocol: Electronically timed 100 m from blocks, still-air.
+    unit: s
+    higher_is_better: false
+    benchmarks:
+      - {level: recreational, value: 13.0, provenance: {kind: prior}}
+      - {level: competitive, value: 11.5, provenance: {kind: prior}}
+      - {level: national, value: 10.6, provenance: {kind: prior}}
+      - {level: elite, value: 10.0, provenance: {kind: prior}}
+  - id: fly-30m
+    name: 30 m flying sprint
+    quality: speed
+    protocol: 30 m flying sprint into timing gates after a run-up.
+    unit: s
+    higher_is_better: false
+    benchmarks:
+      - {level: competitive, value: 3.2, provenance: {kind: prior}}
+      - {level: national, value: 2.9, provenance: {kind: prior}}
+      - {level: elite, value: 2.6, provenance: {kind: prior}}
+  - id: cmj-height
+    name: Countermovement jump height
+    quality: explosive_strength
+    protocol: Countermovement jump on a force plate or validated jump mat.
+    unit: cm
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 40.0, provenance: {kind: prior}}
+      - {level: national, value: 50.0, provenance: {kind: prior}}
+      - {level: elite, value: 60.0, provenance: {kind: prior}}
+  - id: back-squat-rel
+    name: Relative back-squat 1RM
+    quality: max_strength
+    protocol: 1RM back squat after a standardized warm-up ramp.
+    test_protocol: one_rm_test
+    unit: x bodyweight
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 1.5, provenance: {kind: prior}}
+      - {level: national, value: 2.0, provenance: {kind: prior}}
+      - {level: elite, value: 2.3, provenance: {kind: prior}}
+injury_risks:
+  - region: hamstring
+    mechanism: High-speed eccentric loading during the late swing phase.
+    screen: Nordic hamstring capacity and single-leg bridge symmetry.
+    provenance: {kind: prior}
+  - region: achilles
+    mechanism: Repeated high-force plantarflexion at top speed.
+    screen: Single-leg heel-raise capacity and calf tenderness check.
+    provenance: {kind: prior}
+energy_systems:
+  aerobic: 0.02
+  anaerobic_lactic: 0.08
+  anaerobic_alactic: 0.9
+  provenance: {kind: prior}
+sources: []

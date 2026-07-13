@@ -13,8 +13,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 
 | Order | Phase | Title | Status | Branch / PR | Notes |
 |---|---|---|---|---|---|
-| 1 | 0 | PerformanceModel schemas, store & tools | done | `feat/phase-0-performance-model` / PR pending | 1043 tests (+27); 78 tools (+2) |
-| 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | pending | — | |
+| 1 | 0 | PerformanceModel schemas, store & tools | done (merged) | `feat/phase-0-performance-model` / PR #15 `55718c9` | 1043 tests (+27); 78 tools (+2) |
+| 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | done | `feat/phase-1-gaps-kpi-battery` / PR pending | 1083 tests (+40); 82 tools (+4); 4 seed models |
 | 3 | 2 | Exercise ontology & libraries | pending | — | |
 | 4 | 3 | Selection engine & specificity guard | pending | — | |
 | 5 | 4 | High-resolution ingestion | pending | — | |
@@ -42,6 +42,23 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P0 — `Provenance` also rejects `cite_ids` on non-`cited` kinds**, and
   `EnergySystemSplit`/`Benchmark` carry a `provenance` label (invariant 6:
   provenance on every LLM-filled structured value). Additive, within plan intent.
+- **P1 — KPI-results jsonl store lives in `store.py`** (`append_kpi_result`,
+  `read_kpi_results`) with all other append-only logs, not a separate
+  `memory/kpi_results.py`. Domain orchestration (seed loading, gap wiring,
+  test-battery scheduling) lives in the new `memory/performance_models.py` — the
+  module deferred from P0, now created with real logic.
+- **P1 — added `KpiSpec.higher_is_better: bool = True`** (additive, default True).
+  The gap engine needs gap direction (a sprint-time gap grows as time rises; a 1RM
+  gap grows as load falls). Backward-compatible: old models default to True.
+- **P1 — seed models labeled `prior` throughout, no `cited`.** The corpus does not
+  yet hold the determinant/benchmark studies (Suchomel 2016 etc. are the P10
+  evidence pass). Honest priors now beat fabricated citations; P10 upgrades them.
+- **P1 — Typst report "model & gaps" section deferred to Phase 10**, which already
+  scopes it ("performance model & gaps section"). Recorded here per the transversal
+  report-refresh note (extend in the same PR OR record a follow-up).
+- **P1 — no runtime seed-reading tool.** Seeds are package data + test fixtures +
+  an inline example in `needs-analysis`; the LLM authors models from the schema and
+  the referenced seed files, keeping the tool surface lean (82, not 84).
 
 ## Resume notes
 

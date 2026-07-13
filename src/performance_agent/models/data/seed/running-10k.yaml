@@ -1,0 +1,74 @@
+schema_version: 1
+version: 1
+discipline: distance running
+event: 10 km road race
+qualities:
+  - quality: aerobic_capacity
+    weight: 0.5
+    provenance: {kind: prior}
+    rationale: The 10 km is overwhelmingly aerobic; VO2max and threshold dominate.
+  - quality: muscular_endurance
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: Sustained submaximal force output resists late-race decay.
+  - quality: anaerobic_capacity
+    weight: 0.15
+    provenance: {kind: prior}
+    rationale: Surges, hills and the finish tax the glycolytic system.
+  - quality: reactive_strength
+    weight: 0.1
+    provenance: {kind: prior}
+    rationale: Elastic recoil improves running economy.
+  - quality: max_strength
+    weight: 0.05
+    provenance: {kind: prior}
+    rationale: A modest strength base supports economy and injury resistance.
+kpis:
+  - id: run-10k-time
+    name: 10 km time
+    quality: aerobic_capacity
+    protocol: Road or track 10 km time trial in flat conditions.
+    test_protocol: timetrial
+    unit: min
+    higher_is_better: false
+    benchmarks:
+      - {level: recreational, value: 60.0, provenance: {kind: prior}}
+      - {level: competitive, value: 45.0, provenance: {kind: prior}}
+      - {level: national, value: 32.0, provenance: {kind: prior}}
+      - {level: elite, value: 28.0, provenance: {kind: prior}}
+  - id: vo2max
+    name: VO2max
+    quality: aerobic_capacity
+    protocol: Incremental treadmill test to volitional exhaustion.
+    unit: ml/kg/min
+    higher_is_better: true
+    benchmarks:
+      - {level: recreational, value: 45.0, provenance: {kind: prior}}
+      - {level: competitive, value: 55.0, provenance: {kind: prior}}
+      - {level: national, value: 68.0, provenance: {kind: prior}}
+      - {level: elite, value: 75.0, provenance: {kind: prior}}
+  - id: vvo2max
+    name: Velocity at VO2max
+    quality: anaerobic_capacity
+    protocol: Track incremental test; velocity sustained at VO2max.
+    unit: km/h
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 17.0, provenance: {kind: prior}}
+      - {level: national, value: 20.0, provenance: {kind: prior}}
+      - {level: elite, value: 22.0, provenance: {kind: prior}}
+injury_risks:
+  - region: knee
+    mechanism: Patellofemoral overuse from high weekly mileage.
+    screen: Single-leg squat control and weekly-load progression review.
+    provenance: {kind: prior}
+  - region: achilles
+    mechanism: Cumulative tendon load from repetitive stride.
+    screen: Single-leg heel-raise endurance and morning stiffness check.
+    provenance: {kind: prior}
+energy_systems:
+  aerobic: 0.9
+  anaerobic_lactic: 0.08
+  anaerobic_alactic: 0.02
+  provenance: {kind: prior}
+sources: []

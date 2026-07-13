@@ -1,0 +1,66 @@
+schema_version: 1
+version: 1
+discipline: powerlifting
+event: raw 3-lift total
+qualities:
+  - quality: max_strength
+    weight: 0.7
+    provenance: {kind: prior}
+    rationale: The sport is scored directly on maximal force in three lifts.
+  - quality: hypertrophy
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: Cross-sectional area is the long-run substrate for strength.
+  - quality: explosive_strength
+    weight: 0.1
+    provenance: {kind: prior}
+    rationale: Rate of force development helps break sticking points.
+kpis:
+  - id: squat-rel
+    name: Relative back-squat 1RM
+    quality: max_strength
+    protocol: Competition-standard 1RM back squat.
+    test_protocol: one_rm_test
+    unit: x bodyweight
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 1.75, provenance: {kind: prior}}
+      - {level: national, value: 2.25, provenance: {kind: prior}}
+      - {level: elite, value: 2.75, provenance: {kind: prior}}
+  - id: bench-rel
+    name: Relative bench-press 1RM
+    quality: max_strength
+    protocol: Competition-standard 1RM bench press with a pause.
+    test_protocol: one_rm_test
+    unit: x bodyweight
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 1.25, provenance: {kind: prior}}
+      - {level: national, value: 1.6, provenance: {kind: prior}}
+      - {level: elite, value: 2.0, provenance: {kind: prior}}
+  - id: deadlift-rel
+    name: Relative deadlift 1RM
+    quality: max_strength
+    protocol: Competition-standard 1RM deadlift.
+    test_protocol: one_rm_test
+    unit: x bodyweight
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 2.0, provenance: {kind: prior}}
+      - {level: national, value: 2.5, provenance: {kind: prior}}
+      - {level: elite, value: 3.0, provenance: {kind: prior}}
+injury_risks:
+  - region: lumbar spine
+    mechanism: High compressive and shear load in squat and deadlift.
+    screen: Bracing competency and neutral-spine hip-hinge control.
+    provenance: {kind: prior}
+  - region: shoulder
+    mechanism: Maximal bench load through end-range external rotation.
+    screen: Scapular control and pain-free overhead/bench range.
+    provenance: {kind: prior}
+energy_systems:
+  aerobic: 0.02
+  anaerobic_lactic: 0.13
+  anaerobic_alactic: 0.85
+  provenance: {kind: prior}
+sources: []

@@ -647,6 +647,9 @@ class KpiSpec(BaseModel):
     protocol: str = Field(min_length=1)
     test_protocol: TestProtocol | None = None
     unit: str = Field(min_length=1)
+    # Whether a larger measured value is better (True: 1RM, jump height; False:
+    # sprint/race times). Gap direction depends on it — defaults to True.
+    higher_is_better: bool = True
     benchmarks: list[Benchmark] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -726,3 +729,26 @@ class PerformanceModel(BaseModel):
             msg = f"KPI ids must be unique within a model, got {ids}"
             raise ValueError(msg)
         return self
+
+
+class KpiResult(BaseModel):
+    """One dated KPI/test measurement (append-only to kpi_results.jsonl).
+
+    kpi_id links to a KpiSpec.id in the performance model; it is optional so
+    high-resolution measurements without a model KPI (jump height, sprint split)
+    can still be logged (Phase 4). context carries conditions the value depends
+    on (bodyweight, surface, wind), numeric or textual.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    date: date
+    kpi_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    protocol: str = Field(min_length=1)
+    value: float = Field(allow_inf_nan=False)
+    unit: str = Field(min_length=1)
+    context: dict[
+        Annotated[str, StringConstraints(min_length=1)],
+        str | float,
+    ] = Field(default_factory=dict)
