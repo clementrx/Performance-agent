@@ -31,6 +31,14 @@ from performance_agent.engine.endurance import (
     riegel_predict,
     training_zones_from_race,
 )
+from performance_agent.engine.exercise_selection import (
+    Candidate,
+    QualityTarget,
+    ScoreBreakdown,
+    ScoredExercise,
+    score_exercises,
+    stimulus_similarity,
+)
 from performance_agent.engine.feasibility import (
     BodycompFeasibility,
     FeasibilityResult,
@@ -120,6 +128,11 @@ from performance_agent.engine.season import (
     plan_season,
     recommend_taper_length,
 )
+from performance_agent.engine.specificity import (
+    SpecificityWarning,
+    check_specificity_mix,
+    specificity_fit,
+)
 from performance_agent.engine.strength import (
     ProgressionDecision,
     ToleranceAdjustment,
@@ -158,6 +171,7 @@ __all__ = [
     "BlockDelta",
     "BlockWeek",
     "BodycompFeasibility",
+    "Candidate",
     "ComplianceReport",
     "CompressedSession",
     "CutBlock",
@@ -184,9 +198,12 @@ __all__ = [
     "ProgressionDecision",
     "ProgressionRate",
     "QualityPriority",
+    "QualityTarget",
     "ReadinessAssessment",
     "ResponseProfileData",
     "ScheduledTest",
+    "ScoreBreakdown",
+    "ScoredExercise",
     "SeasonEvent",
     "SeasonModality",
     "SeasonSegment",
@@ -194,6 +211,7 @@ __all__ = [
     "SessionCompliance",
     "SessionSets",
     "Severity",
+    "SpecificityWarning",
     "Substitute",
     "TestableKpi",
     "TimelinePoint",
@@ -222,6 +240,7 @@ __all__ = [
     "build_undulating_week",
     "build_weekly_waves",
     "cadence_for",
+    "check_specificity_mix",
     "compare_prescribed_actual",
     "compress_session",
     "compute_gaps",
@@ -251,8 +270,11 @@ __all__ = [
     "reps_for_percentage_rir",
     "riegel_predict",
     "rir_from_rpe",
+    "score_exercises",
     "session_rpe_load",
     "should_deload",
+    "specificity_fit",
+    "stimulus_similarity",
     "strength_feasibility",
     "substitute_exercise",
     "tdee_from_bmr",

@@ -9,10 +9,15 @@ provenance. Selection scoring lands in Phase 3; here the LLM just browses.
 from mcp.server.fastmcp import FastMCP
 
 from performance_agent.memory import exercise_library
-from performance_agent.memory.exercise_library import ExerciseView
+from performance_agent.memory.exercise_library import (
+    ExerciseView,
+    ScoredExerciseView,
+    SpecificityWarningView,
+)
 from performance_agent.memory.paths import resolve_athlete_dir
 from performance_agent.memory.schemas import (
     ExerciseDefinition,
+    MesocyclePhase,
     MovementPattern,
     PerformanceQuality,
     SpecificityLevel,
@@ -57,7 +62,52 @@ def propose_exercise(definition: ExerciseDefinition) -> ExerciseView:
     return exercise_library.propose_exercise(resolve_athlete_dir(), definition)
 
 
+def score_exercises(  # noqa: PLR0913 -- selection inputs, all optional-with-defaults
+    quality_targets: dict[PerformanceQuality, float],
+    phase: MesocyclePhase,
+    pattern: MovementPattern | None = None,
+    available_equipment: list[str] | None = None,
+    contraindicated_regions: list[str] | None = None,
+    recent_exercise_ids: list[str] | None = None,
+    top_k: int | None = None,
+) -> list[ScoredExerciseView]:
+    """Rank exercises for quality targets in a mesocycle phase, with a scored breakdown.
+
+    quality_targets maps each body quality to a priority weight (use the
+    per-quality priorities from compute_performance_gaps). Score = quality_match x
+    phase-appropriate specificity x novelty, with equipment feasibility and
+    contraindication as HARD gates (a candidate failing either scores 0 with an
+    excluded_reason). Candidates default to the whole library (filter with pattern);
+    available_equipment and contraindicated_regions default to the athlete's profile
+    (equipment + active injuries). Pick within the top_k with a stated reason; cite
+    or label the choice. Sorted by score, tie-broken by name.
+    """
+    return exercise_library.score_library_exercises(
+        resolve_athlete_dir(),
+        {str(quality): weight for quality, weight in quality_targets.items()},
+        phase,
+        pattern=pattern,
+        available_equipment=available_equipment,
+        contraindicated_regions=contraindicated_regions,
+        recent_exercise_ids=recent_exercise_ids,
+        top_k=top_k,
+    )
+
+
+def check_program_specificity() -> list[SpecificityWarningView]:
+    """Flag mesocycles whose exercise specificity mix drifts out of the phase band.
+
+    Resolves each block's exercise_id against the ontology and checks the general->
+    special->specific->competition mix per mesocycle against phase-appropriate bands
+    (general prep is general-leaning, realization/taper specific-leaning). Blocks
+    with no exercise_id are skipped — link them to the ontology to be checked.
+    Returns one warning per drifting mesocycle (empty when all are in band). Errors
+    if no structured program exists.
+    """
+    return exercise_library.check_program_specificity(resolve_athlete_dir())
+
+
 def register(mcp: FastMCP) -> None:
     """Register every exercise-ontology tool on the server."""
-    for tool in (list_exercises, propose_exercise):
+    for tool in (list_exercises, propose_exercise, score_exercises, check_program_specificity):
         mcp.tool()(tool)

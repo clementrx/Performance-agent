@@ -15,8 +15,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 |---|---|---|---|---|---|
 | 1 | 0 | PerformanceModel schemas, store & tools | done (merged) | `feat/phase-0-performance-model` / PR #15 `55718c9` | 1043 tests (+27); 78 tools (+2) |
 | 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | done (merged) | `feat/phase-1-gaps-kpi-battery` / PR #16 `51b5496` | 1083 tests (+40); 82 tools (+4); 4 seed models |
-| 3 | 2 | Exercise ontology & libraries | done | `feat/phase-2-exercise-ontology` / PR pending | 1097 tests (+14); 84 tools (+2); 123 seed exercises |
-| 4 | 3 | Selection engine & specificity guard | pending | — | |
+| 3 | 2 | Exercise ontology & libraries | done (merged) | `feat/phase-2-exercise-ontology` / PR #17 `0a8048d` | 1097 tests (+14); 84 tools (+2); 123 seed exercises |
+| 4 | 3 | Selection engine & specificity guard | done | `feat/phase-3-selection-engine` / PR pending | 1126 tests (+29); 86 tools (+2) |
 | 5 | 4 | High-resolution ingestion | pending | — | |
 | 6 | 5 | Load-velocity profiling & VBT autoregulation | pending | — | |
 | 7 | 6 | Fitted Banister model | pending | — | |
@@ -71,6 +71,20 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P2 — athlete exercise-library file I/O in `store.py`** (`read_/write_exercise_
   library`, like `calendar.yaml`); domain logic (seed load, merge, filter, propose)
   in `memory/exercise_library.py`. Consistent with the P0/P1 store-consolidation.
+- **P3 — `substitute_exercise` memory signature gains `base_dir`** (the tool
+  signature is unchanged). Stimulus-equivalence path when the exercise is in the
+  ontology, else the pattern+equipment fallback. The pre-existing
+  `test_substitute_exercise_passthrough` was rewritten into two tests (fallback +
+  stimulus) since a seeded exercise now takes the stimulus path.
+- **P3 — `check_program_specificity` is a sibling tool** (not folded into the
+  week-sequencing guard) — it reasons over whole mesocycles via `exercise_id`
+  links, a different altitude than the intra-week `check_week_sequencing`.
+- **P3 — `ExerciseBlock.exercise_id`** added (optional, links a block to the
+  ontology). `score_exercises`/specificity depend on it. `program-optimization`
+  now sets it when choosing within top-k.
+- **P3 — selection-layer domain logic in `memory/exercise_library.py`** (scoring,
+  stimulus substitution, program-specificity), keeping engine pure in
+  `engine/exercise_selection.py` + `engine/specificity.py`.
 
 ## Resume notes
 

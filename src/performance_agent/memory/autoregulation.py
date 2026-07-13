@@ -26,7 +26,7 @@ from performance_agent.engine.autoregulation import (
     substitute_exercise as engine_substitute_exercise,
 )
 from performance_agent.engine.substitutions import Substitute
-from performance_agent.memory import store
+from performance_agent.memory import exercise_library, store
 from performance_agent.memory.schemas import (
     ExerciseBlock,
     ReadinessBand,
@@ -176,9 +176,18 @@ def compress_session(plan: SessionPlan, available_minutes: int) -> CompressionRe
 
 
 def substitute_exercise(
-    exercise: str, pattern: str, available_equipment: list[str]
+    base_dir: Path, exercise: str, pattern: str, available_equipment: list[str]
 ) -> list[Substitute]:
-    """Same-pattern swaps doable with the equipment on hand (pure engine passthrough)."""
+    """Same-pattern swaps doable with the equipment on hand.
+
+    When the original exercise is in the ontology, substitutes rank by stimulus
+    equivalence (qualities/force/regime similarity, filtered by equipment and the
+    athlete's active-injury contraindications). Otherwise falls back to the curated
+    pattern+equipment table (unchanged behavior for unknown exercises).
+    """
+    stimulus_ranked = exercise_library.stimulus_substitutes(base_dir, exercise, available_equipment)
+    if stimulus_ranked is not None:
+        return stimulus_ranked
     return engine_substitute_exercise(exercise, pattern, available_equipment)
 
 
