@@ -10,7 +10,7 @@ tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         build_block_cycle, build_undulating_sessions, build_inseason_maintenance,
         build_peaking_block, weekly_set_targets_for, read_nutrition_frame,
         read_calendar, build_season_plan, recommend_taper, budget_weekly_load,
-        read_response_profile]
+        read_response_profile, compute_performance_gaps]
 ---
 
 # Program Planning — le Planificateur
@@ -29,6 +29,11 @@ exercises or session loads; that is the Optimizer's job.
 - `read_analysis` (latest) — the quality hierarchy and muscle/pattern priorities
   the structure must serve. If it errors, stop and route back to needs-analysis;
   never plan without a brief.
+- `compute_performance_gaps` (when a performance model exists) — the per-quality
+  priority ranking (gap × weight). This is what the structure attacks first:
+  qualities with the biggest measured gaps get the most volume and the earliest
+  emphasis. Unmeasured qualities are not zero-priority — they are unknowns to test
+  (a research/test-battery question), never silently dropped.
 - `read_research_dossier` — the evidence the structure is justified from. If it
   errors and the athlete has NOT declined deep research, route back to
   deep-research: the premium promise is a plan built on a dossier.
@@ -99,10 +104,11 @@ structure follows and why; a facet it marked thin stays coaching judgment here.
 Structure without numbers is decoration:
 
 - **Strength/hypertrophy volume:** `weekly_set_targets_for` (training_age)
-  gives the per-muscle weekly hard-set landmarks. Distribute them across the
-  analysis' muscle priorities: top priorities program toward optimal_high_sets,
-  secondary ones toward minimum_effective_sets; never exceed
-  maximum_adaptive_sets.
+  gives the per-muscle weekly hard-set landmarks. Distribute them by the
+  `compute_performance_gaps` per-quality priority ranking (falling back to the
+  analysis' muscle priorities when no model exists): the highest-priority
+  qualities program toward optimal_high_sets, lower-priority ones toward
+  minimum_effective_sets; never exceed maximum_adaptive_sets.
 - **Endurance volume/intensity:** define the baseline week (week-1 durations
   and efforts), then scale every week by its volume_factor and intensity_factor
   from the model. A wave you don't apply to the numbers is decoration.

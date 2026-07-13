@@ -167,15 +167,20 @@ def compress_session(
 def substitute_exercise(
     exercise: str, pattern: str, available_equipment: list[str]
 ) -> SubstitutionResult:
-    """List same-pattern exercise swaps doable with the equipment on hand.
+    """List exercise swaps doable with the equipment on hand.
 
     pattern is a movement pattern (squat, hinge, push_h, push_v, pull_h, pull_v,
-    lunge, carry, core, run, ride, swim). Excludes the original exercise and any
-    option whose equipment is not available; bodyweight options always remain.
-    Every alternative is coaching judgment (a standard same-pattern swap), not a
-    corpus-cited prescription.
+    lunge, carry, core, jump, sprint, throw, olympic, run, ride, swim). When the
+    original exercise is in the ontology, alternatives rank by STIMULUS EQUIVALENCE
+    (qualities/force/regime similarity, filtered by equipment and the athlete's
+    active-injury contraindications); otherwise it falls back to the curated
+    same-pattern table. Excludes the original and any option whose equipment is not
+    available; bodyweight options always remain. Every alternative is coaching
+    judgment, not a corpus-cited prescription.
     """
-    alternatives = autoregulation.substitute_exercise(exercise, pattern, available_equipment)
+    alternatives = autoregulation.substitute_exercise(
+        resolve_athlete_dir(), exercise, pattern, available_equipment
+    )
     return SubstitutionResult(
         alternatives=[
             SubstituteView(name=s.name, equipment=list(s.equipment), source=s.source)

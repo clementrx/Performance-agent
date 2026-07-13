@@ -45,6 +45,31 @@ async def test_propose_and_relist(client):
 
 
 @pytest.mark.anyio
+async def test_score_exercises_ranks(client):
+    result = await client.call_tool(
+        "score_exercises",
+        {
+            "quality_targets": {"reactive_strength": 1.0},
+            "phase": "realization",
+            "pattern": "jump",
+            "top_k": 5,
+        },
+    )
+    assert not result.isError
+    scored = result.structuredContent["result"]
+    assert 1 <= len(scored) <= 5
+    scores = [s["score"] for s in scored]
+    assert scores == sorted(scores, reverse=True)
+
+
+@pytest.mark.anyio
+async def test_check_program_specificity_needs_program(client):
+    result = await client.call_tool("check_program_specificity", {})
+    assert result.isError
+    assert "no structured program" in result.content[0].text
+
+
+@pytest.mark.anyio
 async def test_propose_rejects_bad_equipment(client):
     definition = {
         "id": "bad-ex",

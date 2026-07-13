@@ -132,11 +132,20 @@ def test_adjusted_session_renders_deterministically():
     assert render_program(plan) == rendered  # deterministic
 
 
-def test_substitute_exercise_passthrough():
-    alts = substitute_exercise("Back Squat", "squat", ["kettlebell"])
+def test_substitute_unknown_exercise_falls_back(tmp_path):
+    # An exercise not in the ontology uses the curated pattern+equipment table.
+    alts = substitute_exercise(tmp_path, "Some Novel Squat Variant", "squat", ["kettlebell"])
     names = [a.name for a in alts]
     assert "Goblet Squat" in names
+
+
+def test_substitute_known_exercise_ranks_by_stimulus(tmp_path):
+    # Back Squat is in the ontology, so substitutes rank by stimulus equivalence.
+    alts = substitute_exercise(tmp_path, "Back Squat", "squat", ["barbell", "rack"])
+    names = [a.name for a in alts]
     assert "Back Squat" not in names
+    assert "Front Squat" in names  # same pattern/equipment, high similarity
+    assert alts[0].source.startswith("stimulus equivalence")
 
 
 def _adjustment(

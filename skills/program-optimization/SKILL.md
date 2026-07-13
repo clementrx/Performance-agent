@@ -11,7 +11,9 @@ tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         progress_double_progression, prescribe_top_set_backoff,
         prescribe_wave_loading, convert_rpe_to_rir, predict_race_time,
         compute_pace, read_nutrition_frame, read_calendar, budget_weekly_load,
-        substitute_exercise, check_week_sequencing, save_program]
+        list_exercises, score_exercises, propose_exercise,
+        check_program_specificity, substitute_exercise, check_week_sequencing,
+        save_program]
 ---
 
 # Program Optimization — l'Optimiseur
@@ -65,6 +67,33 @@ render any corpus id you quote with `get_citation`.
   benchmark/test week and label the early loads provisional — do not guess a
   number to fill the gap.
 
+## 2b. Choose exercises from the ontology — scored, not free-hand
+
+Exercise selection is a scored decision, not authoring from memory. For each slot
+you fill:
+
+1. `list_exercises` to browse candidates for the movement pattern / quality /
+   available equipment (the merged seed + athlete library).
+2. `score_exercises` with the quality targets for that slot (weighted by the
+   per-quality gap priorities the skeleton carries from planning), the mesocycle
+   `phase`, and — left to default — the athlete's equipment and active-injury
+   contraindications. It returns a ranked, justified breakdown (quality match ×
+   phase-appropriate specificity × equipment feasibility × contraindication ×
+   novelty). Equipment and contraindications are HARD gates: a 0-score with an
+   `excluded_reason` is never chosen.
+3. **Choose within the top-k with a stated reason**, and set the block's
+   `exercise_id` to the chosen ontology id (the `exercise` name stays too). Cite
+   the choice to a corpus id where the evidence supports it, else label it coaching
+   judgment — same anti-fabrication rule as loads. A needed exercise missing from
+   the library is added with `propose_exercise` (via the athlete, provenance
+   judgment) before you reference it.
+
+After the mesocycles are assembled, run `check_program_specificity`: it flags any
+mesocycle whose exercise specificity mix drifts out of its phase band (general prep
+should be general-leaning, realization/taper specific-leaning). Fix a flagged
+mesocycle by swapping in phase-appropriate exercises, or justify the deviation in
+the notes — never ship a silent drift.
+
 ## 3. Sessions with the athlete
 
 - **Split design:** map the skeleton's per-muscle weekly set targets onto the
@@ -102,10 +131,12 @@ render any corpus id you quote with `get_citation`.
     ("tired: top set at RPE 7, skip block C").
   - `short_on_time`: the compression cut order — keep the primary top work, drop
     optional then secondary ("35 min: A + B1 only").
-  - `missing_equipment`: a real same-pattern swap — call `substitute_exercise`
-    (exercise, movement pattern, the athlete's other equipment) and write the first
-    doable option ("no rack: goblet squat 3×10 @ RIR 2"). It is coaching judgment,
-    not a cited prescription.
+  - `missing_equipment`: a real swap — call `substitute_exercise` (exercise,
+    movement pattern, the athlete's other equipment). When the exercise is in the
+    ontology it ranks alternatives by STIMULUS EQUIVALENCE (same qualities/force/
+    regime), filtered by equipment and active injuries; otherwise it falls back to
+    the same-pattern table. Write the first doable option ("no rack: goblet squat
+    3×10 @ RIR 2"). Coaching judgment, not a cited prescription.
   The schema rejects an empty fallback, so a session is not done until all three are
   real.
 - **Warm-ups are automatic.** Leave primary strength blocks at `warmup="auto"`;
