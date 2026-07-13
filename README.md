@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 76 tools. If so, you're done — just talk to it.
+You should see 78 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -257,8 +257,12 @@ proactive follow-up that surfaces what is due (overdue check-in, imminent race,
 missed sessions, readiness gaps, a stale response profile) severity-ordered so the
 coach speaks first, and a deterministic end-to-end simulation (no LLM) that drives
 the real engine + store across three synthetic athletes to prove the whole loop
-composes; 1016 tests
-incl. property-based) · 76 MCP
+composes, and a sport-agnostic PerformanceModel (the researched, versioned
+answer to "what determines performance in this event" — trainable qualities
+with normalized weights, KPIs with level benchmarks, injury risks and
+energy-system split, every value provenance-labeled cited/prior/judgment);
+1043 tests
+incl. property-based) · 78 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response
