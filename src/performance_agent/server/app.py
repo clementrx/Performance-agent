@@ -8,6 +8,7 @@ from performance_agent.server import (
     evidence_tools,
     import_tools,
     memory_tools,
+    performance_tools,
     report_tools,
     response_tools,
 )
@@ -20,6 +21,7 @@ evidence_tools.register(mcp)
 report_tools.register(mcp)
 import_tools.register(mcp)
 response_tools.register(mcp)
+performance_tools.register(mcp)
 
 
 def main() -> None:

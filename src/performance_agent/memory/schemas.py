@@ -560,3 +560,169 @@ class ResponseProfile(BaseModel):
     adherence_by_quality: list[AdherenceQuality] = Field(default_factory=list)
     adjustment_patterns: list[str] = Field(default_factory=list)
     caveats: list[str] = Field(default_factory=list)
+
+
+# --- PerformanceModel (sport-agnostic determinants, researched & versioned) -
+#
+# models/performance-model-v{N}.yaml is the structured answer to "what
+# determines performance in this event". The LLM researches the literature and
+# proposes; the engine validates, normalizes weights, and computes gaps against
+# it. Every value the LLM fills carries a Provenance label so a report can show
+# whether a number is cited, a team-chosen prior, or coaching judgment.
+
+ProvenanceKind = Literal["cited", "prior", "judgment"]
+
+# Generic, trainable body-quality axes. This enum is the contract: the LLM
+# cannot invent qualities. Sport-specific expression belongs in KpiSpec
+# protocols, not in new quality names. (Named PerformanceQuality to avoid
+# collision with the session-tag Quality literal above.)
+PerformanceQuality = Literal[
+    "max_strength",
+    "explosive_strength",
+    "reactive_strength",
+    "speed",
+    "acceleration",
+    "change_of_direction",
+    "aerobic_capacity",
+    "anaerobic_capacity",
+    "muscular_endurance",
+    "hypertrophy",
+    "mobility",
+    "balance_stability",
+]
+
+BenchmarkLevel = Literal["recreational", "competitive", "national", "elite"]
+
+_ENERGY_SUM_TOLERANCE = 0.02
+
+
+class Provenance(BaseModel):
+    """Where a structured value came from: cited requires ≥1 corpus id."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: ProvenanceKind
+    cite_ids: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _cited_requires_ids(self) -> Self:
+        if self.kind == "cited" and not self.cite_ids:
+            msg = "cited provenance requires at least one cite_id (never invent citations)"
+            raise ValueError(msg)
+        if self.kind != "cited" and self.cite_ids:
+            msg = f"{self.kind} provenance must not carry cite_ids (only 'cited' may)"
+            raise ValueError(msg)
+        return self
+
+
+class QualityRequirement(BaseModel):
+    """One trainable quality's importance to the event (weights normalized at the model)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    quality: PerformanceQuality
+    weight: float = Field(ge=0, le=1)
+    provenance: Provenance
+    rationale: str = ""
+
+
+class Benchmark(BaseModel):
+    """A performance standard for one competitive level, with its provenance."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    level: BenchmarkLevel
+    value: float = Field(allow_inf_nan=False)
+    provenance: Provenance
+
+
+class KpiSpec(BaseModel):
+    """A measurable indicator linked to a quality, with a test protocol and benchmarks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    name: str = Field(min_length=1)
+    quality: PerformanceQuality
+    protocol: str = Field(min_length=1)
+    test_protocol: TestProtocol | None = None
+    unit: str = Field(min_length=1)
+    benchmarks: list[Benchmark] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _benchmark_levels_unique(self) -> Self:
+        levels = [b.level for b in self.benchmarks]
+        if len(set(levels)) != len(levels):
+            msg = f"KPI {self.id} has duplicate benchmark levels: {levels}"
+            raise ValueError(msg)
+        return self
+
+
+class InjuryRiskEntry(BaseModel):
+    """A region-specific injury risk with its mechanism and a screening cue."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    region: str = Field(min_length=1)
+    mechanism: str = Field(min_length=1)
+    screen: str = Field(min_length=1)
+    provenance: Provenance
+
+
+class EnergySystemSplit(BaseModel):
+    """Approximate energy-system contributions (fractions summing to ≈1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aerobic: float = Field(ge=0, le=1)
+    anaerobic_lactic: float = Field(ge=0, le=1)
+    anaerobic_alactic: float = Field(ge=0, le=1)
+    provenance: Provenance
+
+    @model_validator(mode="after")
+    def _fractions_sum_to_one(self) -> Self:
+        total = self.aerobic + self.anaerobic_lactic + self.anaerobic_alactic
+        if abs(total - 1.0) > _ENERGY_SUM_TOLERANCE:
+            msg = f"energy-system fractions must sum to ≈1 (got {total:.3f})"
+            raise ValueError(msg)
+        return self
+
+
+class PerformanceModel(BaseModel):
+    """Sport-agnostic determinants of one event, versioned and immutable.
+
+    qualities weights are normalized to sum to 1 at validation (the raw weights
+    the LLM proposes need not sum to 1). The store stamps version/reason; a
+    reason is mandatory from v2. schema_version guards forward compatibility.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    version: int = Field(default=1, ge=1)
+    discipline: str = Field(min_length=1)
+    event: str = Field(min_length=1)
+    reason: str | None = None
+    qualities: list[QualityRequirement] = Field(min_length=1)
+    kpis: list[KpiSpec] = Field(default_factory=list)
+    injury_risks: list[InjuryRiskEntry] = Field(default_factory=list)
+    energy_systems: EnergySystemSplit | None = None
+    sources: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _normalize_quality_weights(self) -> Self:
+        total = sum(q.weight for q in self.qualities)
+        if total <= 0:
+            msg = "quality weights are not normalizable (they sum to 0); give at least one > 0"
+            raise ValueError(msg)
+        for requirement in self.qualities:
+            requirement.weight = requirement.weight / total
+        return self
+
+    @model_validator(mode="after")
+    def _kpi_ids_unique(self) -> Self:
+        ids = [k.id for k in self.kpis]
+        if len(set(ids)) != len(ids):
+            msg = f"KPI ids must be unique within a model, got {ids}"
+            raise ValueError(msg)
+        return self

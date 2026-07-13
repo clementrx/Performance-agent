@@ -18,6 +18,7 @@ from performance_agent.memory.schemas import (
     CalendarEvent,
     CheckinEntry,
     Goal,
+    PerformanceModel,
     Profile,
     ProgramPlan,
     ReadinessEntry,
@@ -42,6 +43,8 @@ RESEARCH_DIR = "research"
 NUTRITION_DIR = "nutrition"
 RESPONSE_DIR = "response"
 RESPONSE_PREFIX = "response-profile"
+MODELS_DIR = "models"
+PERFORMANCE_MODEL_PREFIX = "performance-model"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -506,6 +509,57 @@ def read_response_profile(base_dir: Path, version: int | None = None) -> Respons
         raise ValueError(msg)
     raw = _load_yaml(path)
     return _validated(path, lambda: ResponseProfile.model_validate(raw))
+
+
+def latest_performance_model_version(base_dir: Path) -> int | None:
+    """Return the highest existing performance-model version, or None."""
+    return _latest_doc_version(base_dir, MODELS_DIR, PERFORMANCE_MODEL_PREFIX, suffix=".yaml")
+
+
+def save_performance_model(
+    base_dir: Path,
+    model: PerformanceModel,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next performance-model version as immutable YAML.
+
+    Same immutable-version audit trail as programs and response profiles: the
+    payload is a YAML PerformanceModel document, versions are never overwritten,
+    and every revision (v2+) requires a reason. The store stamps the
+    authoritative version and reason onto the model. today is accepted for
+    signature parity with the other versioned stores (the model carries no date).
+    """
+    _ = today
+    current = _latest_doc_version(base_dir, MODELS_DIR, PERFORMANCE_MODEL_PREFIX, suffix=".yaml")
+    version = 1 if current is None else current + 1
+    if version > 1 and not reason:
+        msg = f"adapting performance model v{current} to v{version} requires a reason (audit trail)"
+        raise ValueError(msg)
+    stamped = model.model_copy(update={"version": version, "reason": reason})
+    path = _doc_path(base_dir, MODELS_DIR, PERFORMANCE_MODEL_PREFIX, version, suffix=".yaml")
+    if path.exists():
+        msg = f"{path} already exists; performance model versions are immutable"
+        raise ValueError(msg)
+    _atomic_write(path, _to_yaml(stamped.model_dump(mode="json")))
+    return path, version
+
+
+def read_performance_model(base_dir: Path, version: int | None = None) -> PerformanceModel | None:
+    """Return the given or latest performance model, or None when none exists."""
+    target = (
+        version
+        if version is not None
+        else _latest_doc_version(base_dir, MODELS_DIR, PERFORMANCE_MODEL_PREFIX, suffix=".yaml")
+    )
+    if target is None:
+        return None
+    path = _doc_path(base_dir, MODELS_DIR, PERFORMANCE_MODEL_PREFIX, target, suffix=".yaml")
+    if not path.exists():
+        msg = f"performance model version {target} does not exist"
+        raise ValueError(msg)
+    raw = _load_yaml(path)
+    return _validated(path, lambda: PerformanceModel.model_validate(raw))
 
 
 def save_analysis(
