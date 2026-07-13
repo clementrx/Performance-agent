@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 82 tools. If so, you're done — just talk to it.
+You should see 84 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -264,9 +264,12 @@ value provenance-labeled cited/prior/judgment) that drives gap analysis (measure
 KPIs vs benchmarks, per-quality training priorities, unmeasured stays unmeasured)
 and a dated test battery scheduled as experiments around the calendar, seeded with
 four reference models (sprint, 10k, powerlifting, football) that are examples not a
-support gate;
-1083 tests
-incl. property-based) · 82 MCP
+support gate, and a structured exercise ontology (~120 seed exercises attributed by
+movement pattern, force vector, contraction regime, kinetic chain, equipment,
+specificity level and qualities trained — filterable, and extensible with the
+athlete's own additions);
+1097 tests
+incl. property-based) · 84 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response

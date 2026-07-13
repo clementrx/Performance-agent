@@ -17,6 +17,7 @@ from performance_agent.memory.schemas import (
     Calendar,
     CalendarEvent,
     CheckinEntry,
+    ExerciseLibrary,
     Goal,
     KpiResult,
     PerformanceModel,
@@ -47,6 +48,8 @@ RESPONSE_DIR = "response"
 RESPONSE_PREFIX = "response-profile"
 MODELS_DIR = "models"
 PERFORMANCE_MODEL_PREFIX = "performance-model"
+EXERCISES_DIR = "exercises"
+EXERCISE_LIBRARY_FILE = "library.yaml"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -248,6 +251,21 @@ def read_session_adjustments(base_dir: Path) -> list[SessionAdjustmentEntry]:
             SessionAdjustmentEntry.model_validate_json(line) for line in lines if line.strip()
         ],
     )
+
+
+def read_exercise_library(base_dir: Path) -> ExerciseLibrary:
+    """Return the athlete's added-exercise library, or an empty one when none exists."""
+    path = base_dir / EXERCISES_DIR / EXERCISE_LIBRARY_FILE
+    if not path.exists():
+        return ExerciseLibrary()
+    return _validated(path, lambda: ExerciseLibrary.model_validate(_load_yaml(path) or {}))
+
+
+def write_exercise_library(base_dir: Path, library: ExerciseLibrary) -> Path:
+    """Persist the whole athlete exercise library as readable YAML; returns the path."""
+    path = base_dir / EXERCISES_DIR / EXERCISE_LIBRARY_FILE
+    _atomic_write(path, _to_yaml(library.model_dump(mode="json")))
+    return path
 
 
 def append_kpi_result(base_dir: Path, entry: KpiResult) -> None:
