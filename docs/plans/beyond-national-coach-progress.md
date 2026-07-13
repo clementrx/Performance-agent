@@ -19,7 +19,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — [PR #10](https://github.com/clementrx/Performance-agent/pull/10) (base: phase 4) | 902 tests; +4 tools (73 total) |
 | 8 | 6 | Deloads, adherence, return-to-load | done (PR open) | `feat/phase-6-regulation` — [PR #11](https://github.com/clementrx/Performance-agent/pull/11) | 957 tests; +2 tools (75 total) |
 | 9 | 7 | Proactive follow-up | done (PR open) | `feat/phase-7-proactive-followup` — [PR #12](https://github.com/clementrx/Performance-agent/pull/12) (base: phase 6) | 987 tests; +1 tool (76 total) |
-| 10 | 8 | End-to-end simulated evaluation | pending | — | — |
+| 10 | 8 | End-to-end simulated evaluation | done | `feat/phase-8-e2e-sim` (base: phase 7) | 1001 tests; +0 tools (76 total); +14 e2e_sim tests |
 
 ## Deviations from the plan
 
@@ -435,8 +435,61 @@ is broken.
   DEFERRED to the single pre-release refresh (known batched items). English README
   updated to 76 tools / 987 tests + a proactive-follow-up phrase.
 
+## Phase 8 notes
+
+- **New tests (14, total 1001; +0 tools, still 76):** `tests/e2e_sim/` — a
+  deterministic simulation harness (`harness.py`) driving the REAL engine + store
+  against three synthetic personas. No LLM anywhere; every date is explicit
+  (`today=`, ORIGIN = Monday 2026-01-05) and the only "randomness" is a SEEDED
+  `random.Random(seed)` (P1's ±1% load noise, seed 101). Runs identically every time.
+  Added `tests/e2e_sim/__init__.py` (the repo's test subdirs are packages).
+- **Personas & the assertions each exercises:**
+  - **P1 runner** (`test_persona_p1_runner.py`): season P1 invariants (segments tile
+    the horizon; taper ends the week before the A race, competition on it); zero
+    `block` sequencing violations in *every* generated week; response-profile recovery
+    of an injected 0.6%/week strength progression within ±0.2 pts
+    (`compute_response_profile`); an injected 400 kg implausible squat flagged
+    (`session_plausibility_flags` → `e1rm_jump`) and excluded from the fitted rate;
+    every program version has a reason.
+  - **P2 footballer** (`test_persona_p2_footballer.py`): external load present in the
+    weekly totals (majority share from club/match `source="external"`); zero `block`
+    violations for a footballer week (lifting off match ±1); an injected fixture
+    pile-up week firing `should_deload != "none"` within one simulated week, driven by
+    the real `fitness_fatigue_series` / `weekly_strain` / `weekly_monotony`;
+    `list_due_actions` surfacing both `missed_sessions` and `readiness_gap` after a
+    silent week.
+  - **P3 Hyrox** (`test_persona_p3_hyrox.py`): a mixed-modality season with a taper
+    before the A race and only a secondary-event surface for the B race; a calendar
+    change (A race moved +2 weeks, re-planned from week 6) that keeps a taper
+    immediately before the new date and saves a v2 whose reason cites the new date;
+    zero `block` violations for the 4-day intervals/stations/brick/long template; a
+    return-to-load ramp after a 2-week break (`build_return_progression`: starts below
+    baseline, monotone non-decreasing, reaches 1.0) persisted as a `return_to_load`
+    program version with a reason; every version has a reason.
+- **Determinism approach:** seeded RNG + explicit dates only, as above. The response
+  profile keys its per-goal rate off the tracked lift (`Back Squat`) via the store's
+  real alignment anchor (program `created_on`); for the runner the S&C lift is the
+  natural carrier of a measurable rate (a pure-pace rate is not what the response
+  engine measures — noted here, not a gap).
+- **No production code changed.** The harness is pure test code under `tests/e2e_sim/`
+  so it may import across layers; it drives only the existing public store/engine/
+  memory APIs. No engine/memory bug was found while wiring the sim — the prior phases
+  compose as designed. Tool count unchanged (76). Manual gate re-verified green:
+  pytest (1001), ruff check + format, ty, prek --all-files.
+- **New doc:** `docs/eval-checklist.md` — a short MANUAL skill-level eval script (the
+  3 personas + expected agent behaviours + cross-cutting safety/honesty checks) for
+  release testing with a live LLM, the human counterpart to the LLM-free sim.
+- **Report templates / i18n READMEs / docs/installing.md:** unchanged this phase.
+  Remaining pre-release BATCHED items for the main orchestrator (NOT this phase):
+  the i18n README refresh (test/tool counts in `docs/i18n/README.{fr,it,es,de}.md`),
+  the `docs/installing.md` tool-count line, the Typst report-template sections
+  (P1 season overview / P2-P9 load trends / P5 response summary), and the single PyPI
+  release. English README updated to 1001 tests + the simulated-e2e "Working today"
+  claim (tool count stays 76).
+
 ## Resume notes
 
-_Phase 7 complete. Next in execution order: **Phase 8 (end-to-end simulated
-evaluation)** — the LAST phase (order 0, 1, 2, 9, 3, 4, 5, 6, 7, **8**); depends on
-Phases 0-7 + 9. Branch off `feat/phase-7-proactive-followup` (stacked)._
+_All phases (0, 1, 2, 9, 3, 4, 5, 6, 7, 8) complete. Phase 8 is the last. Remaining
+before release are the batched, non-phase items listed in the Phase 8 notes above
+(i18n README refresh, `docs/installing.md` tool-count line, Typst report-template
+sections, single PyPI release) — for the main orchestrator, not a phase branch._
