@@ -103,13 +103,43 @@ class ToleranceRow:
 
 
 @dataclass(frozen=True)
+class QualityRateRow:
+    """A measured per-quality weekly rate, keyed to its KPI, with its sample size."""
+
+    quality: str
+    kpi_id: str
+    pct_per_week: float
+    n: int
+    window_weeks: float
+    r2: float
+
+
+@dataclass(frozen=True)
+class BanisterRow:
+    """The fitted Banister summary: params, fit quality, and usability verdict."""
+
+    usable: bool
+    tau1: float
+    tau2: float
+    k1: float
+    k2: float
+    r2: float
+    k1_ci_half: float
+    k2_ci_half: float
+    n_load_days: int
+    n_performance_points: int
+
+
+@dataclass(frozen=True)
 class ResponseSummary:
     """Measured-vs-prior response, adherence and the profile's caveats verbatim."""
 
     goal_rate: RateRow | None
     lift_rates: list[RateRow]
+    quality_rates: list[QualityRateRow]
     adherence: list[AdherenceRow]
     tolerance: list[ToleranceRow]
+    banister: BanisterRow | None
     caveats: list[str]
 
 
@@ -248,11 +278,41 @@ def build_response_summary(profile: ResponseProfile, goal_label: str | None) -> 
         ToleranceRow(direction=flag.direction, correlation=flag.correlation, n_weeks=flag.n_weeks)
         for flag in profile.volume_tolerance_flags
     ]
+    quality_rates = [
+        QualityRateRow(
+            quality=rate.quality,
+            kpi_id=rate.kpi_id,
+            pct_per_week=rate.pct_per_week,
+            n=rate.n,
+            window_weeks=rate.window_weeks,
+            r2=rate.r2,
+        )
+        for rate in profile.per_quality_rates
+    ]
+    fit = profile.banister
+    banister = (
+        BanisterRow(
+            usable=fit.usable,
+            tau1=fit.tau1,
+            tau2=fit.tau2,
+            k1=fit.k1,
+            k2=fit.k2,
+            r2=fit.r2,
+            k1_ci_half=fit.k1_ci_half,
+            k2_ci_half=fit.k2_ci_half,
+            n_load_days=fit.n_load_days,
+            n_performance_points=fit.n_performance_points,
+        )
+        if fit is not None
+        else None
+    )
     return ResponseSummary(
         goal_rate=goal_rate,
         lift_rates=lift_rates,
+        quality_rates=quality_rates,
         adherence=adherence,
         tolerance=tolerance,
+        banister=banister,
         caveats=list(profile.caveats),
     )
 

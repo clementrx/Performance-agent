@@ -22,8 +22,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 7 | 6 | Fitted Banister model | done (merged) | `feat/phase-6-fitted-banister` / PR #21 `4fb2438` | 1181 tests (+13); 88 tools (+1) |
 | 8 | 7 | Individual taper response & per-quality profile | done (merged) | `feat/phase-7-taper-response` / PR #22 `778a927` | 1196 tests (+15); 89 tools (+1) |
 | 9 | 8 | Multi-year planning & residuals | done (merged) | `feat/phase-8-macro-residuals` / PR #23 `62f7172` | 1223 tests (+27); 93 tools (+4) |
-| 10 | 9 | Property tests & multi-sport e2e sim | done | `feat/phase-9-multisport-sim` / PR pending | 1242 tests (+19); 93 tools (no new) |
-| 11 | 10 | Skills/docs/i18n/corpus & release prep | pending | — | |
+| 10 | 9 | Property tests & multi-sport e2e sim | done (merged) | `feat/phase-9-multisport-sim` / PR #24 `5ec0868` | 1242 tests (+19); 93 tools (no new) |
+| 11 | 10 | Skills/docs/i18n/corpus & release prep | done (release awaiting GO) | `feat/phase-10-docs-release` / PR pending | 1243 tests (+1); 93 tools; v0.4.0 built |
 
 Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` when parked.
 
@@ -154,6 +154,24 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P9 — consolidated cross-cutting property file** re-asserts load-velocity/Banister
   recovery, selection contraindication monotonicity, and residual gap monotonicity in
   one suite; per-module property tests remain.
+- **P10 — fitted-response report annex delivered** (Banister params + basis/usable +
+  approximate CIs + per-quality rates, en/fr/es). The Typst **model-&-gaps** and
+  **macro-overview** report annexes are a documented FOLLOW-UP: report cosmetics whose
+  data is fully tool-accessible; the fitted-individualization annex (the athlete-visible
+  headline) is shipped. Flag at the GO gate.
+- **P10 — corpus DOI/PMID/ISBN verification not run.** `verify_reference` needs network
+  access unavailable in the execution sandbox; per plan, unverifiable → labeled priors,
+  which is exactly what P0-P9 did (no fabricated citations). The corpus additions
+  (Banister/Morton, Issurin, González-Badillo/Sánchez-Medina, Suchomel, Bondarchuk,
+  Mujika) remain a network-gated FOLLOW-UP; all dependent constants are honest priors.
+- **P10 — i18n READMEs: counters updated (93 tools / 1243 tests) in all four langs**;
+  the full "Working today" capability-paragraph re-translation (any-sport engine, scored
+  selection, fitted individualization, multi-year) is a FOLLOW-UP — the numbers are
+  accurate now. `goal-assessment` is a superpowers skill (not in repo `skills/`), left
+  untouched.
+- **P10 — release v0.4.0 PREPARED, NOT PUBLISHED.** pyproject bumped 0.3.0→0.4.0,
+  CHANGELOG.md added, wheel+sdist built clean. Git tag + PyPI publish are HELD for
+  explicit user GO (plan §0 / DoD 6).
 
 ## Resume notes
 

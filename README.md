@@ -42,6 +42,14 @@ tell you what you want to hear. PerformanceAgent is architected so neither is po
   reference that isn't in the corpus.
 - **Your data is files, not a cloud.** Profile, programs, session logs, and check-ins
   live in a plain directory of markdown/YAML you can read, edit, diff, and sync.
+- **Any sport, not a lookup table.** The coach researches what determines performance
+  in *your* event and fills a structured, versioned model — trainable qualities,
+  benchmarks, injury risks — then computes your gaps against it. A kayak sprinter is
+  modeled exactly like a powerlifter; no sport is hard-coded. Exercise choice is a
+  deterministic scored ranking (not authored from memory), and the individualization
+  is *fitted*: your own fitness-fatigue time constants, taper response and per-quality
+  rates — with honesty gates that refuse a number when the data is too thin — planned
+  across a 1-4 year macrocycle.
 
 ## Install (5 minutes, 3 steps)
 
@@ -292,7 +300,7 @@ typed backward from the major event with per-year quality-emphasis budgets deriv
 from the gap priorities, feeding the season) and a training-residuals guard (warns
 where a maintained quality would decay past its Issurin retention window without a
 refresh);
-1242 tests
+1243 tests
 incl. property-based) · 93 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
@@ -307,9 +315,10 @@ behind a double verification gate · twelve coaching skills incl. a mandatory de
 gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard
 citation gate.
 
-**Roadmap:** corpus growth toward ~200 studies · outcome simulation (Banister +
-Monte Carlo) · more sports verticals (Hyrox-specific engine tools, football, tennis) ·
-optional web front-end reusing the same MCP server.
+**Roadmap:** environment & fine peaking (altitude/hypoxia, heat acclimatization,
+jet-lag protocols, competition-hour scheduling) — the deliberate next iteration ·
+corpus growth toward ~200 studies · outcome simulation (Monte Carlo on the fitted
+Banister model) · optional web front-end reusing the same MCP server.
 
 ## Design principles
 

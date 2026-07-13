@@ -5,7 +5,9 @@ from typing import Literal
 
 from performance_agent.reports.labels import LABELS
 from performance_agent.reports.sections import (
+    BanisterRow,
     LoadTrends,
+    QualityRateRow,
     RateRow,
     ResponseSummary,
     SeasonOverview,
@@ -119,6 +121,31 @@ def _tolerance_line(flag: ToleranceRow, labels: dict[str, str]) -> str:
     return f"- {escape_typst(direction)} (r={flag.correlation:+.2f}, n={flag.n_weeks})"
 
 
+def _quality_rate_line(rate: QualityRateRow, labels: dict[str, str]) -> str:
+    row = RateRow(rate.quality, rate.pct_per_week, rate.n, rate.window_weeks, rate.r2)
+    head = f"{escape_typst(rate.quality)} ({escape_typst(rate.kpi_id)})"
+    return f"- {head}: {escape_typst(_rate_str(row, labels))}"
+
+
+def _banister_lines(fit: BanisterRow, labels: dict[str, str]) -> list[str]:
+    """The fitted Banister summary: basis (usable), params, and uncertainty."""
+    lines = [f"*{escape_typst(labels['response_banister'])}:*"]
+    if not fit.usable:
+        lines.append(f"- {escape_typst(labels['response_fit_unusable'])}")
+        return lines
+    params = (
+        f"tau1={fit.tau1:.0f}d / tau2={fit.tau2:.0f}d, "
+        f"k1={fit.k1:.3f} (+/-{fit.k1_ci_half:.3f}), k2={fit.k2:.3f} (+/-{fit.k2_ci_half:.3f})"
+    )
+    quality = (
+        f"r2={fit.r2:.2f}, n={fit.n_performance_points} {labels['response_fit_points']}, "
+        f"{fit.n_load_days} {labels['response_fit_load_days']}"
+    )
+    lines.append(f"- {escape_typst(params)}")
+    lines.append(f"- {escape_typst(quality)} ({escape_typst(labels['response_fit_ci_note'])})")
+    return lines
+
+
 def _response_lines(response: ResponseSummary, labels: dict[str, str]) -> list[str]:
     """Response summary (expert only): measured-vs-prior rate, adherence, caveats."""
     lines = [f"= {escape_typst(labels['response_title'])}", ""]
@@ -140,6 +167,11 @@ def _response_lines(response: ResponseSummary, labels: dict[str, str]) -> list[s
     if response.tolerance:
         lines.append(f"*{escape_typst(labels['response_tolerance'])}:*")
         lines += [_tolerance_line(flag, labels) for flag in response.tolerance]
+    if response.quality_rates:
+        lines.append(f"*{escape_typst(labels['response_quality_rates'])}:*")
+        lines += [_quality_rate_line(rate, labels) for rate in response.quality_rates]
+    if response.banister is not None:
+        lines += _banister_lines(response.banister, labels)
     if response.caveats:
         lines.append(f"*{escape_typst(labels['response_caveats'])}:*")
         lines += [f"- {escape_typst(caveat)}" for caveat in response.caveats]

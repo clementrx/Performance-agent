@@ -4,7 +4,9 @@ import pytest
 
 from performance_agent.reports.sections import (
     AdherenceRow,
+    BanisterRow,
     LoadTrends,
+    QualityRateRow,
     RateRow,
     ResponseSummary,
     SeasonEventRow,
@@ -33,8 +35,30 @@ LOAD = LoadTrends(
 RESPONSE = ResponseSummary(
     goal_rate=RateRow(label="10 km", pct_per_week=0.012, n=6, window_weeks=6.0, r2=0.7),
     lift_rates=[],
+    quality_rates=[
+        QualityRateRow(
+            quality="aerobic_capacity",
+            kpi_id="run-10k-time",
+            pct_per_week=-0.01,
+            n=6,
+            window_weeks=6.0,
+            r2=0.8,
+        )
+    ],
     adherence=[AdherenceRow("endurance_easy", 82.0, 9, 1, 0, 1)],
     tolerance=[ToleranceRow("higher_volume_higher_fatigue", 0.6, 5)],
+    banister=BanisterRow(
+        usable=True,
+        tau1=40.0,
+        tau2=8.0,
+        k1=0.1,
+        k2=0.14,
+        r2=0.95,
+        k1_ci_half=0.02,
+        k2_ci_half=0.03,
+        n_load_days=84,
+        n_performance_points=6,
+    ),
     caveats=["mesuré sur six séances provisoires"],
 )
 
@@ -111,6 +135,32 @@ def test_expert_mode_renders_all_three_sections():
     assert "Monotonie" in source
     assert "Synthèse de la réponse" in source
     assert "mesuré sur six séances provisoires" in source
+    # Fitted-response summary: Banister params + per-quality rates + CI note.
+    assert "Modèle fitness-fatigue ajusté" in source
+    assert "tau1" in source and "40d" in source
+    assert "IC 95% approximatifs" in source
+    assert "Taux par qualité" in source
+
+
+def test_unusable_banister_is_labelled_population():
+    unusable = replace(
+        RESPONSE,
+        banister=BanisterRow(
+            usable=False,
+            tau1=1.0,
+            tau2=1.0,
+            k1=0.0,
+            k2=0.0,
+            r2=0.0,
+            k1_ci_half=0.0,
+            k2_ci_half=0.0,
+            n_load_days=10,
+            n_performance_points=2,
+        ),
+    )
+    source = build_report_source(replace(CONTEXT, response=unusable))
+    assert "modèle populationnel" in source
+    assert "tau1" not in source
 
 
 def test_coach_mode_is_terse():

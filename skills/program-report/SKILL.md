@@ -15,9 +15,12 @@ document — it must be as honest as the conversation that produced it.
 1. Confirm there is a program: `read_athlete` → program_version. Null → route to
    program-planning; a report of nothing helps nobody.
 2. Ask which mode (one question): **coach** — terse instructions to train with;
-   **expert** — adds the adaptation reason and the full references section with
-   evidence grades. Default to coach for athletes, expert for anyone who asks
-   "why" a lot.
+   **expert** — adds the adaptation reason, the full references section with
+   evidence grades, and (when the data exists) the response annex: measured
+   per-quality rates and the FITTED fitness-fatigue summary (Banister τ/gain params
+   with approximate CIs, or a "population model stands" line when the fit did not
+   qualify). Provenance and uncertainty are shown, never hidden. Default to coach
+   for athletes, expert for anyone who asks "why" a lot.
 3. Pre-flight: `read_program` and run `check_citations` on the body. If anything
    is flagged, do NOT render — fix the program first (route to program-adaptation
    to save a corrected version with a reason). The renderer enforces the same
