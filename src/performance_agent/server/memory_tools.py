@@ -11,8 +11,9 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from performance_agent.engine import SeasonModality
-from performance_agent.memory import monitoring, sequencing, store
+from performance_agent.memory import diligence, monitoring, sequencing, store
 from performance_agent.memory import season as season_planner
+from performance_agent.memory.diligence import DueActionView
 from performance_agent.memory.monitoring import PlausibilityFlag
 from performance_agent.memory.paths import resolve_athlete_dir
 from performance_agent.memory.schemas import (
@@ -510,6 +511,22 @@ def get_time_context() -> TimeContext:
     return build_time_context(resolve_athlete_dir())
 
 
+def list_due_actions() -> list[DueActionView]:
+    """What the coach owes the athlete right now, most severe first (facts, not prose).
+
+    Call this immediately after get_time_context and open with the top items. It
+    reads the active program cadence, calendar, sessions, readiness and response
+    profile to surface: an overdue check-in, an A/B event within three weeks
+    (taper/peaking about to start), planned sessions missed this week, three-plus
+    training days with no readiness read, an active goal whose deadline has no dated
+    events, a response profile older than six weeks, and a streak of red readiness
+    days. Each action is {kind, severity, due_since_days|due_in_days, message_key,
+    ref}; render the message_key yourself in the athlete's language and quote the
+    numbers. An all-green athlete returns []. Severity is high, medium or low.
+    """
+    return diligence.list_due_actions(resolve_athlete_dir())
+
+
 def register(mcp: FastMCP) -> None:
     """Register every memory tool on the server."""
     for tool in (
@@ -537,5 +554,6 @@ def register(mcp: FastMCP) -> None:
         build_season_plan,
         check_week_sequencing,
         get_time_context,
+        list_due_actions,
     ):
         mcp.tool()(tool)

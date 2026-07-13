@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 75 tools. If so, you're done — just talk to it.
+You should see 76 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -252,8 +252,11 @@ recalibration from the athlete's own logs (measured progression rate honest abou
 prescribed-vs-actual compliance, volume-tolerance association, a versioned response
 profile) that recomputes goal feasibility against the measured rate, data-driven
 deload recommendations (monotony/strain, TSB and readiness trends against the planned
-counter) and a graded return-to-load ramp after time off (clearance-gated); 957 tests
-incl. property-based) · 75 MCP
+counter) and a graded return-to-load ramp after time off (clearance-gated),
+proactive follow-up that surfaces what is due (overdue check-in, imminent race,
+missed sessions, readiness gaps, a stale response profile) severity-ordered so the
+coach speaks first; 987 tests
+incl. property-based) · 76 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response

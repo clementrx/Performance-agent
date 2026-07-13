@@ -18,7 +18,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 6 | 4 | Intra-week sequencing & interference | done (PR open) | `feat/phase-4-sequencing` — [PR #9](https://github.com/clementrx/Performance-agent/pull/9) (base: phase 3) | 860 tests; +1 tool (69 total) |
 | 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — [PR #10](https://github.com/clementrx/Performance-agent/pull/10) (base: phase 4) | 902 tests; +4 tools (73 total) |
 | 8 | 6 | Deloads, adherence, return-to-load | done (PR open) | `feat/phase-6-regulation` — [PR #11](https://github.com/clementrx/Performance-agent/pull/11) | 957 tests; +2 tools (75 total) |
-| 9 | 7 | Proactive follow-up | pending | — | — |
+| 9 | 7 | Proactive follow-up | done (PR open) | `feat/phase-7-proactive-followup` — PR TBD (base: phase 6) | 987 tests; +1 tool (76 total) |
 | 10 | 8 | End-to-end simulated evaluation | pending | — | — |
 
 ## Deviations from the plan
@@ -383,8 +383,60 @@ is broken.
   batched items). English README updated to 75 tools / 957 tests + a deload/return-to-
   load phrase.
 
+## Phase 7 notes
+
+- **New tool (1, total 76):** `list_due_actions()` in `server/memory_tools.py` (it
+  reads many athlete files, so it lives with the memory-layer tools). Returns a list
+  of `DueActionView` = `{kind, severity, message_key, due_since_days|due_in_days,
+  ref}`, sorted most-severe-first. It returns **facts, not prose** — a stable
+  locale-neutral `message_key` plus the numbers; the LLM renders the sentence in the
+  athlete's language. An all-green athlete returns `[]`.
+- **Engine/memory split (purity preserved):** `engine/diligence.py` is pure — it
+  imports ONLY stdlib (`dataclasses`, `typing`) and operates on engine-local
+  `@dataclass`es (`DiligenceFacts` = already-extracted numbers/bools, `UpcomingEvent`,
+  `DueAction`). It has NO datetime and NO `memory.schemas` import;
+  `tests/engine/test_engine_purity.py` passes. `memory/diligence.py` owns ALL file
+  reading and date math (time context, program cadence, calendar, sessions,
+  readiness, response profile → `DiligenceFacts`) and maps `DueAction` → the JSON
+  view. Mirrors `engine/season.py` ↔ `memory/season.py`. Deterministic via an
+  optional `today` param, like `build_time_context` / `build_season_plan`.
+- **Due conditions implemented (7 kinds):** `checkin` (overdue past
+  `checkin_cadence_days`, or never — only when a program exists), `event` (A/B within
+  21 days), `missed_sessions` (expected weekly training days minus sessions logged in
+  the last 7 days), `readiness_gap` (≥3 recent training days with no readiness read),
+  `calendar_incomplete` (an active goal has a deadline but the calendar has zero
+  events), `response_profile_stale` (>6 weeks / 42 days since `as_of`),
+  `readiness_red_streak` (trailing run of red readiness reads).
+- **Severity ordering:** `high` > `medium` > `low`; within a severity, most urgent
+  first (soonest upcoming event, longest overdue), then a stable tiebreak on
+  kind + ref → fully deterministic. Severity assignment: check-in high once a full
+  extra cadence late (else medium; never-checked-in = high); A event high ≤14 d else
+  medium ≤21 d; B event medium ≤7 d else low ≤21 d; missed ≥3 high else medium;
+  readiness gap medium; calendar_incomplete medium; profile stale low; red streak ≥3
+  high else medium (≥2). Every threshold is a **team-chosen prior** (no corpus rule
+  prescribes coach-outreach timing) — labeled in code, consistent with Phases 2-6.
+- **`message_key` approach:** the tool never emits a localized sentence. Keys are
+  `checkin_overdue`, `checkin_never`, `event_approaching`, `missed_sessions`,
+  `readiness_gap`, `calendar_incomplete`, `response_profile_stale`,
+  `readiness_red_streak`; the `performance-coach` skill renders each in the athlete's
+  locale and quotes the numbers.
+- **New doc:** `docs/proactive-reminders.md` — documents `list_due_actions` and
+  OPTIONAL client-side reminder recipes (cron / launchd / scheduled agent run that
+  opens a session with "coach check" so the tool fires). Explicitly optional, no
+  server change; the server stays passive (stdio request/response, cannot push).
+- **Skill:** `performance-coach` calls `list_due_actions` immediately after
+  `get_time_context` and OPENS with the top items (the coach speaks first);
+  `list_due_actions` added to its `tools:` frontmatter and body. Existing needles and
+  the tool-reference test preserved (only added).
+- **No new corpus entries** (no verified network); no evidence needed (follow-up
+  timing is coaching judgment, not a cited prescription).
+- **Report templates / i18n READMEs / docs/installing.md:** the batched report pass,
+  the 4 `docs/i18n/` READMEs and the `docs/installing.md` tool-count line stay
+  DEFERRED to the single pre-release refresh (known batched items). English README
+  updated to 76 tools / 987 tests + a proactive-follow-up phrase.
+
 ## Resume notes
 
-_Phase 6 complete. Next in execution order: **Phase 7 (proactive follow-up)** (order 0,
-1, 2, 9, 3, 4, 5, 6, **7**, 8); depends on Phases 0, 1, 5. Branch off
-`feat/phase-6-regulation` (stacked)._
+_Phase 7 complete. Next in execution order: **Phase 8 (end-to-end simulated
+evaluation)** — the LAST phase (order 0, 1, 2, 9, 3, 4, 5, 6, 7, **8**); depends on
+Phases 0-7 + 9. Branch off `feat/phase-7-proactive-followup` (stacked)._
