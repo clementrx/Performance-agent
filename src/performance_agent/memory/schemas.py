@@ -957,3 +957,59 @@ class ExerciseLibrary(BaseModel):
             msg = f"exercise ids must be unique within a library, got {ids}"
             raise ValueError(msg)
         return self
+
+
+# --- Multi-year macro plan (macrocycle above seasons, versioned) ------------
+#
+# macro/macro-plan-v{N}.yaml plans a 1-4 year horizon backward from the major
+# event (e.g. Games/championship): each year is typed and carries quality
+# emphases derived from the PerformanceModel gap priorities. It sits ABOVE
+# seasons and never changes week granularity (the 7-day microcycle limit stands).
+
+MacroYearType = Literal["development", "qualification", "realization"]
+
+
+class MacroYear(BaseModel):
+    """One planned year of the macrocycle: its type and quality emphases."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    index: int = Field(ge=1, le=4)
+    year_type: MacroYearType
+    primary_event_id: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64
+    )
+    quality_emphases: dict[PerformanceQuality, float] = Field(default_factory=dict)
+
+    @field_validator("quality_emphases")
+    @classmethod
+    def _emphases_in_unit_range(cls, value: dict[str, float]) -> dict[str, float]:
+        bad = {k: v for k, v in value.items() if not 0.0 <= v <= 1.0}
+        if bad:
+            msg = f"quality_emphases weights must be within 0-1, got {bad}"
+            raise ValueError(msg)
+        return value
+
+
+class MacroPlan(BaseModel):
+    """A multi-year plan, versioned and immutable (reason mandatory from v2)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    version: int = Field(default=1, ge=1)
+    horizon_years: int = Field(ge=1, le=4)
+    major_event_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    years: list[MacroYear] = Field(min_length=1)
+    reason: str | None = None
+
+    @model_validator(mode="after")
+    def _years_match_horizon(self) -> Self:
+        if len(self.years) != self.horizon_years:
+            msg = f"expected {self.horizon_years} years, got {len(self.years)}"
+            raise ValueError(msg)
+        indices = [y.index for y in self.years]
+        if indices != list(range(1, self.horizon_years + 1)):
+            msg = f"year indices must be 1..{self.horizon_years} in order, got {indices}"
+            raise ValueError(msg)
+        return self

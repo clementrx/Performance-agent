@@ -10,7 +10,8 @@ tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         build_block_cycle, build_undulating_sessions, build_inseason_maintenance,
         build_peaking_block, weekly_set_targets_for, read_nutrition_frame,
         read_calendar, build_season_plan, recommend_taper, budget_weekly_load,
-        read_response_profile, compute_performance_gaps]
+        read_response_profile, compute_performance_gaps, build_macro_plan,
+        save_macro_plan, read_macro_plan, check_residuals]
 ---
 
 # Program Planning — le Planificateur
@@ -51,6 +52,25 @@ evidence. Query `search_evidence` for the skeleton's structural questions
 qualities) and render any id you quote with `get_citation`. What the corpus
 does not cover is labeled coaching judgment. State plainly in the skeleton
 that it was built without a research dossier.
+
+## 1b. Multi-year athletes: plan the macrocycle first
+
+When the athlete's major event is more than a year out (a Games/championship on
+the calendar, or a stated 1-4 year horizon), plan the macrocycle BEFORE the season.
+`build_macro_plan(horizon_years)` types each year backward from the major event
+(last = realization, prior = qualification for >= 3-year horizons, earlier =
+development) and derives each year's quality emphases from the gap priorities —
+development years bias general capacities and weaknesses, the realization year
+biases specific/competition qualities. Review it with the athlete, then
+`save_macro_plan(plan, reason)` (immutable, versioned; `read_macro_plan` re-reads).
+Feed the CURRENT year's `quality_emphases` into `build_season_plan`'s `year_emphases`
+so the season's focus serves the macro budget. Single-year athletes skip this.
+
+Once the program exists (after program-optimization builds and saves it), run
+`check_residuals`: it warns where a maintained quality would decay past its retention
+window (aerobic/max-strength hold ~30 days, speed ~5) without a refresh stimulus. Add
+a refresh or justify the gap — never let a developed quality silently detrain across a
+long development block.
 
 ## 2. Plan the season backward when the calendar has dated events
 

@@ -44,13 +44,18 @@ class SecondaryEventView(TypedDict):
 
 
 class SeasonPlanView(TypedDict):
-    """The full backward-planned season, ready for the LLM to narrate."""
+    """The full backward-planned season, ready for the LLM to narrate.
+
+    macro_emphases carries the macro year's quality emphases when passed (from a
+    MacroPlan year); it is None for a standalone season, leaving behavior unchanged.
+    """
 
     start_date: str
     horizon_weeks: int
     modality: str
     segments: list[SegmentView]
     secondary_events: list[SecondaryEventView]
+    macro_emphases: dict[str, float] | None
 
 
 def _week_of(event_date: date, start: date) -> int:
@@ -75,9 +80,16 @@ def _horizon_weeks(base_dir: Path, start: date, event_weeks: list[int]) -> int:
 
 
 def build_season_plan(
-    base_dir: Path, modality: SeasonModality = "mixed", today: date | None = None
+    base_dir: Path,
+    modality: SeasonModality = "mixed",
+    today: date | None = None,
+    year_emphases: dict[str, float] | None = None,
 ) -> SeasonPlanView:
-    """Read the calendar and plan the season backward from its dated events."""
+    """Read the calendar and plan the season backward from its dated events.
+
+    year_emphases (optional macro context) is echoed back as macro_emphases for the
+    LLM to bias the season's quality focus; the segment tiling itself is unchanged.
+    """
     start = today or date.today()
     calendar = store.read_calendar(base_dir)
     engine_events = [
@@ -122,4 +134,5 @@ def build_season_plan(
         modality=modality,
         segments=segment_views,
         secondary_events=secondary,
+        macro_emphases=year_emphases,
     )

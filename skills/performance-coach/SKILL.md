@@ -84,6 +84,9 @@ At session start:
 After a skill hands back:
 
 - Accepted goal, no dossier → deep-research
+- Major event more than a year out (Games/championship, 1-4 year horizon) →
+  program-planning plans the MACROCYCLE first (year typing + quality budgets),
+  then the current season serves it
 - Dossier saved, no program → program-planning
 - Skeleton handed over by program-planning → program-optimization
 - Draft validated by the athlete but not yet reviewed → program-review (the

@@ -12,6 +12,7 @@ from performance_agent.engine.periodization import (
     InseasonWeek,
     PeakingWeek,
     WeekLoad,
+    block_weeks_for_training_age,
     build_block_periodization,
     build_inseason_week,
     build_strength_peaking,
@@ -265,3 +266,10 @@ def test_peaking_rejects_out_of_range_lengths(weeks):
 def test_peaking_rejects_non_whole_weeks():
     with pytest.raises(ValueError, match="whole number"):
         build_strength_peaking(weeks=2.0)  # ty: ignore[invalid-argument-type]
+
+
+def test_block_weeks_for_training_age():
+    assert block_weeks_for_training_age("beginner") == 6
+    assert block_weeks_for_training_age("advanced") == 12
+    with pytest.raises(ValueError, match="training_age must be one of"):
+        block_weeks_for_training_age("elite")
