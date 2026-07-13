@@ -155,6 +155,13 @@ from performance_agent.engine.strength import (
     weekly_set_targets_adjusted,
 )
 from performance_agent.engine.substitutions import Substitute
+from performance_agent.engine.taper_response import (
+    TaperEvent,
+    TaperResponse,
+    TaperWindow,
+    detect_taper,
+    fit_taper_response,
+)
 from performance_agent.engine.test_battery import (
     ScheduledTest,
     TestableKpi,
@@ -225,6 +232,9 @@ __all__ = [
     "Severity",
     "SpecificityWarning",
     "Substitute",
+    "TaperEvent",
+    "TaperResponse",
+    "TaperWindow",
     "TestableKpi",
     "TimelinePoint",
     "ToleranceAdjustment",
@@ -258,11 +268,13 @@ __all__ = [
     "compute_gaps",
     "count_escalation_signals",
     "daily_e1rm",
+    "detect_taper",
     "double_progression",
     "e1rm_timeline",
     "endurance_feasibility",
     "estimate_srpe_from_hr",
     "fit_load_velocity",
+    "fit_taper_response",
     "fitness_fatigue_series",
     "flag_implausible_session",
     "hypertrophy_feasibility",

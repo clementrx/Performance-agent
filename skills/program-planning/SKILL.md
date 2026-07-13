@@ -61,7 +61,10 @@ tiled segments (each with a `phase_type`, week indices, dates, and a rationale)
 plus B/C events. Then chain the builders below per segment: `block` →
 `build_block_cycle`, `waves` → `build_periodization_waves`, `peaking` →
 `build_peaking_block`, `in_season` → `build_inseason_maintenance`; `taper`
-segments use `recommend_taper`'s length; `maintenance`/`transition` are light
+segments use `recommend_taper`'s length — it returns `basis` (individual when the
+athlete has >= 2 past tapers with outcomes, else population) and `population_days`
+for comparison; when the basis is individual, plan to the athlete's own best-outcome
+taper and say so, else use the population rule and label it. `maintenance`/`transition` are light
 bridges. **Quote each segment's rationale in the skeleton** — especially any
 `compromise` flag (two A events too close): the athlete must hear that honestly.
 B events get a mini-taper/light week inside their block, never a full taper; C

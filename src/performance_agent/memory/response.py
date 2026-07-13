@@ -18,6 +18,7 @@ from performance_agent.engine import (
     AdherenceByQuality,
     ProgressionRate,
     SessionSets,
+    TimelinePoint,
     VolumeTolerance,
     adherence_stats,
     build_response_profile,
@@ -42,6 +43,7 @@ from performance_agent.memory.schemas import (
     MeasuredRate,
     ProgramPlan,
     Quality,
+    QualityRate,
     ReadinessEntry,
     ResponseProfile,
     SessionEntry,
@@ -232,6 +234,42 @@ def _to_adherence(stat: AdherenceByQuality) -> AdherenceQuality:
     )
 
 
+def _per_quality_rates(base_dir: Path) -> list[QualityRate]:
+    """Measured per-quality progression rates from KPI results, keyed via the model.
+
+    For each model KPI, fit a weekly rate to its dated measurements (a None fit
+    when the data is too thin is dropped, never fabricated). pct_per_week is
+    directional — negative when a KPI improves by getting smaller (a time).
+    """
+    model = store.read_performance_model(base_dir)
+    if model is None:
+        return []
+    results = [r for r in store.read_kpi_results(base_dir) if r.kpi_id is not None]
+    by_kpi: dict[str, list] = {}
+    for result in results:
+        by_kpi.setdefault(str(result.kpi_id), []).append(result)
+    rates: list[QualityRate] = []
+    for kpi in model.kpis:
+        points = by_kpi.get(kpi.id, [])
+        if not points:
+            continue
+        origin = min(p.date for p in points)
+        timeline = [TimelinePoint(day_index=(p.date - origin).days, e1rm=p.value) for p in points]
+        rate = progression_rate(timeline)
+        if rate is not None:
+            rates.append(
+                QualityRate(
+                    quality=kpi.quality,
+                    kpi_id=kpi.id,
+                    pct_per_week=rate.pct_per_week,
+                    r2=rate.r2,
+                    n=rate.n,
+                    window_weeks=rate.span_weeks,
+                )
+            )
+    return rates
+
+
 def compute_response_profile(
     base_dir: Path,
     goal_id: str | None = None,
@@ -299,6 +337,7 @@ def compute_response_profile(
         as_of=as_of,
         goal_id=resolved_goal_id,
         per_lift_rates=[_to_lift_rate(lift, rate) for lift, rate in sorted(rates.items())],
+        per_quality_rates=_per_quality_rates(base_dir),
         per_goal_measured_rate=measured,
         volume_tolerance_flags=tolerance_flags,
         adherence_by_quality=[_to_adherence(s) for s in data.adherence_by_quality],

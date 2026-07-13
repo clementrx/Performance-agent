@@ -19,8 +19,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 4 | 3 | Selection engine & specificity guard | done (merged) | `feat/phase-3-selection-engine` / PR #18 `daf6215` | 1126 tests (+29); 86 tools (+2) |
 | 5 | 4 | High-resolution ingestion | done (merged) | `feat/phase-4-highres-ingestion` / PR #19 `0a8e60f` | 1148 tests (+22); 86 tools |
 | 6 | 5 | Load-velocity profiling & VBT autoregulation | done (merged) | `feat/phase-5-load-velocity` / PR #20 `e013009` | 1168 tests (+20); 87 tools (+1) |
-| 7 | 6 | Fitted Banister model | done | `feat/phase-6-fitted-banister` / PR pending | 1181 tests (+13); 88 tools (+1) |
-| 8 | 7 | Individual taper response & per-quality profile | pending | — | |
+| 7 | 6 | Fitted Banister model | done (merged) | `feat/phase-6-fitted-banister` / PR #21 `4fb2438` | 1181 tests (+13); 88 tools (+1) |
+| 8 | 7 | Individual taper response & per-quality profile | done | `feat/phase-7-taper-response` / PR pending | 1196 tests (+15); 89 tools (+1) |
 | 9 | 8 | Multi-year planning & residuals | pending | — | |
 | 10 | 9 | Property tests & multi-sport e2e sim | pending | — | |
 | 11 | 10 | Skills/docs/i18n/corpus & release prep | pending | — | |
@@ -118,6 +118,19 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
   `fit_banister` tool; `compute_fitness_fatigue` gained optional `ctl_tau`/`atl_tau`
   (pass fitted τ1/τ2). EWMA defaults unchanged when omitted. Banister 1975 / Morton
   1990 corpus citations deferred to P10 (τ bounds are priors until then).
+- **P7 — `recommend_taper` moved from `engine_tools.py` to a new
+  `server/taper_tools.py`** (it now reads athlete data — layering: engine_tools stays
+  pure). Same tool name; output extended with `basis`/`population_days`/`note`. New
+  `fit_taper_response` diagnostic tool (net +1). Detection counts consecutive
+  sub-75%-of-baseline days before an event (true taper duration), not the longest
+  ≥25%-average window (which over-reports on deep tapers).
+- **P7 — `ResponseProfile.schema_version` bumped 1→2** for `per_quality_rates`
+  (v1 profiles still validate — additive field). `QualityRate.quality` is `str`
+  (mirrors `LiftRate.lift`; the PerformanceQuality literal is defined later in
+  schemas.py, and the value is validated upstream on the KPI).
+- **P7 — Banister-derived taper window (predicted TSB peak) deferred.** The plan
+  marks it "Optional"; the individual-history path is the core deliverable. Follow-up
+  candidate for a later iteration.
 
 ## Resume notes
 
