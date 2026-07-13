@@ -540,6 +540,20 @@ async def test_compute_fitness_fatigue_tool(client):
 
 
 @pytest.mark.anyio
+async def test_compute_fitness_fatigue_accepts_fitted_taus(client):
+    default = await client.call_tool("compute_fitness_fatigue", {"daily_loads": [100.0] * 60})
+    fitted = await client.call_tool(
+        "compute_fitness_fatigue",
+        {"daily_loads": [100.0] * 60, "ctl_tau": 30, "atl_tau": 5},
+    )
+    assert not fitted.isError
+    # A shorter CTL tau ramps faster, so CTL is higher by day 60.
+    assert (
+        fitted.structuredContent["days"][-1]["ctl"] > default.structuredContent["days"][-1]["ctl"]
+    )
+
+
+@pytest.mark.anyio
 async def test_compute_readiness_tool(client):
     result = await client.call_tool(
         "compute_readiness",

@@ -12,7 +12,7 @@ tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         estimate_srpe_from_hr, budget_weekly_load, import_activity_file,
         log_kpi_result,
         recommend_deload, read_session_adjustments, compute_response_profile,
-        save_response_profile,
+        save_response_profile, fit_banister,
         compare_prescribed_actual, write_profile, upsert_calendar_event,
         remove_calendar_event]
 ---
@@ -157,8 +157,12 @@ matter in plain language — "you're progressing at ~0.5%/week on the squat; I p
 with the 1%/week beginner prior, so the next block will size to your measured rate".
 Where the profile still returns a null rate, say the data is thin and the population
 prior stands. Use `compare_prescribed_actual` to show the block's adherence and
-prescribed-vs-performed volume alongside it. Then route to program-adaptation so the
-next version is sized to the measured response.
+prescribed-vs-performed volume alongside it. When a KPI has enough history (>= 8
+weeks of load and >= 5 spanning measurements), pass its id as `banister_kpi_id` to
+`compute_response_profile` (or call `fit_banister` directly) to fit the athlete's own
+fitness-fatigue time constants — read `usable` FIRST and treat an unusable fit as
+"not enough data yet", never as a number to act on. Then route to program-adaptation
+so the next version is sized to the measured response.
 
 ## Route
 

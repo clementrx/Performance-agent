@@ -5,9 +5,10 @@ itself. Docstrings become the tool descriptions the agent reads, so they
 state units, valid ranges, and honesty requirements.
 """
 
-from typing import Literal, TypedDict
+from typing import Annotated, Literal, TypedDict
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 from performance_agent.engine import (
     AcwrMethod,
@@ -748,19 +749,25 @@ def compute_monotony_strain(daily_loads_7: list[float]) -> MonotonyStrain:
     )
 
 
-def compute_fitness_fatigue(daily_loads: list[float]) -> FitnessFatigueSeries:
+def compute_fitness_fatigue(
+    daily_loads: list[float],
+    ctl_tau: Annotated[int, Field(ge=1, le=365)] = 42,
+    atl_tau: Annotated[int, Field(ge=1, le=365)] = 7,
+) -> FitnessFatigueSeries:
     """Day-by-day CTL/ATL/TSB fitness-fatigue trend from a daily-load series.
 
-    CTL (42-day EWMA) is the fitness trend, ATL (7-day EWMA) the fatigue trend,
-    TSB = CTL - ATL the freshness trend (positive = fresh, negative = fatigued).
-    Both EWMAs start cold at zero, so the first weeks ramp up. Descriptive
-    trends only, never a performance prediction; narrate the direction of the
-    last few days, not the absolute number.
+    CTL (fitness, default 42-day EWMA) and ATL (fatigue, default 7-day EWMA) give
+    TSB = CTL - ATL, the freshness trend (positive = fresh, negative = fatigued).
+    Both EWMAs start cold at zero, so the first weeks ramp up. Descriptive trends
+    only, never a performance prediction; narrate the direction of the last few
+    days, not the absolute number. OPTIONAL: pass ctl_tau/atl_tau from a usable
+    fit_banister result (tau1/tau2) to use the athlete's OWN fitted time constants
+    instead of the population defaults; omit them for the labeled EWMA convention.
     """
     return FitnessFatigueSeries(
         days=[
             DayStateView(date_index=d.date_index, ctl=d.ctl, atl=d.atl, tsb=d.tsb)
-            for d in fitness_fatigue_series(daily_loads)
+            for d in fitness_fatigue_series(daily_loads, ctl_tau=ctl_tau, atl_tau=atl_tau)
         ]
     )
 

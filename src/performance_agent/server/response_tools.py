@@ -11,10 +11,11 @@ from typing import TypedDict
 
 from mcp.server.fastmcp import FastMCP
 
+from performance_agent.memory import banister as banister_layer
 from performance_agent.memory import response as response_engine
 from performance_agent.memory import store
 from performance_agent.memory.paths import resolve_athlete_dir
-from performance_agent.memory.schemas import ResponseProfile
+from performance_agent.memory.schemas import BanisterParams, ResponseProfile
 
 
 class VersionedDocSaved(TypedDict):
@@ -53,7 +54,9 @@ class ComplianceView(TypedDict):
     extra_unplanned: int
 
 
-def compute_response_profile(goal_id: str | None = None) -> ResponseProfile:
+def compute_response_profile(
+    goal_id: str | None = None, banister_kpi_id: str | None = None
+) -> ResponseProfile:
     """Distil the athlete's logged response into a profile (computed, not saved).
 
     Reads the active structured program (its created_on anchors program-week
@@ -62,10 +65,29 @@ def compute_response_profile(goal_id: str | None = None) -> ResponseProfile:
     volume_tolerance_flags, adherence_by_quality, adjustment_patterns and
     caveats. per_goal_measured_rate is null when the data is too thin (fewer than
     6 points or under a 4-week span) — recalibrate only when it is present; the
-    caveats say where population priors still stand in. Call save_response_profile
-    to persist the result. Errors if no structured program exists yet.
+    caveats say where population priors still stand in. When banister_kpi_id is
+    given, a fitted Banister model against that KPI is attached (banister.usable is
+    False when the history does not qualify). Call save_response_profile to persist.
+    Errors if no structured program exists yet.
     """
-    return response_engine.compute_response_profile(resolve_athlete_dir(), goal_id)
+    return response_engine.compute_response_profile(
+        resolve_athlete_dir(), goal_id, banister_kpi_id=banister_kpi_id
+    )
+
+
+def fit_banister(kpi_id: str) -> BanisterParams:
+    """Fit the two-component Banister model against one KPI, from logged loads.
+
+    Builds a daily session-RPE load series from the session log and dated
+    performance points from the KPI-results log, then fits p_hat = p0 + k1*fitness
+    - k2*fatigue with per-athlete time constants (tau1 fitness > tau2 fatigue).
+    Reads `usable` FIRST: it refuses (usable=false, with the params still shown for
+    transparency) without >= 8 weeks of load AND >= 5 spanning performance points,
+    or when the fit is pinned at a bound or a gain is non-positive — never a
+    fabricated parameter. Stores nothing; persist via compute_response_profile
+    (banister_kpi_id) + save_response_profile. CIs are approximate (OLS SEs).
+    """
+    return banister_layer.fit_kpi_banister(resolve_athlete_dir(), kpi_id)
 
 
 def save_response_profile(profile: ResponseProfile, reason: str | None = None) -> VersionedDocSaved:
@@ -142,5 +164,6 @@ def register(mcp: FastMCP) -> None:
         save_response_profile,
         read_response_profile,
         compare_prescribed_actual,
+        fit_banister,
     ):
         mcp.tool()(tool)

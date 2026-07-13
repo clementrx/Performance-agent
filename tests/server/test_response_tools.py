@@ -55,6 +55,32 @@ async def test_compute_save_read_round_trip(client, athlete_home):
 
 
 @pytest.mark.anyio
+async def test_fit_banister_thin_data_refused(client):
+    result = await client.call_tool("fit_banister", {"kpi_id": "squat-e1rm"})
+    assert not result.isError
+    fit = result.structuredContent
+    assert fit["usable"] is False
+    assert fit["n_performance_points"] == 0
+
+
+@pytest.mark.anyio
+async def test_compute_response_profile_attaches_banister(client, athlete_home):
+    _seed(athlete_home, weeks=8)
+    result = await client.call_tool("compute_response_profile", {"banister_kpi_id": "squat-e1rm"})
+    assert not result.isError
+    assert result.structuredContent["banister"] is not None
+    assert result.structuredContent["banister"]["fitted_kpi_id"] == "squat-e1rm"
+
+
+@pytest.mark.anyio
+async def test_compute_response_profile_no_banister_by_default(client, athlete_home):
+    _seed(athlete_home, weeks=8)
+    result = await client.call_tool("compute_response_profile", {})
+    assert not result.isError
+    assert result.structuredContent["banister"] is None
+
+
+@pytest.mark.anyio
 async def test_read_before_save_errors(client):
     result = await client.call_tool("read_response_profile", {})
     assert result.isError
