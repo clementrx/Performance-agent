@@ -19,7 +19,22 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — [PR #10](https://github.com/clementrx/Performance-agent/pull/10) (base: phase 4) | 902 tests; +4 tools (73 total) |
 | 8 | 6 | Deloads, adherence, return-to-load | done (PR open) | `feat/phase-6-regulation` — [PR #11](https://github.com/clementrx/Performance-agent/pull/11) | 957 tests; +2 tools (75 total) |
 | 9 | 7 | Proactive follow-up | done (PR open) | `feat/phase-7-proactive-followup` — [PR #12](https://github.com/clementrx/Performance-agent/pull/12) (base: phase 6) | 987 tests; +1 tool (76 total) |
-| 10 | 8 | End-to-end simulated evaluation | done | `feat/phase-8-e2e-sim` (base: phase 7) | 1001 tests; +0 tools (76 total); +14 e2e_sim tests |
+| 10 | 8 | End-to-end simulated evaluation | done (PR open) | `feat/phase-8-e2e-sim` — [PR #13](https://github.com/clementrx/Performance-agent/pull/13) | 1001 tests; +0 tools (76 total); +14 e2e_sim tests |
+
+**All 10 phases implemented and independently gate-verified.** Stacked PRs #4→#13
+(each verified: pytest green, ruff/ruff-format/ty clean, engine-purity held, corpus
+untouched across the whole stack). Baseline 597 → **1001 tests**; 47 → **76 tools**.
+
+### Remaining before release (batched wrap-up, then user-gated merge + publish)
+1. Typst report-template sections: P1 season overview, P2/P9 load trends, P5 response
+   summary — coach & expert modes, en/fr/es (deferred each phase; required by Global
+   DoD item 4). Hard citation gate applies.
+2. i18n README refresh (`docs/i18n/README.{fr,it,es,de}.md`): test count → 1001,
+   tool count → 76, new-capability lines.
+3. `docs/installing.md` tool-count check string (still 47).
+4. **User-gated:** merge the stacked PRs #4→#13 into main in order; then the single
+   version bump + changelog per `RELEASING.md` and the PyPI publish (irreversible
+   external action — requires explicit user go-ahead).
 
 ## Deviations from the plan
 
