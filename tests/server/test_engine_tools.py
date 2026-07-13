@@ -437,6 +437,8 @@ async def test_all_engine_tools_are_listed(client):
         "endurance_zones",
         "budget_weekly_load",
         "flag_implausible_session",
+        "recommend_deload",
+        "build_return_progression",
     } <= names
 
 
@@ -448,6 +450,56 @@ async def test_recommend_taper_tool(client):
     )
     assert not result.isError
     assert 4 <= result.structuredContent["taper_days"] <= 14
+
+
+@pytest.mark.anyio
+async def test_recommend_deload_tool(client):
+    result = await client.call_tool(
+        "recommend_deload",
+        {
+            "weeks_since_deload": 6,
+            "monotony_recent": None,
+            "strain_trend": 0.0,
+            "tsb": 0.0,
+            "readiness_trend": 0.0,
+            "adherence_pct": 95.0,
+        },
+    )
+    assert not result.isError
+    assert result.structuredContent["recommendation"] == "full"
+    assert result.structuredContent["drivers"]
+
+
+@pytest.mark.anyio
+async def test_build_return_progression_tool_requires_clearance(client):
+    result = await client.call_tool(
+        "build_return_progression",
+        {
+            "weeks_off": 3,
+            "sessions_per_week": 3,
+            "pain_free": True,
+            "cleared_by_professional": False,
+        },
+    )
+    assert result.isError
+    assert "clearance" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_build_return_progression_tool_cleared(client):
+    result = await client.call_tool(
+        "build_return_progression",
+        {
+            "weeks_off": 3,
+            "sessions_per_week": 3,
+            "pain_free": True,
+            "cleared_by_professional": True,
+        },
+    )
+    assert not result.isError
+    weeks = result.structuredContent["weeks"]
+    assert weeks[0]["volume_factor"] == pytest.approx(0.50)
+    assert weeks[-1]["volume_factor"] == pytest.approx(1.0)
 
 
 @pytest.mark.anyio

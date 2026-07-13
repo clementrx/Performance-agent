@@ -17,7 +17,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 5 | 3 | Day-of session autoregulation | done (PR open) | `feat/phase-3-session-autoregulation` — [PR #8](https://github.com/clementrx/Performance-agent/pull/8) | 823 tests; +5 tools (68 total) |
 | 6 | 4 | Intra-week sequencing & interference | done (PR open) | `feat/phase-4-sequencing` — [PR #9](https://github.com/clementrx/Performance-agent/pull/9) (base: phase 3) | 860 tests; +1 tool (69 total) |
 | 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — [PR #10](https://github.com/clementrx/Performance-agent/pull/10) (base: phase 4) | 902 tests; +4 tools (73 total) |
-| 8 | 6 | Deloads, adherence, return-to-load | pending | — | — |
+| 8 | 6 | Deloads, adherence, return-to-load | done (PR open) | `feat/phase-6-regulation` — PR (base: phase 5) | 957 tests; +2 tools (75 total) |
 | 9 | 7 | Proactive follow-up | pending | — | — |
 | 10 | 8 | End-to-end simulated evaluation | pending | — | — |
 
@@ -322,9 +322,69 @@ is broken.
   refresh. English README updated to 73 tools / 902 tests + an individualized-recalibration
   phrase.
 
+## Phase 6 notes
+
+- **New tools (2, total 75):** `recommend_deload`, `build_return_progression` — both
+  pure engine wrappers in `server/engine_tools.py` (registered in `register()`). The
+  tool `build_return_progression` shares its name with the engine function, so the
+  engine one is imported as `engine_build_return_progression` (same aliasing pattern
+  as Phase 2's `engine_*` imports).
+- **New engine modules (pure, purity test green):** `engine/regulation.py`
+  (`should_deload`) and `engine/return_to_load.py` (`build_return_progression`). Both
+  take plain numbers / bools only — no datetime, no `memory.schemas` — so
+  `tests/engine/test_engine_purity.py` passes unchanged. `return_to_load.py` imports
+  `math` (allowed) for `math.ceil`.
+- **Deload thresholds (all team-chosen priors, documented in-code):**
+  `weeks_since_deload >= planned_interval_weeks + 1` → `full` regardless (planned
+  counter is the backstop; `planned_interval_weeks` default 4); `tsb < -25` with
+  readiness trend `<= 0` → `full` when adherence `>= 70%`, else downgraded to `light`
+  (fatigue signals unreliable under low adherence → adherence playbook); `monotony >
+  2.0` with `strain_trend > 0` → at least `light`. `full` dominates `light` when both
+  fire. Returns a descriptive `{recommendation, drivers}` — the LLM decides/narrates.
+  `should_deload` gained a 7th param `planned_interval_weeks` beyond the plan's literal
+  6-arg signature because the "≥ planned interval + 1" rule needs it (the plan text
+  names the rule; the signature omitted the input). Kept a default so callers that
+  only pass the 6 monitoring args still work.
+- **Return-to-load bands (team-chosen priors):** `< 1 wk off` → 0.90 vol / 0.95 int;
+  `1–2` → 0.70/0.85; `2–4` → 0.50/0.70; `> 4` → 0.40/0.60. Ramp then climbs +12.5%/wk
+  volume, +7.5%/wk intensity (12.5% = midpoint of the plan's 10–15% band), capped at
+  1.0, both reaching baseline on the last week; longer layoff → lower start → longer
+  ramp (property-tested). Every progressing week's note encodes the 24h rule (pain
+  ≤3/10 clearing within 24h = advance, else repeat the week). `pain_free=False` returns
+  a single holding week at the band start (no progression through pain).
+- **Clearance gating:** the HARD "only after professional clearance" precondition is
+  enforced at the tool boundary — the `build_return_progression` MCP tool takes an extra
+  `cleared_by_professional: bool` (not in the engine signature) and raises a refer-out
+  ValueError when it is False (server test `test_build_return_progression_tool_requires_
+  clearance`). The `program-adaptation` return-to-load branch requires the athlete to
+  confirm clearance before calling it, preserves refer-out language, and never programs
+  through pain.
+- **Evidence decisions:** no new corpus entries (no verified network). The return-to-
+  sport consensus (Ardern et al. 2016) and detraining/retraining (Mujika & Padilla)
+  named in the plan are referenced in the module docstring "in spirit only" and every
+  constant is labelled `team-chosen prior` — consistent with Phases 2–5's anti-
+  fabrication approach; no unverified citations added.
+- **Overreach scenario test:** `test_overreach_scenario_fires_full_after_spike` builds
+  6 calm weeks then a spike week of daily loads, runs the real `fitness_fatigue_series`
+  / `weekly_strain`, confirms TSB is driven below −25 with a negative readiness trend,
+  and asserts `should_deload` returns `full` with a TSB driver — within the one injected
+  spike week.
+- **Skills:** `program-adaptation` gained a deload branch (calls `recommend_deload`,
+  quotes drivers), a return-to-load branch (clearance-gated, `build_return_progression`,
+  `return_to_load` mesocycle phase, refer-out preserved), and an adherence playbook
+  (persistent <70% → diagnose cause in the athlete's words → 2-day minimum-effective
+  template via `weekly_set_targets_for`'s `minimum_effective_sets`, renegotiate cadence,
+  version with that reason, never shame). `training-checkin` surfaces `recommend_deload`
+  proactively before fatigue hits 8. New tools added to both skills' `tools:` frontmatter
+  and referenced in the body; existing needles preserved.
+- **Report templates / i18n READMEs / docs/installing.md:** the batched report pass and
+  the 4 `docs/i18n/` READMEs stay DEFERRED to the single pre-release refresh; the
+  `docs/installing.md` tool-count line is also left for that batched refresh (known
+  batched items). English README updated to 75 tools / 957 tests + a deload/return-to-
+  load phrase.
+
 ## Resume notes
 
-_Phase 5 complete. Next in execution order: **Phase 6 (data-driven deloads, adherence
-playbook, return-to-load)** (order 0, 1, 2, 9, 3, 4, 5, **6**, 7, 8); depends on Phase
-2's monitoring and Phase 5's response profile. Branch off `feat/phase-5-response-profile`
-(stacked)._
+_Phase 6 complete. Next in execution order: **Phase 7 (proactive follow-up)** (order 0,
+1, 2, 9, 3, 4, 5, 6, **7**, 8); depends on Phases 0, 1, 5. Branch off
+`feat/phase-6-regulation` (stacked)._

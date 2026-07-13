@@ -70,6 +70,11 @@ from performance_agent.engine.periodization import (
     build_undulating_week,
     build_weekly_waves,
 )
+from performance_agent.engine.regulation import (
+    DeloadAssessment,
+    DeloadRecommendation,
+    should_deload,
+)
 from performance_agent.engine.response import (
     AdherenceByQuality,
     ComplianceReport,
@@ -88,6 +93,10 @@ from performance_agent.engine.response import (
     e1rm_timeline,
     progression_rate,
     volume_tolerance,
+)
+from performance_agent.engine.return_to_load import (
+    WeekFactor,
+    build_return_progression,
 )
 from performance_agent.engine.season import (
     SeasonEvent,
@@ -132,6 +141,8 @@ __all__ = [
     "CompressedSession",
     "CutBlock",
     "DayState",
+    "DeloadAssessment",
+    "DeloadRecommendation",
     "EnergyTarget",
     "EscalationSignals",
     "FeasibilityResult",
@@ -161,6 +172,7 @@ __all__ = [
     "UndulatingSession",
     "VolumeTolerance",
     "WaveStep",
+    "WeekFactor",
     "WeekLoad",
     "WeeklySetTargets",
     "WeeklyVolume",
@@ -173,6 +185,7 @@ __all__ = [
     "build_block_periodization",
     "build_inseason_week",
     "build_response_profile",
+    "build_return_progression",
     "build_strength_peaking",
     "build_undulating_week",
     "build_weekly_waves",
@@ -203,6 +216,7 @@ __all__ = [
     "riegel_predict",
     "rir_from_rpe",
     "session_rpe_load",
+    "should_deload",
     "strength_feasibility",
     "substitute_exercise",
     "tdee_from_bmr",

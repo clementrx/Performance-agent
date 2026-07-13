@@ -51,6 +51,7 @@ from performance_agent.engine import (
     riegel_predict,
     rir_from_rpe,
     session_rpe_load,
+    should_deload,
     strength_feasibility,
     tdee_from_bmr,
     top_set_backoff,
@@ -62,6 +63,7 @@ from performance_agent.engine import (
     weekly_strain,
 )
 from performance_agent.engine import budget_weekly_load as engine_budget_weekly_load
+from performance_agent.engine import build_return_progression as engine_build_return_progression
 from performance_agent.engine import estimate_srpe_from_hr as engine_estimate_srpe_from_hr
 from performance_agent.engine import flag_implausible_session as engine_flag_implausible_session
 
@@ -860,6 +862,101 @@ def flag_implausible_session(  # noqa: PLR0913 -- optional numeric guards, all k
     return PlausibilityResult(flags=[FlagView(code=f.code, message=f.message) for f in flags])
 
 
+class DeloadRecommendationView(TypedDict):
+    """A descriptive deload recommendation and the signals that drove it."""
+
+    recommendation: Literal["none", "light", "full"]
+    drivers: list[str]
+
+
+class ReturnWeekView(TypedDict):
+    """One week of the return-to-load ramp (factors vs baseline load)."""
+
+    week_index: int
+    volume_factor: float
+    intensity_factor: float
+    note: str
+
+
+class ReturnProgressionView(TypedDict):
+    """A graded return-to-load ramp back to full training."""
+
+    weeks: list[ReturnWeekView]
+    pain_free: bool
+
+
+def recommend_deload(  # noqa: PLR0913 -- plan-mandated monitoring-signal set
+    weeks_since_deload: int,
+    monotony_recent: float | None,
+    strain_trend: float,
+    tsb: float,
+    readiness_trend: float,
+    adherence_pct: float,
+    planned_interval_weeks: int = 4,
+) -> DeloadRecommendationView:
+    """Recommend a deload (none/light/full) from accumulated monitoring signals.
+
+    Feed the Phase 2 monitoring trends: monotony_recent (Foster monotony for the
+    recent week, null if uniform), strain_trend (week-on-week change in strain,
+    positive = rising), tsb (latest freshness, negative = fatigued),
+    readiness_trend (recent change in the readiness score in points, negative =
+    declining), adherence_pct (0-100). weeks_since_deload vs planned_interval_weeks
+    is the guardrail: past the planned cadence a full deload is due regardless.
+    Deep fatigue (tsb < -25 with readiness not improving) recommends full, but
+    downgrades to light under <70% adherence (fix adherence first). Descriptive:
+    quote the drivers and decide with the athlete, this never acts on its own.
+    """
+    result = should_deload(
+        weeks_since_deload,
+        monotony_recent,
+        strain_trend,
+        tsb,
+        readiness_trend,
+        adherence_pct,
+        planned_interval_weeks,
+    )
+    return DeloadRecommendationView(recommendation=result.recommendation, drivers=result.drivers)
+
+
+def build_return_progression(
+    weeks_off: int, sessions_per_week: int, pain_free: bool, cleared_by_professional: bool
+) -> ReturnProgressionView:
+    """Build a graded volume/intensity ramp back to full load after time off.
+
+    HARD PRECONDITION: only call after a professional has cleared the athlete to
+    resume training -- this is return-to-load, not return-from-injury. Pass
+    cleared_by_professional=True only once the athlete confirms that clearance;
+    without it this refuses (raises) and you refer out. Never program through an
+    active injury.
+
+    weeks_off is whole weeks away; sessions_per_week (1-14) is the cadence to
+    resume at. The start is banded by layoff (< 1 wk -> 0.90 vol / 0.95 int; 1-2
+    -> 0.70/0.85; 2-4 -> 0.50/0.70; > 4 -> 0.40/0.60), then climbs 12.5%/week
+    volume and 7.5%/week intensity to baseline; longer layoffs ramp longer.
+    pain_free gates progression via the 24h rule (pain <=3/10 clearing within 24h
+    = advance, else repeat the week); pain_free=False returns a single holding week.
+    """
+    if not cleared_by_professional:
+        msg = (
+            "return-to-load requires professional clearance first: confirm the athlete "
+            "has been cleared to resume training, or refer out -- never program through injury"
+        )
+        raise ValueError(msg)
+    ramp = engine_build_return_progression(weeks_off, sessions_per_week, pain_free)
+    return ReturnProgressionView(
+        weeks=[
+            ReturnWeekView(
+                week_index=w.week_index,
+                volume_factor=w.volume_factor,
+                intensity_factor=w.intensity_factor,
+                note=w.note,
+            )
+            for w in ramp
+        ],
+        pain_free=pain_free,
+    )
+
+
 def convert_rpe_to_rir(rpe: float) -> RirValue:
     """Convert a session RPE (1-10, half points allowed) to reps in reserve.
 
@@ -905,5 +1002,7 @@ def register(mcp: FastMCP) -> None:
         prescribe_wave_loading,
         convert_rpe_to_rir,
         recommend_taper,
+        recommend_deload,
+        build_return_progression,
     ):
         mcp.tool()(tool)

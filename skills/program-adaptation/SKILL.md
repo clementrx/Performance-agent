@@ -8,6 +8,8 @@ tools: [read_athlete, get_time_context, read_program, read_sessions, read_checki
         assess_endurance_goal, assess_strength_goal, assess_hypertrophy_goal,
         assess_bodycomp_goal, weekly_set_targets_for, prescribe_load, estimate_1rm,
         build_periodization_waves, compare_prescribed_actual, read_response_profile,
+        compute_monotony_strain, compute_fitness_fatigue, compute_readiness,
+        recommend_deload, build_return_progression,
         search_evidence, search_evidence_live, save_evidence, verify_reference,
         get_citation, check_citations, save_program]
 ---
@@ -85,6 +87,63 @@ route through program-planning instead of patching sessions in place.
   more sets. A HYPERTROPHY plateau is addressed through volume — raise the
   weekly sets within the `weekly_set_targets_for` landmarks for the athlete's
   training age, never past maximum_adaptive_sets.
+
+### Deload branch — place it by evidence, not just the counter
+
+When the diagnosis is under-recovery (fatigue accumulating, TSB falling, readiness
+sliding), call `recommend_deload` and let the data place the deload instead of
+waiting for the fixed periodization counter. Feed it the monitoring trends you
+already built: `weeks_since_deload` (from the plan's deload weeks), the recent
+Foster monotony from `compute_monotony_strain`, the week-on-week change in strain,
+the latest TSB from `compute_fitness_fatigue`, the recent change in the readiness
+score (`compute_readiness` across the last reads), and recent `adherence_pct`. Pass
+the plan's planned deload cadence as `planned_interval_weeks`.
+
+- Quote the returned drivers verbatim to the athlete ("TSB -32 with readiness not
+  improving; a full deload is due") — the recommendation is DESCRIPTIVE, you and
+  the athlete decide, the engine never acts on its own.
+- `full` → a full deload week (`build_periodization_waves` deload factors) as the
+  next version; `light` → a lighter week that restores variation; `none`
+  → the fatigue is not (yet) deload-worthy, address the real driver.
+- When the driver names low adherence downgrading a fatigue deload to `light`, the
+  real problem is behaviour, not load — go to the adherence playbook below.
+
+### Return-to-load branch — only after professional clearance
+
+When the athlete is returning after time off (illness, a break, or a cleared
+injury), never resume at the previous load. This branch has a HARD precondition:
+
+- **Confirm professional clearance first.** Ask the athlete explicitly whether a
+  professional has cleared them to resume training. Without that confirmation, do
+  NOT build a ramp — this is return-to-LOAD, never return-from-injury; refer out
+  and keep the refer-out rule. `build_return_progression` refuses without
+  `cleared_by_professional=true` by design.
+- Once cleared, call `build_return_progression(weeks_off, sessions_per_week,
+  pain_free, cleared_by_professional=true)`. It returns a week-by-week volume /
+  intensity ramp banded by layoff length, climbing back to baseline; each week
+  carries the 24h rule (post-session pain <=3/10 clearing within 24h = advance,
+  otherwise repeat the week). Pass `pain_free=false` when pain is still present —
+  it returns a single holding week, never a progression through pain.
+- Build the ramp as a new program version whose mesocycle phase is
+  `return_to_load`, applying each week's factors to freshly recomputed loads/paces.
+  The version reason names the layoff and the clearance (e.g. "3 weeks off, cleared
+  by physio; 4-week graded return ramp"). It still passes §3's review gate.
+
+### Adherence playbook — the best program is the one that gets done
+
+When `compare_prescribed_actual` / `read_response_profile` show persistent adherence
+below 70% (not a one-off missed week), the problem is behaviour, not stimulus.
+Never shame — diagnose the cause in the athlete's own words and re-scope:
+
+1. Ask what is actually in the way and name it as the athlete does — time,
+   motivation, life load, or pain — do not assume.
+2. Propose the MINIMUM VIABLE PROGRAM: a 2-day/week template sized at
+   `minimum_effective_sets` (from `weekly_set_targets_for`), the shortest sessions
+   that still keep the goal alive per the feasibility engine. Less program that
+   gets done beats an ideal program that does not.
+3. Renegotiate the check-in cadence to something the athlete will actually meet.
+4. Version it with that reason ("adherence 45% over 6 weeks, time-constrained;
+   dropped to a 2-day minimum-effective template"), through §3's gate like any other.
 
 - Citation repair: when a render was refused for unknown references, locate the
   offending claims, replace each with a `search_evidence`-backed citation rendered

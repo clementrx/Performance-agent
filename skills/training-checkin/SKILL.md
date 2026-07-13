@@ -10,7 +10,8 @@ tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         read_nutrition_frame, compute_session_load, compute_monotony_strain,
         compute_fitness_fatigue, compute_acwr, compute_readiness,
         estimate_srpe_from_hr, budget_weekly_load, import_activity_file,
-        read_session_adjustments, compute_response_profile, save_response_profile,
+        recommend_deload, read_session_adjustments, compute_response_profile,
+        save_response_profile,
         compare_prescribed_actual, write_profile, upsert_calendar_event,
         remove_calendar_event]
 ---
@@ -81,6 +82,13 @@ injury probability:
 - **Readiness:** if the athlete logged readiness (`read_readiness`) or gives you the
   four Hooper items now, `log_readiness` and `compute_readiness` for the green/amber/
   red band; a red streak feeds the fatigue trigger below.
+- **Proactive deload check:** once you have monotony/strain, the TSB trend and a
+  readiness trend, call `recommend_deload` and surface it BEFORE fatigue hits 8 —
+  the point is to see the deload coming, not to find it at a red check-in. Feed it
+  `weeks_since_deload` (from the plan), the recent monotony, the week-on-week strain
+  change, the latest TSB, the recent readiness-score change, and recent adherence.
+  A `light`/`full` result with its drivers routes to program-adaptation's deload
+  branch; quote the drivers, never present it as a prediction.
 
 ## Structured-signal triggers — scan them at every check-in
 
