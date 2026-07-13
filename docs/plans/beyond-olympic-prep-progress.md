@@ -20,8 +20,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 5 | 4 | High-resolution ingestion | done (merged) | `feat/phase-4-highres-ingestion` / PR #19 `0a8e60f` | 1148 tests (+22); 86 tools |
 | 6 | 5 | Load-velocity profiling & VBT autoregulation | done (merged) | `feat/phase-5-load-velocity` / PR #20 `e013009` | 1168 tests (+20); 87 tools (+1) |
 | 7 | 6 | Fitted Banister model | done (merged) | `feat/phase-6-fitted-banister` / PR #21 `4fb2438` | 1181 tests (+13); 88 tools (+1) |
-| 8 | 7 | Individual taper response & per-quality profile | done | `feat/phase-7-taper-response` / PR pending | 1196 tests (+15); 89 tools (+1) |
-| 9 | 8 | Multi-year planning & residuals | pending | — | |
+| 8 | 7 | Individual taper response & per-quality profile | done (merged) | `feat/phase-7-taper-response` / PR #22 `778a927` | 1196 tests (+15); 89 tools (+1) |
+| 9 | 8 | Multi-year planning & residuals | done | `feat/phase-8-macro-residuals` / PR pending | 1223 tests (+27); 93 tools (+4) |
 | 10 | 9 | Property tests & multi-sport e2e sim | pending | — | |
 | 11 | 10 | Skills/docs/i18n/corpus & release prep | pending | — | |
 
@@ -131,6 +131,18 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P7 — Banister-derived taper window (predicted TSB peak) deferred.** The plan
   marks it "Optional"; the individual-history path is the core deliverable. Follow-up
   candidate for a later iteration.
+- **P8 — macro tools in a new `server/macro_tools.py`** (build/save/read_macro_plan
+  + check_residuals). `check_residuals` reads the active program and resolves
+  `exercise_id` → ontology qualities (blocks without an id are skipped). `MacroYear.
+  quality_emphases` built via `model_validate` to satisfy the literal-dict typing.
+- **P8 — `build_season_plan` macro context is a passthrough**: optional
+  `year_emphases` echoed back as `macro_emphases`; the segment tiling is unchanged
+  (faithful to "accepts the year's emphases; existing behavior unchanged without it").
+- **P8 — training-age block length via `build_block_cycle(training_age=...)`**
+  (beginner 6 / intermediate 9 / advanced 12 weeks, team-chosen priors); `total_weeks`
+  still works and wins when both are given.
+- **P8 — residual durations & macro tilts are team-chosen priors** (Issurin 2010 lands
+  in the P10 corpus pass). Tool count 93 (≤95 cap; P9/P10 add no tools).
 
 ## Resume notes
 

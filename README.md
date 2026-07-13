@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 89 tools. If so, you're done — just talk to it.
+You should see 93 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -285,9 +285,13 @@ athlete's own time constants into the fitness-fatigue trend), individual taper
 response (detects past tapers from the load log, pairs each with its event-linked
 outcome, and recommends duration/reduction from the athlete's own best-outcome taper
 when ≥2 exist — else the labeled population rule) and per-quality progression rates
-keyed through the model KPIs;
-1196 tests
-incl. property-based) · 89 MCP
+keyed through the model KPIs, plus multi-year macrocycle planning (a 1-4 year plan
+typed backward from the major event with per-year quality-emphasis budgets derived
+from the gap priorities, feeding the season) and a training-residuals guard (warns
+where a maintained quality would decay past its Issurin retention window without a
+refresh);
+1223 tests
+incl. property-based) · 93 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response

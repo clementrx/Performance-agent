@@ -20,6 +20,7 @@ from performance_agent.memory.schemas import (
     ExerciseLibrary,
     Goal,
     KpiResult,
+    MacroPlan,
     PerformanceModel,
     Profile,
     ProgramPlan,
@@ -48,6 +49,8 @@ RESPONSE_DIR = "response"
 RESPONSE_PREFIX = "response-profile"
 MODELS_DIR = "models"
 PERFORMANCE_MODEL_PREFIX = "performance-model"
+MACRO_DIR = "macro"
+MACRO_PLAN_PREFIX = "macro-plan"
 EXERCISES_DIR = "exercises"
 EXERCISE_LIBRARY_FILE = "library.yaml"
 _FRONTMATTER_DELIMITER = "---\n"
@@ -597,6 +600,50 @@ def read_performance_model(base_dir: Path, version: int | None = None) -> Perfor
         raise ValueError(msg)
     raw = _load_yaml(path)
     return _validated(path, lambda: PerformanceModel.model_validate(raw))
+
+
+def latest_macro_plan_version(base_dir: Path) -> int | None:
+    """Return the highest existing macro-plan version, or None."""
+    return _latest_doc_version(base_dir, MACRO_DIR, MACRO_PLAN_PREFIX, suffix=".yaml")
+
+
+def save_macro_plan(
+    base_dir: Path,
+    plan: MacroPlan,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next macro-plan version as immutable YAML (reason from v2)."""
+    _ = today
+    current = _latest_doc_version(base_dir, MACRO_DIR, MACRO_PLAN_PREFIX, suffix=".yaml")
+    version = 1 if current is None else current + 1
+    if version > 1 and not reason:
+        msg = f"adapting macro plan v{current} to v{version} requires a reason (audit trail)"
+        raise ValueError(msg)
+    stamped = plan.model_copy(update={"version": version, "reason": reason})
+    path = _doc_path(base_dir, MACRO_DIR, MACRO_PLAN_PREFIX, version, suffix=".yaml")
+    if path.exists():
+        msg = f"{path} already exists; macro plan versions are immutable"
+        raise ValueError(msg)
+    _atomic_write(path, _to_yaml(stamped.model_dump(mode="json")))
+    return path, version
+
+
+def read_macro_plan(base_dir: Path, version: int | None = None) -> MacroPlan | None:
+    """Return the given or latest macro plan, or None when none exists."""
+    target = (
+        version
+        if version is not None
+        else _latest_doc_version(base_dir, MACRO_DIR, MACRO_PLAN_PREFIX, suffix=".yaml")
+    )
+    if target is None:
+        return None
+    path = _doc_path(base_dir, MACRO_DIR, MACRO_PLAN_PREFIX, target, suffix=".yaml")
+    if not path.exists():
+        msg = f"macro plan version {target} does not exist"
+        raise ValueError(msg)
+    raw = _load_yaml(path)
+    return _validated(path, lambda: MacroPlan.model_validate(raw))
 
 
 def save_analysis(

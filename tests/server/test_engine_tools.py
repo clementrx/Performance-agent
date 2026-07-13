@@ -249,6 +249,19 @@ async def test_build_block_cycle(client):
 
 
 @pytest.mark.anyio
+async def test_build_block_cycle_by_training_age(client):
+    result = await client.call_tool("build_block_cycle", {"training_age": "advanced"})
+    assert not result.isError
+    assert len(result.structuredContent["weeks"]) == 12  # advanced default
+
+
+@pytest.mark.anyio
+async def test_build_block_cycle_needs_an_input(client):
+    result = await client.call_tool("build_block_cycle", {})
+    assert result.isError
+
+
+@pytest.mark.anyio
 async def test_build_undulating_sessions(client):
     result = await client.call_tool("build_undulating_sessions", {"sessions_per_week": 3})
     assert not result.isError

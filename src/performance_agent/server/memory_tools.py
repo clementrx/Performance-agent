@@ -427,7 +427,9 @@ def set_recurring_constraints(recurring: list[RecurringConstraint]) -> CalendarS
     )
 
 
-def build_season_plan(modality: SeasonModality = "mixed") -> SeasonPlanView:
+def build_season_plan(
+    modality: SeasonModality = "mixed", year_emphases: dict[str, float] | None = None
+) -> SeasonPlanView:
     """Plan the season backward from the calendar's dated events.
 
     Reserves a taper immediately before each A-priority competition and fills
@@ -438,8 +440,14 @@ def build_season_plan(modality: SeasonModality = "mixed") -> SeasonPlanView:
     week indices, calendar dates, its phase_type, and a rationale to quote;
     B/C events are surfaced separately (B gets a mini-taper, C is trained
     through). Chain the periodization builders per segment's phase_type.
+
+    OPTIONAL macro context: pass year_emphases (a MacroPlan year's quality_emphases)
+    to bias the season's quality focus — it is echoed back as macro_emphases; the
+    segment tiling is unchanged. Omit it for a standalone single season.
     """
-    return season_planner.build_season_plan(resolve_athlete_dir(), modality)
+    return season_planner.build_season_plan(
+        resolve_athlete_dir(), modality, year_emphases=year_emphases
+    )
 
 
 class ViolationView(TypedDict):

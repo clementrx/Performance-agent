@@ -41,6 +41,26 @@ REALIZATION_INTENSITY = 1.10
 # week). Team-chosen floor.
 MIN_BLOCK_WEEKS = 6
 
+# Default block-cycle length in weeks by training age (team-chosen priors):
+# beginners consolidate on shorter blocks with more frequent realization; advanced
+# athletes tolerate longer accumulation. Training age modulates STRUCTURE, not just
+# rate priors.
+_BLOCK_WEEKS_BY_TRAINING_AGE: dict[str, int] = {
+    "beginner": 6,
+    "intermediate": 9,
+    "advanced": 12,
+}
+
+
+def block_weeks_for_training_age(training_age: str) -> int:
+    """Return the default block-cycle length in weeks for a training age (prior)."""
+    if training_age not in _BLOCK_WEEKS_BY_TRAINING_AGE:
+        options = sorted(_BLOCK_WEEKS_BY_TRAINING_AGE)
+        msg = f"training_age must be one of {options}, got {training_age!r}"
+        raise ValueError(msg)
+    return _BLOCK_WEEKS_BY_TRAINING_AGE[training_age]
+
+
 _BLOCK_PHASE_FACTORS: dict[BlockPhase, tuple[float, float]] = {
     "accumulation": (ACCUMULATION_VOLUME, ACCUMULATION_INTENSITY),
     "intensification": (INTENSIFICATION_VOLUME, INTENSIFICATION_INTENSITY),

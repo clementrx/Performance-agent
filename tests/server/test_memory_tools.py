@@ -254,6 +254,14 @@ async def test_calendar_and_season_plan_through_tools(client):
     assert not plan.isError
     phases = [s["phase_type"] for s in plan.structuredContent["segments"]]
     assert "taper" in phases and phases[-1] == "competition"
+    assert plan.structuredContent["macro_emphases"] is None  # standalone season
+
+    with_macro = await client.call_tool(
+        "build_season_plan",
+        {"modality": "endurance", "year_emphases": {"aerobic_capacity": 0.7, "speed": 0.3}},
+    )
+    assert not with_macro.isError
+    assert with_macro.structuredContent["macro_emphases"]["aerobic_capacity"] == pytest.approx(0.7)
 
 
 @pytest.mark.anyio

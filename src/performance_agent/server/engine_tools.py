@@ -26,6 +26,7 @@ from performance_agent.engine import (
     WeekLoad,
     WeeklySetTargets,
     acute_chronic_ratio,
+    block_weeks_for_training_age,
     bmr_mifflin_st_jeor,
     bodycomp_feasibility,
     build_block_periodization,
@@ -494,7 +495,9 @@ def build_periodization_waves(
     return PeriodizationWaves(weeks=waves)
 
 
-def build_block_cycle(total_weeks: int) -> BlockCycle:
+def build_block_cycle(
+    total_weeks: int | None = None, training_age: TrainingAge | None = None
+) -> BlockCycle:
     """Split a training cycle into accumulation/intensification/realization blocks.
 
     Use this when a single deadline goal is 6+ weeks out and benefits from
@@ -504,8 +507,16 @@ def build_block_cycle(total_weeks: int) -> BlockCycle:
     Phase split is ~50/35/15% of total_weeks with at least 1 week per phase;
     accumulation is 1.10 volume at 0.85 intensity, intensification 0.90 at
     1.05, realization 0.55 at 1.10 — multipliers against a baseline week.
-    total_weeks must be a whole number >= 6.
+    Pass total_weeks (a whole number >= 6) directly, OR pass training_age to use
+    the age-default block length (beginner 6, intermediate 9, advanced 12 weeks —
+    training age modulates block STRUCTURE, a team-chosen prior). Give one or the
+    other; total_weeks wins when both are supplied.
     """
+    if total_weeks is None:
+        if training_age is None:
+            msg = "give total_weeks or training_age"
+            raise ValueError(msg)
+        total_weeks = block_weeks_for_training_age(training_age)
     return BlockCycle(weeks=build_block_periodization(total_weeks))
 
 
