@@ -6,6 +6,7 @@ from performance_agent.server import (
     autoregulation_tools,
     engine_tools,
     evidence_tools,
+    exercise_tools,
     import_tools,
     memory_tools,
     performance_tools,
@@ -22,6 +23,7 @@ report_tools.register(mcp)
 import_tools.register(mcp)
 response_tools.register(mcp)
 performance_tools.register(mcp)
+exercise_tools.register(mcp)
 
 
 def main() -> None:

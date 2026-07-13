@@ -752,3 +752,119 @@ class KpiResult(BaseModel):
         Annotated[str, StringConstraints(min_length=1)],
         str | float,
     ] = Field(default_factory=dict)
+
+
+# --- Exercise ontology (structured, universally-attributed movements) -------
+#
+# exercises/data/seed_exercises.yaml ships ~120 attributed exercises; the athlete
+# may add more to exercises/library.yaml. Each ExerciseDefinition carries the
+# universal attributes the selection engine (Phase 3) scores on. Movement-pattern
+# and equipment vocabularies mirror engine/substitutions.py so the two never drift.
+
+MovementPattern = Literal[
+    "squat",
+    "hinge",
+    "push_h",
+    "push_v",
+    "pull_h",
+    "pull_v",
+    "lunge",
+    "carry",
+    "core",
+    "jump",
+    "sprint",
+    "throw",
+    "olympic",
+    "run",
+    "ride",
+    "swim",
+]
+ForceVector = Literal["axial", "horizontal", "lateral", "rotational", "mixed"]
+ContractionRegime = Literal[
+    "concentric_dominant",
+    "eccentric_dominant",
+    "isometric",
+    "plyometric",
+    "ballistic",
+    "mixed",
+]
+SpecificityLevel = Literal["general", "special", "specific", "competition"]
+KineticChain = Literal["open", "closed"]
+
+# Equipment tokens mirror engine/substitutions.py; "bodyweight" is the explicit
+# no-equipment token (an exercise needing nothing lists []). Matched lowercase.
+EQUIPMENT_VOCABULARY = frozenset(
+    {
+        "barbell",
+        "rack",
+        "dumbbell",
+        "kettlebell",
+        "machine",
+        "cable",
+        "bench",
+        "pullup_bar",
+        "bands",
+        "box",
+        "bike",
+        "pool",
+        "sled",
+        "medicine_ball",
+        "bodyweight",
+    }
+)
+
+
+class ExerciseDefinition(BaseModel):
+    """One exercise with universal attributes the selection engine scores on."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    name: str = Field(min_length=1)
+    patterns: list[MovementPattern] = Field(min_length=1)
+    force_vector: ForceVector
+    contraction_regime: ContractionRegime
+    chain: KineticChain
+    equipment: list[str] = Field(default_factory=list)
+    specificity_level: SpecificityLevel
+    qualities_trained: dict[PerformanceQuality, float] = Field(min_length=1)
+    contraindications: list[str] = Field(default_factory=list)
+    unilateral: bool = False
+    skill_complexity: int = Field(ge=1, le=3)
+    provenance: Provenance
+
+    @field_validator("equipment")
+    @classmethod
+    def _equipment_in_vocabulary(cls, value: list[str]) -> list[str]:
+        unknown = [token for token in value if token not in EQUIPMENT_VOCABULARY]
+        if unknown:
+            vocab = sorted(EQUIPMENT_VOCABULARY)
+            msg = f"unknown equipment token(s) {unknown}; vocabulary: {vocab}"
+            raise ValueError(msg)
+        return value
+
+    @field_validator("qualities_trained")
+    @classmethod
+    def _quality_weights_in_unit_range(cls, value: dict[str, float]) -> dict[str, float]:
+        bad = {k: v for k, v in value.items() if not 0.0 <= v <= 1.0}
+        if bad:
+            msg = f"qualities_trained weights must be within 0-1, got {bad}"
+            raise ValueError(msg)
+        return value
+
+
+class ExerciseLibrary(BaseModel):
+    """A set of athlete-added exercises (exercises/library.yaml, schema_version 1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    exercises: list[ExerciseDefinition] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _exercise_ids_unique(self) -> Self:
+        ids = [e.id for e in self.exercises]
+        if len(set(ids)) != len(ids):
+            msg = f"exercise ids must be unique within a library, got {ids}"
+            raise ValueError(msg)
+        return self

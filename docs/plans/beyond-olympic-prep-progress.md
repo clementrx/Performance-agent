@@ -14,8 +14,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | Order | Phase | Title | Status | Branch / PR | Notes |
 |---|---|---|---|---|---|
 | 1 | 0 | PerformanceModel schemas, store & tools | done (merged) | `feat/phase-0-performance-model` / PR #15 `55718c9` | 1043 tests (+27); 78 tools (+2) |
-| 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | done | `feat/phase-1-gaps-kpi-battery` / PR pending | 1083 tests (+40); 82 tools (+4); 4 seed models |
-| 3 | 2 | Exercise ontology & libraries | pending | — | |
+| 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | done (merged) | `feat/phase-1-gaps-kpi-battery` / PR #16 `51b5496` | 1083 tests (+40); 82 tools (+4); 4 seed models |
+| 3 | 2 | Exercise ontology & libraries | done | `feat/phase-2-exercise-ontology` / PR pending | 1097 tests (+14); 84 tools (+2); 123 seed exercises |
 | 4 | 3 | Selection engine & specificity guard | pending | — | |
 | 5 | 4 | High-resolution ingestion | pending | — | |
 | 6 | 5 | Load-velocity profiling & VBT autoregulation | pending | — | |
@@ -59,6 +59,18 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P1 — no runtime seed-reading tool.** Seeds are package data + test fixtures +
   an inline example in `needs-analysis`; the LLM authors models from the schema and
   the referenced seed files, keeping the tool surface lean (82, not 84).
+- **P2 — `MovementPattern` is a Literal in `schemas.py`, not an enum.**
+  `engine/substitutions.py` uses `MovementPattern = str`; the ontology needs strict
+  validation, so a `MovementPattern` Literal (16 values incl. jump/sprint/throw/
+  olympic beyond the substitution table's 12) is the contract for
+  `ExerciseDefinition`. `SessionPlan.patterns` stays `list[str]` (untouched).
+- **P2 — `ExerciseDefinition` has an `id`** (slug) beyond the plan's field list —
+  Phase 3's `ExerciseBlock.exercise_id` links to it. Equipment vocabulary extends
+  substitutions' tokens with sled/medicine_ball/bodyweight (needed by plyo/throw/
+  sprint families); "bodyweight" is the explicit no-equipment available token.
+- **P2 — athlete exercise-library file I/O in `store.py`** (`read_/write_exercise_
+  library`, like `calendar.yaml`); domain logic (seed load, merge, filter, propose)
+  in `memory/exercise_library.py`. Consistent with the P0/P1 store-consolidation.
 
 ## Resume notes
 
