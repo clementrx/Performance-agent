@@ -32,9 +32,13 @@ untouched across the whole stack). Baseline 597 → **1001 tests**; 47 → **76 
 2. ~~i18n README refresh (`docs/i18n/README.{fr,it,es,de}.md`): test count → 1001,
    tool count → 76, new-capability lines.~~ **Done.**
 3. ~~`docs/installing.md` tool-count check string (still 47).~~ **Done** (→ 76).
-4. **User-gated:** merge the stacked PRs #4→#13 (and this wrap-up PR on top) into main
-   in order; then the single version bump + changelog per `RELEASING.md` and the PyPI
-   publish (irreversible external action — requires explicit user go-ahead).
+4. ~~**User-gated:** merge the stacked PRs into main; then version bump + PyPI publish.~~
+   **DONE 2026-07-13:** the full stack was fast-forwarded into `main` (PRs #4→#14 closed,
+   commits `e35104f..e38ec73`), version bumped `0.2.0 → 0.3.0` (+ `uv.lock` re-locked),
+   tagged `v0.3.0`. The `release.yml` workflow ran green (gate + build + PyPI trusted
+   publish, `200 OK`). **`performance-agent 0.3.0` is live on PyPI** — verified: the
+   published wheel imports and exposes 76 tools, and the stdio server starts/stops
+   cleanly on EOF. Release complete.
 
 ### Pre-release wrap-up notes (branch `feat/report-sections-and-docs`)
 
