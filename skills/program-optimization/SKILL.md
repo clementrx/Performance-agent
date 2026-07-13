@@ -149,6 +149,23 @@ the notes — never ship a silent drift.
 - **Warm-ups are automatic.** Leave primary strength blocks at `warmup="auto"`;
   the renderer emits the ramp-up sets (via the engine) so the printed program
   carries them without you writing each ramp by hand.
+- **Session-log carnet — embed it so logging is one paste.** The delivered
+  program ends with a "📋 Carnet de séance (à copier dans Notes)" section: one
+  copy-paste block per session, the exercise names already printed (projected
+  from the blocks above — no new exercise source), and blanks for the athlete to
+  fill. The athlete keeps a block in their phone notes, fills it during the
+  session, and pastes the whole block back to log in one shot. Each block:
+  header `📋 LOG — <week> <session label>`, then `Date:`, `Douleur
+  (dos/épaule/coude): non`, `RPE séance:`, a `—` separator, one line per
+  loggable exercise, and `Notes:`. **Each exercise line carries its prescription
+  in brackets so the block is both the plan to follow AND the log to fill:**
+  `Nom exo [sets×reps · RPE · rest]:` — the athlete reads the bracket to know
+  what to do and writes what they actually did after the `:`. The fill rule,
+  stated once at the top of the section: after the `:`, per set `poids×reps`
+  space-separated (`22x9` = 22 kg, 9 reps); a bare number = reps at bodyweight;
+  `Ns` = an N-second hold; unilateral = per side; empty = not done. Omit
+  non-loggable priming (EMS, mobility) from the blocks — the `Notes:` line and
+  the check-in capture those.
 
 ## 3b. Sequence-check every week before you present it
 
