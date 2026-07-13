@@ -1,0 +1,89 @@
+schema_version: 1
+version: 1
+discipline: football
+event: association football (outfield)
+qualities:
+  - quality: aerobic_capacity
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: Match running demands a high intermittent aerobic base.
+  - quality: acceleration
+    weight: 0.2
+    provenance: {kind: prior}
+    rationale: Most decisive actions are short accelerations under 20 m.
+  - quality: change_of_direction
+    weight: 0.15
+    provenance: {kind: prior}
+    rationale: Cutting and repositioning recur throughout a match.
+  - quality: speed
+    weight: 0.15
+    provenance: {kind: prior}
+    rationale: Top-speed sprints decide transitions and duels.
+  - quality: anaerobic_capacity
+    weight: 0.1
+    provenance: {kind: prior}
+    rationale: Repeated-sprint ability sustains high-intensity bursts.
+  - quality: reactive_strength
+    weight: 0.1
+    provenance: {kind: prior}
+    rationale: Elastic qualities support jumping, cutting and sprinting.
+  - quality: max_strength
+    weight: 0.1
+    provenance: {kind: prior}
+    rationale: Strength underpins duels and injury resilience.
+kpis:
+  - id: sprint-10m
+    name: 10 m sprint
+    quality: acceleration
+    protocol: 10 m sprint from a standing start through timing gates.
+    unit: s
+    higher_is_better: false
+    benchmarks:
+      - {level: competitive, value: 1.9, provenance: {kind: prior}}
+      - {level: national, value: 1.75, provenance: {kind: prior}}
+      - {level: elite, value: 1.65, provenance: {kind: prior}}
+  - id: yo-yo-ir1
+    name: Yo-Yo Intermittent Recovery Test level 1
+    quality: aerobic_capacity
+    protocol: Yo-Yo IR1 shuttle test to volitional exhaustion (distance covered).
+    unit: m
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 1600.0, provenance: {kind: prior}}
+      - {level: national, value: 2200.0, provenance: {kind: prior}}
+      - {level: elite, value: 2800.0, provenance: {kind: prior}}
+  - id: cod-505
+    name: 505 change-of-direction test
+    quality: change_of_direction
+    protocol: 505 test; 10 m in, 180-degree turn, 5 m out, timed.
+    unit: s
+    higher_is_better: false
+    benchmarks:
+      - {level: competitive, value: 2.5, provenance: {kind: prior}}
+      - {level: national, value: 2.3, provenance: {kind: prior}}
+      - {level: elite, value: 2.2, provenance: {kind: prior}}
+  - id: cmj-height
+    name: Countermovement jump height
+    quality: reactive_strength
+    protocol: Countermovement jump on a force plate or validated jump mat.
+    unit: cm
+    higher_is_better: true
+    benchmarks:
+      - {level: competitive, value: 35.0, provenance: {kind: prior}}
+      - {level: national, value: 42.0, provenance: {kind: prior}}
+      - {level: elite, value: 50.0, provenance: {kind: prior}}
+injury_risks:
+  - region: hamstring
+    mechanism: High-speed running and repeated sprint decelerations.
+    screen: Nordic hamstring capacity and sprint-load monitoring.
+    provenance: {kind: prior}
+  - region: knee
+    mechanism: Non-contact ACL load during cutting and landing.
+    screen: Drop-jump landing mechanics and frontal-plane knee control.
+    provenance: {kind: prior}
+energy_systems:
+  aerobic: 0.7
+  anaerobic_lactic: 0.2
+  anaerobic_alactic: 0.1
+  provenance: {kind: prior}
+sources: []

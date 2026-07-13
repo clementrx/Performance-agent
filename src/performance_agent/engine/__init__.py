@@ -42,6 +42,14 @@ from performance_agent.engine.feasibility import (
     recalibrated_feasibility,
     strength_feasibility,
 )
+from performance_agent.engine.gaps import (
+    GapReport,
+    KpiGap,
+    KpiTarget,
+    Measurement,
+    QualityPriority,
+    compute_gaps,
+)
 from performance_agent.engine.load import (
     AcwrMethod,
     DayState,
@@ -134,6 +142,12 @@ from performance_agent.engine.strength import (
     weekly_set_targets_adjusted,
 )
 from performance_agent.engine.substitutions import Substitute
+from performance_agent.engine.test_battery import (
+    ScheduledTest,
+    TestableKpi,
+    cadence_for,
+    plan_test_battery,
+)
 
 __all__ = [
     "AcwrMethod",
@@ -155,18 +169,24 @@ __all__ = [
     "EnergyTarget",
     "EscalationSignals",
     "FeasibilityResult",
+    "GapReport",
     "ImplausibilityFlag",
     "InseasonWeek",
+    "KpiGap",
+    "KpiTarget",
     "LoadBudget",
     "LoggedSession",
     "MeasuredFeasibility",
+    "Measurement",
     "PaceZone",
     "PeakingWeek",
     "PlannedSession",
     "ProgressionDecision",
     "ProgressionRate",
+    "QualityPriority",
     "ReadinessAssessment",
     "ResponseProfileData",
+    "ScheduledTest",
     "SeasonEvent",
     "SeasonModality",
     "SeasonSegment",
@@ -175,6 +195,7 @@ __all__ = [
     "SessionSets",
     "Severity",
     "Substitute",
+    "TestableKpi",
     "TimelinePoint",
     "ToleranceAdjustment",
     "TopSetBackoff",
@@ -200,8 +221,10 @@ __all__ = [
     "build_strength_peaking",
     "build_undulating_week",
     "build_weekly_waves",
+    "cadence_for",
     "compare_prescribed_actual",
     "compress_session",
+    "compute_gaps",
     "count_escalation_signals",
     "double_progression",
     "e1rm_timeline",
@@ -219,6 +242,7 @@ __all__ = [
     "pace_s_per_km",
     "percentage_for_reps_rir",
     "plan_season",
+    "plan_test_battery",
     "prescribe_energy_target",
     "progression_rate",
     "readiness_score",

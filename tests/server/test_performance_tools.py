@@ -83,3 +83,48 @@ async def test_invalid_model_unknown_quality_errors(client):
     payload["qualities"][0]["quality"] = "explosiveness"
     result = await client.call_tool("save_performance_model", {"model": payload})
     assert result.isError
+
+
+def _kpi_result(kpi_id="squat-1rm", value=1.7):
+    return {
+        "date": "2026-07-01",
+        "kpi_id": kpi_id,
+        "protocol": "1RM after warm-up",
+        "value": value,
+        "unit": "x bodyweight",
+    }
+
+
+@pytest.mark.anyio
+async def test_log_and_read_kpi_results(client):
+    logged = await client.call_tool("log_kpi_result", {"entry": _kpi_result()})
+    assert not logged.isError
+    assert logged.structuredContent["count"] == 1
+    read = await client.call_tool("read_kpi_results", {})
+    assert not read.isError
+    assert read.structuredContent["result"][0]["kpi_id"] == "squat-1rm"
+
+
+@pytest.mark.anyio
+async def test_compute_gaps_needs_model(client):
+    result = await client.call_tool("compute_performance_gaps", {})
+    assert result.isError
+    assert "no performance model" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_compute_gaps_after_model_and_measurement(client):
+    await client.call_tool("save_performance_model", {"model": _model_payload()})
+    await client.call_tool("log_kpi_result", {"entry": _kpi_result(value=1.9)})
+    result = await client.call_tool("compute_performance_gaps", {"level": "elite"})
+    assert not result.isError
+    gaps = {g["kpi_id"]: g for g in result.structuredContent["kpi_gaps"]}
+    assert gaps["squat-1rm"]["status"] == "measured"
+
+
+@pytest.mark.anyio
+async def test_plan_test_battery_after_model(client):
+    await client.call_tool("save_performance_model", {"model": _model_payload()})
+    result = await client.call_tool("plan_test_battery", {})
+    assert not result.isError
+    assert result.structuredContent["horizon_weeks"] >= 1

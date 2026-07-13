@@ -33,6 +33,12 @@ def test_wheel_ships_the_seed_corpus(wheel_path):
     assert "performance_agent/evidence/data/seed_corpus.yaml" in _names(wheel_path)
 
 
+def test_wheel_ships_the_seed_performance_models(wheel_path):
+    names = _names(wheel_path)
+    for slug in ("sprint-100m", "running-10k", "powerlifting", "football"):
+        assert f"performance_agent/models/data/seed/{slug}.yaml" in names
+
+
 def test_wheel_ships_the_license(wheel_path):
     names = _names(wheel_path)
     assert any(name.endswith("licenses/LICENSE") or name.endswith("LICENSE") for name in names)

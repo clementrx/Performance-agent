@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 78 tools. If so, you're done — just talk to it.
+You should see 82 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -257,16 +257,21 @@ proactive follow-up that surfaces what is due (overdue check-in, imminent race,
 missed sessions, readiness gaps, a stale response profile) severity-ordered so the
 coach speaks first, and a deterministic end-to-end simulation (no LLM) that drives
 the real engine + store across three synthetic athletes to prove the whole loop
-composes, and a sport-agnostic PerformanceModel (the researched, versioned
-answer to "what determines performance in this event" — trainable qualities
-with normalized weights, KPIs with level benchmarks, injury risks and
-energy-system split, every value provenance-labeled cited/prior/judgment);
-1043 tests
-incl. property-based) · 78 MCP
+composes, a sport-agnostic PerformanceModel (the researched, versioned answer to
+"what determines performance in this event" — trainable qualities with normalized
+weights, KPIs with level benchmarks, injury risks and energy-system split, every
+value provenance-labeled cited/prior/judgment) that drives gap analysis (measured
+KPIs vs benchmarks, per-quality training priorities, unmeasured stays unmeasured)
+and a dated test battery scheduled as experiments around the calendar, seeded with
+four reference models (sprint, 10k, powerlifting, football) that are examples not a
+support gate;
+1083 tests
+incl. property-based) · 82 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response
-profile, and an adaptation audit trail ·
+profile, versioned performance models, a dated KPI-results log, and an adaptation
+audit trail ·
 activity-file import (.fit/.tcx/.gpx/CSV) that
 proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication

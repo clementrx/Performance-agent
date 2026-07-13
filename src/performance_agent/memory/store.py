@@ -18,6 +18,7 @@ from performance_agent.memory.schemas import (
     CalendarEvent,
     CheckinEntry,
     Goal,
+    KpiResult,
     PerformanceModel,
     Profile,
     ProgramPlan,
@@ -37,6 +38,7 @@ SESSIONS_FILE = "sessions.jsonl"
 CHECKINS_FILE = "checkins.jsonl"
 READINESS_FILE = "readiness.jsonl"
 SESSION_ADJUSTMENTS_FILE = "session_adjustments.jsonl"
+KPI_RESULTS_FILE = "kpi_results.jsonl"
 PROGRAMS_DIR = "programs"
 ANALYSIS_DIR = "analysis"
 RESEARCH_DIR = "research"
@@ -245,6 +247,23 @@ def read_session_adjustments(base_dir: Path) -> list[SessionAdjustmentEntry]:
         lambda: [
             SessionAdjustmentEntry.model_validate_json(line) for line in lines if line.strip()
         ],
+    )
+
+
+def append_kpi_result(base_dir: Path, entry: KpiResult) -> None:
+    """Append one dated KPI/test measurement to the append-only log."""
+    _append_jsonl(base_dir / KPI_RESULTS_FILE, entry.model_dump_json())
+
+
+def read_kpi_results(base_dir: Path) -> list[KpiResult]:
+    """Return all logged KPI results in insertion order."""
+    path = base_dir / KPI_RESULTS_FILE
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return _validated(
+        path,
+        lambda: [KpiResult.model_validate_json(line) for line in lines if line.strip()],
     )
 
 
