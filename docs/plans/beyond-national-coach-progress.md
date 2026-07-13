@@ -16,7 +16,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 4 | 9 | Activity file import | done (PR open) | `feat/phase-9-activity-import` — [PR #7](https://github.com/clementrx/Performance-agent/pull/7) | 782 tests; +1 tool (63 total); +fitdecode dep |
 | 5 | 3 | Day-of session autoregulation | done (PR open) | `feat/phase-3-session-autoregulation` — [PR #8](https://github.com/clementrx/Performance-agent/pull/8) | 823 tests; +5 tools (68 total) |
 | 6 | 4 | Intra-week sequencing & interference | done (PR open) | `feat/phase-4-sequencing` — [PR #9](https://github.com/clementrx/Performance-agent/pull/9) (base: phase 3) | 860 tests; +1 tool (69 total) |
-| 7 | 5 | Individual response profile | pending | — | — |
+| 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — PR (base: phase 4) | 902 tests; +4 tools (73 total) |
 | 8 | 6 | Deloads, adherence, return-to-load | pending | — | — |
 | 9 | 7 | Proactive follow-up | pending | — | — |
 | 10 | 8 | End-to-end simulated evaluation | pending | — | — |
@@ -261,9 +261,70 @@ is broken.
   `docs/i18n/` READMEs stay DEFERRED to the pre-release refresh. English README updated
   to 69 tools / 860 tests + a sequencing/interference phrase.
 
+## Phase 5 notes
+
+- **New tools (4, total 73):** `compute_response_profile`, `save_response_profile`,
+  `read_response_profile`, `compare_prescribed_actual` — all in the new
+  `server/response_tools.py` (registered in `server/app.py`). Two existing tools
+  gained OPTIONAL params (backward compatible): `assess_strength_goal` /
+  `assess_endurance_goal` / `assess_hypertrophy_goal` / `assess_bodycomp_goal` gained
+  `measured_weekly_rate` (+ `measured_n_weeks`), and `weekly_set_targets_for` gained
+  `tolerance_adjustment`.
+- **Engine/memory split (purity preserved):** `engine/response.py` is pure — it
+  imports ONLY stdlib + engine siblings (`engine/strength`, `engine/_validation`) and
+  operates on engine-local `@dataclass`es (`SessionSets`/`TimelinePoint`/
+  `ProgressionRate`/`PlannedSession`/`LoggedSession`/`ComplianceReport`/
+  `VolumeTolerance`/`ResponseProfileData`). It NEVER imports `memory.schemas` or
+  `datetime`; `tests/engine/test_engine_purity.py` passes. `memory/response.py` owns
+  all date→day/week conversion and `SessionEntry`/`ProgramPlan`→engine extraction,
+  builds the pydantic `ResponseProfile`, and the implausible-entry exclusion (reuses
+  `engine.flag_implausible_session`, dropping `e1rm_jump`-flagged points). Mirrors the
+  `engine/season.py` ↔ `memory/season.py` pattern.
+- **Versioned-yaml store:** added `_doc_path`/`_latest_doc_version` a `suffix` param
+  (default `.md`, kept DRY) and a parallel `save_response_profile` /
+  `read_response_profile` / `latest_response_profile_version` in `store.py`. A
+  `ResponseProfile` persists to `response/response-profile-v{N}.yaml` (`schema_version:
+  1`) with the SAME immutable-versioned discipline as programs: never overwritten,
+  reason mandatory from v2, store stamps version/as_of/reason. `ResponseProfile`
+  carries `version`/`reason` fields (like `ProgramPlan`) so the yaml payload is
+  self-describing.
+- **assess_* backward-compat:** params are optional (default None → unchanged
+  behaviour, existing tests untouched). The return type changed from
+  `FeasibilityResult`/`BodycompFeasibility` to a `GoalAssessment`/`BodycompAssessment`
+  TypedDict that keeps every existing top-level field AND adds `measured` (null unless
+  a measured rate is supplied). Existing tests read the same keys and still pass; new
+  `measured` key carries the recalibrated probability + `small_n`. Engine helper
+  `recalibrated_feasibility` shares the population logistic so the two probabilities
+  are directly comparable.
+- **Honesty about n (returns None, never a fabricated rate):** `progression_rate`
+  returns None below 6 points or a 4-week span (and on zero span); `volume_tolerance`
+  returns None below 8 aligned weeks or when either series is flat, and reports
+  association DIRECTION only (never causal); `compute_response_profile` records n,
+  window_weeks, r2 per rate and appends a caveat wherever a signal is thin or absent
+  (null measured rate → "using population prior"). Property-tested: a synthetic linear
+  rate r is recovered within 1e-3.
+- **Evidence decisions:** no new corpus entries (no verified network). Every new
+  constant (min points/span, tolerance week/correlation thresholds, measured small-n
+  window, done-volume fraction, tolerance-adjustment landmarks) is labeled
+  `team-chosen prior` in code; the tolerance-adjusted set targets stay bounded by the
+  existing corpus-anchored `WEEKLY_SET_TARGETS` min/max landmarks.
+- **Skills:** `training-checkin` (+compute/save profile + compare tools; recompute &
+  narrate deltas at each mesocycle end), `needs-analysis` and `program-planning`
+  (+`read_response_profile`; pass the measured rate to the feasibility tools / size to
+  it, map a tolerance flag to `weekly_set_targets_for`; program-planning also places a
+  `TestMilestone` at each mesocycle end), `program-adaptation` (+`compare_prescribed_actual`
+  / `read_response_profile`; adherence & tolerance flags in the diagnosis vocabulary).
+  All new tools added to the relevant `tools:` frontmatter and referenced in the body.
+- **Report templates / i18n READMEs:** the P5 response-summary report section (measured
+  vs prior rates, adherence) stays DEFERRED to the batched report pass, like the
+  earlier phases (plan-sanctioned follow-up; no athlete-visible report change wired
+  this phase). The 4 `docs/i18n/` READMEs stay for the single batched pre-release
+  refresh. English README updated to 73 tools / 902 tests + an individualized-recalibration
+  phrase.
+
 ## Resume notes
 
-_Phase 4 complete. Next in execution order: **Phase 5 (individual response profile &
-recalibration)** (order 0, 1, 2, 9, 3, 4, **5**, 6, 7, 8); depends on Phase 0's
-structured `ProgramPlan`, Phase 2's monitoring, and Phase 3's autoregulation logs.
-Branch off `feat/phase-4-sequencing` (stacked)._
+_Phase 5 complete. Next in execution order: **Phase 6 (data-driven deloads, adherence
+playbook, return-to-load)** (order 0, 1, 2, 9, 3, 4, 5, **6**, 7, 8); depends on Phase
+2's monitoring and Phase 5's response profile. Branch off `feat/phase-5-response-profile`
+(stacked)._

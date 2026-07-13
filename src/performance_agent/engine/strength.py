@@ -9,6 +9,7 @@ documented on those functions.
 
 import math
 from dataclasses import dataclass
+from typing import Literal
 
 from performance_agent.engine._validation import validate_finite, validate_whole_number
 from performance_agent.engine.feasibility import TrainingAge
@@ -195,9 +196,42 @@ WEEKLY_SET_TARGETS: dict[TrainingAge, WeeklySetTargets] = {
 }
 
 
+ToleranceAdjustment = Literal["reduce", "default", "extend"]
+
+
 def weekly_set_targets(training_age: TrainingAge) -> WeeklySetTargets:
     """Return per-muscle weekly hard-set targets for a training-age bucket."""
     return WEEKLY_SET_TARGETS[training_age]
+
+
+def weekly_set_targets_adjusted(
+    training_age: TrainingAge, tolerance_adjustment: ToleranceAdjustment = "default"
+) -> WeeklySetTargets:
+    """Per-muscle weekly set targets shifted by measured volume tolerance.
+
+    "reduce" pulls the programmed optimal_low-optimal_high range down toward the
+    minimum-effective floor (for an athlete whose fatigue rises with volume);
+    "extend" pushes it up toward the maximum-adaptive ceiling (a strong
+    responder). Both stay bounded by the training-age minimum_effective_sets and
+    maximum_adaptive_sets landmarks; "default" returns the base targets. The
+    shift direction is a coaching decision; the landmarks are the corpus-anchored
+    dose-response priors from WEEKLY_SET_TARGETS.
+    """
+    base = WEEKLY_SET_TARGETS[training_age]
+    if tolerance_adjustment == "default":
+        return base
+    if tolerance_adjustment == "reduce":
+        low = base.minimum_effective_sets
+        high = base.optimal_low_sets
+    else:  # extend
+        low = base.optimal_high_sets
+        high = base.maximum_adaptive_sets
+    return WeeklySetTargets(
+        minimum_effective_sets=base.minimum_effective_sets,
+        optimal_low_sets=low,
+        optimal_high_sets=high,
+        maximum_adaptive_sets=base.maximum_adaptive_sets,
+    )
 
 
 @dataclass(frozen=True)

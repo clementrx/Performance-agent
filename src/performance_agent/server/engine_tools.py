@@ -12,13 +12,13 @@ from mcp.server.fastmcp import FastMCP
 from performance_agent.engine import (
     AcwrMethod,
     BlockWeek,
-    BodycompFeasibility,
     EnergyTarget,
     FeasibilityResult,
     InseasonWeek,
     PeakingWeek,
     ProgressionDecision,
     SeasonModality,
+    ToleranceAdjustment,
     TopSetBackoff,
     TrainingAge,
     UndulatingSession,
@@ -46,6 +46,7 @@ from performance_agent.engine import (
     percentage_for_reps_rir,
     prescribe_energy_target,
     readiness_score,
+    recalibrated_feasibility,
     recommend_taper_length,
     riegel_predict,
     rir_from_rpe,
@@ -57,12 +58,12 @@ from performance_agent.engine import (
     wave_loading,
     weekly_loads,
     weekly_monotony,
+    weekly_set_targets_adjusted,
     weekly_strain,
 )
 from performance_agent.engine import budget_weekly_load as engine_budget_weekly_load
 from performance_agent.engine import estimate_srpe_from_hr as engine_estimate_srpe_from_hr
 from performance_agent.engine import flag_implausible_session as engine_flag_implausible_session
-from performance_agent.engine import weekly_set_targets as engine_weekly_set_targets
 
 _ONE_RM_FORMULAS = {
     "brzycki": one_rm_brzycki,
@@ -172,6 +173,62 @@ class TaperLength(TypedDict):
     taper_days: int
 
 
+class MeasuredView(TypedDict):
+    """The measured-rate half of a recalibrated verdict (null when no rate given)."""
+
+    measured_weekly_rate: float
+    ratio: float
+    probability: float
+    small_n: bool
+
+
+class GoalAssessment(TypedDict):
+    """A feasibility verdict, optionally recalibrated against a measured rate.
+
+    The top-level fields are the population-prior verdict; measured is null
+    unless a measured_weekly_rate was supplied, in which case it carries the
+    probability scored against the athlete's own measured rate. Present BOTH
+    probabilities and flag small_n.
+    """
+
+    improvement_needed: float
+    required_weekly_rate: float
+    achievable_weekly_rate: float
+    ratio: float
+    probability: float
+    measured: MeasuredView | None
+
+
+class BodycompAssessment(TypedDict):
+    """A fat-loss verdict, optionally recalibrated against a measured rate."""
+
+    fat_mass_to_lose_kg: float
+    required_weekly_loss_pct_bw: float
+    achievable_weekly_loss_pct_bw: float
+    ratio: float
+    probability: float
+    exceeds_safe_rate: bool
+    measured: MeasuredView | None
+
+
+def _measured_view(
+    required_weekly_rate: float,
+    measured_weekly_rate: float | None,
+    measured_n_weeks: int | None,
+) -> MeasuredView | None:
+    """Score the required rate against a measured rate, or None when none given."""
+    if measured_weekly_rate is None:
+        return None
+    n_weeks = measured_n_weeks if measured_n_weeks is not None else 1
+    result = recalibrated_feasibility(required_weekly_rate, measured_weekly_rate, n_weeks)
+    return MeasuredView(
+        measured_weekly_rate=result.measured_weekly_rate,
+        ratio=result.ratio,
+        probability=result.probability,
+        small_n=result.small_n,
+    )
+
+
 def recommend_taper(
     buildup_weeks: int,
     modality: SeasonModality,
@@ -188,70 +245,124 @@ def recommend_taper(
     return TaperLength(taper_days=recommend_taper_length(buildup_weeks, modality, event_priority))
 
 
-def assess_endurance_goal(
-    current_time_s: float, target_time_s: float, weeks: int, training_age: TrainingAge
-) -> FeasibilityResult:
+def _goal_assessment(
+    verdict: FeasibilityResult, measured_weekly_rate: float | None, measured_n_weeks: int | None
+) -> GoalAssessment:
+    return GoalAssessment(
+        improvement_needed=verdict.improvement_needed,
+        required_weekly_rate=verdict.required_weekly_rate,
+        achievable_weekly_rate=verdict.achievable_weekly_rate,
+        ratio=verdict.ratio,
+        probability=verdict.probability,
+        measured=_measured_view(
+            verdict.required_weekly_rate, measured_weekly_rate, measured_n_weeks
+        ),
+    )
+
+
+def assess_endurance_goal(  # noqa: PLR0913 -- plan-mandated optional recalibration params, keyword at call sites
+    current_time_s: float,
+    target_time_s: float,
+    weeks: int,
+    training_age: TrainingAge,
+    measured_weekly_rate: float | None = None,
+    measured_n_weeks: int | None = None,
+) -> GoalAssessment:
     """Score the feasibility of an endurance time goal (honest-coach verdict).
 
     Both times are in seconds over the same distance; training_age is one of
-    beginner, intermediate, advanced. Returns the success probability (0-1)
-    with the drivers behind it (improvement_needed, required vs achievable
-    weekly rates, their ratio). Always present the drivers alongside the
-    probability, never the bare number.
+    beginner, intermediate, advanced. Returns the population-prior probability
+    (0-1) with its drivers (improvement_needed, required vs achievable weekly
+    rates as fractions of current, their ratio). When the response profile has a
+    measured rate (per_goal_measured_rate.value, a fraction/week), pass it as
+    measured_weekly_rate (+ measured_n_weeks) to ALSO get the measured-rate
+    probability under `measured`; present BOTH and flag small_n. Never the bare
+    number.
     """
-    return endurance_feasibility(current_time_s, target_time_s, weeks, training_age)
+    verdict = endurance_feasibility(current_time_s, target_time_s, weeks, training_age)
+    return _goal_assessment(verdict, measured_weekly_rate, measured_n_weeks)
 
 
-def assess_strength_goal(
-    current_one_rm_kg: float, target_one_rm_kg: float, weeks: int, training_age: TrainingAge
-) -> FeasibilityResult:
+def assess_strength_goal(  # noqa: PLR0913 -- plan-mandated optional recalibration params, keyword at call sites
+    current_one_rm_kg: float,
+    target_one_rm_kg: float,
+    weeks: int,
+    training_age: TrainingAge,
+    measured_weekly_rate: float | None = None,
+    measured_n_weeks: int | None = None,
+) -> GoalAssessment:
     """Score the feasibility of a strength (1RM) goal (honest-coach verdict).
 
     Both loads are in kg for the same lift; training_age is one of beginner,
-    intermediate, advanced. Sign convention: improvement_needed is positive
-    when the target is above the current 1RM. Returns the success
-    probability (0-1) with the drivers behind it (improvement_needed,
-    required vs achievable weekly rates as fractions of current 1RM, their
-    ratio). Always present the drivers alongside the probability, never the
-    bare number.
+    intermediate, advanced. improvement_needed is positive when the target is
+    above the current 1RM. Returns the population-prior probability (0-1) with
+    its drivers (required vs achievable weekly rates as fractions of current
+    1RM, their ratio). When the response profile has a measured rate
+    (per_goal_measured_rate.value, a fraction/week), pass it as
+    measured_weekly_rate (+ measured_n_weeks) to ALSO get the measured-rate
+    probability under `measured`; present BOTH and flag small_n. Never the bare
+    number.
     """
-    return strength_feasibility(current_one_rm_kg, target_one_rm_kg, weeks, training_age)
+    verdict = strength_feasibility(current_one_rm_kg, target_one_rm_kg, weeks, training_age)
+    return _goal_assessment(verdict, measured_weekly_rate, measured_n_weeks)
 
 
 def assess_hypertrophy_goal(
-    target_lean_gain_kg: float, weeks: int, training_age: TrainingAge
-) -> FeasibilityResult:
+    target_lean_gain_kg: float,
+    weeks: int,
+    training_age: TrainingAge,
+    measured_weekly_rate: float | None = None,
+    measured_n_weeks: int | None = None,
+) -> GoalAssessment:
     """Score the feasibility of a lean-mass gain goal (honest-coach verdict).
 
     target_lean_gain_kg is lean mass in kg (positive); rates are ABSOLUTE
-    kg/week, not fractions — improvement_needed carries the target gain in
-    kg. Returns the success probability (0-1) with the drivers behind it
-    (required vs achievable kg/week, their ratio). Always present the
-    drivers alongside the probability, never the bare number.
+    kg/week — improvement_needed carries the target gain in kg. Returns the
+    population-prior probability (0-1) with its drivers (required vs achievable
+    kg/week, their ratio). When a measured kg/week rate is known, pass it as
+    measured_weekly_rate (+ measured_n_weeks) to ALSO get the measured-rate
+    probability under `measured`; present BOTH and flag small_n. Never the bare
+    number.
     """
-    return hypertrophy_feasibility(target_lean_gain_kg, weeks, training_age)
+    verdict = hypertrophy_feasibility(target_lean_gain_kg, weeks, training_age)
+    return _goal_assessment(verdict, measured_weekly_rate, measured_n_weeks)
 
 
-def assess_bodycomp_goal(
+def assess_bodycomp_goal(  # noqa: PLR0913 -- plan-mandated optional recalibration params, keyword at call sites
     current_weight_kg: float,
     current_body_fat_pct: float,
     target_body_fat_pct: float,
     weeks: int,
     sex: Literal["male", "female"],
-) -> BodycompFeasibility:
+    measured_weekly_rate: float | None = None,
+    measured_n_weeks: int | None = None,
+) -> BodycompAssessment:
     """Score the feasibility of a fat-loss goal (honest-coach verdict).
 
     Weight in kg; body-fat percentages in (3, 60) with target below current.
     REFUSES targets below the healthy minimum for the athlete's sex (5% male,
     12% female) with an error telling you to refer to a health professional —
-    relay that refusal, do not work around it. exceeds_safe_rate=True means
-    the deadline demands more than 1% bodyweight/week and risks muscle loss;
-    say so explicitly. Always present the drivers (fat_mass_to_lose_kg,
-    required vs achievable weekly loss as fractions of bodyweight, their
-    ratio) alongside the probability, never the bare number.
+    relay that refusal, do not work around it. exceeds_safe_rate=True means the
+    deadline demands more than 1% bodyweight/week and risks muscle loss; say so.
+    Always present the drivers (fat_mass_to_lose_kg, required vs achievable
+    weekly loss as fractions of bodyweight, their ratio) alongside the
+    probability. When a measured weekly loss rate (fraction of bodyweight/week)
+    is known, pass it as measured_weekly_rate (+ measured_n_weeks) to ALSO get
+    the measured-rate probability under `measured`; present BOTH, flag small_n.
     """
-    return bodycomp_feasibility(
+    verdict = bodycomp_feasibility(
         current_weight_kg, current_body_fat_pct, target_body_fat_pct, weeks, sex
+    )
+    return BodycompAssessment(
+        fat_mass_to_lose_kg=verdict.fat_mass_to_lose_kg,
+        required_weekly_loss_pct_bw=verdict.required_weekly_loss_pct_bw,
+        achievable_weekly_loss_pct_bw=verdict.achievable_weekly_loss_pct_bw,
+        ratio=verdict.ratio,
+        probability=verdict.probability,
+        exceeds_safe_rate=verdict.exceeds_safe_rate,
+        measured=_measured_view(
+            verdict.required_weekly_loss_pct_bw, measured_weekly_rate, measured_n_weeks
+        ),
     )
 
 
@@ -271,16 +382,22 @@ def prescribe_reps_load(one_rm_kg: float, reps: int, rir: int) -> RepsLoadPrescr
     )
 
 
-def weekly_set_targets_for(training_age: TrainingAge) -> WeeklySetTargets:
+def weekly_set_targets_for(
+    training_age: TrainingAge, tolerance_adjustment: ToleranceAdjustment = "default"
+) -> WeeklySetTargets:
     """Weekly hard-set targets per muscle group for a training-age bucket.
 
     Returns minimum_effective_sets, optimal_low_sets-optimal_high_sets (the
-    range to program), and maximum_adaptive_sets (do not exceed), all in
-    weekly hard sets per muscle group. Anchored on the volume dose-response
-    meta-analysis in the corpus; the training-age spread is a team-chosen
-    prior.
+    range to program), and maximum_adaptive_sets (do not exceed), all in weekly
+    hard sets per muscle group. Anchored on the volume dose-response
+    meta-analysis in the corpus; the training-age spread is a team-chosen prior.
+    tolerance_adjustment recalibrates the programmed range from the response
+    profile's volume-tolerance flag: "reduce" pulls it toward the minimum floor
+    (fatigue rises with volume), "extend" pushes it toward the maximum ceiling
+    (strong responder), "default" leaves the population range. Both stay bounded
+    by the min/max landmarks.
     """
-    return engine_weekly_set_targets(training_age)
+    return weekly_set_targets_adjusted(training_age, tolerance_adjustment)
 
 
 def progress_double_progression(

@@ -94,6 +94,58 @@ def _logistic_probability(ratio: float) -> float:
     return 1 / (1 + math.exp(exponent))
 
 
+# A measured window shorter than this many weeks carries extra uncertainty and
+# is flagged so the narrator caveats it (team-chosen prior).
+MEASURED_SMALL_N_WEEKS = 8
+
+
+@dataclass(frozen=True)
+class MeasuredFeasibility:
+    """A feasibility probability recomputed from the athlete's MEASURED rate.
+
+    Same logistic mapping as the population verdict, but scoring the required
+    weekly rate against the athlete's own measured rate instead of the
+    training-age prior. small_n flags a short measurement window.
+    """
+
+    measured_weekly_rate: float
+    required_weekly_rate: float
+    ratio: float
+    probability: float
+    small_n: bool
+
+
+def recalibrated_feasibility(
+    required_weekly_rate: float, measured_weekly_rate: float, measured_n_weeks: int
+) -> MeasuredFeasibility:
+    """Recompute a feasibility probability from a measured weekly rate.
+
+    required_weekly_rate comes from a population feasibility verdict (already in
+    the goal's units — a fraction for endurance/strength/bodycomp, kg/week for
+    hypertrophy); measured_weekly_rate must be positive and in the SAME units.
+    The ratio and logistic mapping match the population path, so the two
+    probabilities are directly comparable. small_n is True below
+    MEASURED_SMALL_N_WEEKS weeks of measurement.
+    """
+    validate_whole_number("measured_n_weeks", measured_n_weeks)
+    validate_finite("required_weekly_rate", required_weekly_rate)
+    validate_finite("measured_weekly_rate", measured_weekly_rate)
+    if measured_weekly_rate <= 0:
+        msg = f"measured_weekly_rate must be positive, got {measured_weekly_rate!r}"
+        raise ValueError(msg)
+    if measured_n_weeks <= 0:
+        msg = f"measured_n_weeks must be positive, got {measured_n_weeks!r}"
+        raise ValueError(msg)
+    ratio = required_weekly_rate / measured_weekly_rate
+    return MeasuredFeasibility(
+        measured_weekly_rate=measured_weekly_rate,
+        required_weekly_rate=required_weekly_rate,
+        ratio=ratio,
+        probability=_logistic_probability(ratio),
+        small_n=measured_n_weeks < MEASURED_SMALL_N_WEEKS,
+    )
+
+
 def _validate_inputs(current_time_s: float, target_time_s: float, weeks: int) -> None:
     validate_whole_number("weeks", weeks)
     for name, value in (("current_time_s", current_time_s), ("target_time_s", target_time_s)):

@@ -7,8 +7,9 @@ tools: [read_athlete, get_time_context, read_program, read_sessions, read_checki
         read_session_adjustments, compute_session_load, compute_weekly_loads, compute_acwr,
         assess_endurance_goal, assess_strength_goal, assess_hypertrophy_goal,
         assess_bodycomp_goal, weekly_set_targets_for, prescribe_load, estimate_1rm,
-        build_periodization_waves, search_evidence, search_evidence_live,
-        save_evidence, verify_reference, get_citation, check_citations, save_program]
+        build_periodization_waves, compare_prescribed_actual, read_response_profile,
+        search_evidence, search_evidence_live, save_evidence, verify_reference,
+        get_citation, check_citations, save_program]
 ---
 
 # Program Adaptation
@@ -53,6 +54,14 @@ every one carries a reason the athlete (and future you) can audit.
   mismatch (the program asks for more minutes than the life has); repeated readiness
   downgrades point to under-recovery (the load is landing harder than planned). An
   escalate=true signal is often what routed here — name which pattern it is.
+- Add the individual response to the diagnosis vocabulary: `compare_prescribed_actual`
+  gives per-session done/partial/modified/missed and weekly prescribed-vs-performed
+  volume (a plateau under low adherence is a behaviour problem, not a stimulus one);
+  `read_response_profile` gives the measured rate, `adherence_by_quality`, and any
+  `volume_tolerance_flags`. A higher_volume_higher_fatigue flag means the next version
+  should size volume with `weekly_set_targets_for`'s `tolerance_adjustment="reduce"`;
+  a stalling lift whose measured rate is near the population prior is genuine, not a
+  data artefact. Never invent a rate the profile does not carry.
 - Name the diagnosis in one sentence: under-recovery / under-stimulus / interrupted
   training / life-constraint change / pain-driven (map check-in triggers loosely:
   fatigue ≥ 8 → under-recovery; adherence < 70% → interrupted training; but

@@ -9,7 +9,8 @@ tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
         search_evidence, get_citation, check_citations, build_periodization_waves,
         build_block_cycle, build_undulating_sessions, build_inseason_maintenance,
         build_peaking_block, weekly_set_targets_for, read_nutrition_frame,
-        read_calendar, build_season_plan, recommend_taper, budget_weekly_load]
+        read_calendar, build_season_plan, recommend_taper, budget_weekly_load,
+        read_response_profile]
 ---
 
 # Program Planning — le Planificateur
@@ -31,6 +32,13 @@ exercises or session loads; that is the Optimizer's job.
 - `read_research_dossier` — the evidence the structure is justified from. If it
   errors and the athlete has NOT declined deep research, route back to
   deep-research: the premium promise is a plan built on a dossier.
+- `read_response_profile` (latest) — the athlete's OWN measured response, if any.
+  When it holds a `per_goal_measured_rate`, the plan is sized to the measured rate,
+  not the population prior; state in the skeleton which rate you used and its n. Map
+  a `volume_tolerance_flags` entry to `weekly_set_targets_for`'s
+  `tolerance_adjustment` ("reduce" when fatigue rose with volume, "extend" for a
+  strong responder, else "default"). It errors when none is saved — then plan on
+  population priors and say so. Never fabricate a rate the profile does not carry.
 
 **Degraded mode — athlete declined deep research:** proceed on corpus-only
 evidence. Query `search_evidence` for the skeleton's structural questions
@@ -128,6 +136,11 @@ week/session notes. It carries:
 5. **Constraints the Optimizer must respect** — availability (sessions per
    week), equipment, injuries, split_preferences, and the analysis' injury
    flags.
+6. **Re-test milestones** — place a `TestMilestone` at each mesocycle end so the
+   response profile refreshes on real data: protocol `amrap_rir1` for lifts (an
+   AMRAP at RIR 1 is safer than a true 1RM), `timetrial` for endurance. Their
+   results, logged as sessions, feed the response profile and the next program
+   version.
 
 ## 6. Hand off
 

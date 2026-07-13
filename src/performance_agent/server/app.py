@@ -9,6 +9,7 @@ from performance_agent.server import (
     import_tools,
     memory_tools,
     report_tools,
+    response_tools,
 )
 
 mcp = FastMCP("performance-agent")
@@ -18,6 +19,7 @@ autoregulation_tools.register(mcp)
 evidence_tools.register(mcp)
 report_tools.register(mcp)
 import_tools.register(mcp)
+response_tools.register(mcp)
 
 
 def main() -> None:

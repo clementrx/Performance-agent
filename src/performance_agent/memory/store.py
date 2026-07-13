@@ -22,6 +22,7 @@ from performance_agent.memory.schemas import (
     ProgramPlan,
     ReadinessEntry,
     RecurringConstraint,
+    ResponseProfile,
     SessionAdjustmentEntry,
     SessionEntry,
     SessionPlan,
@@ -39,6 +40,8 @@ PROGRAMS_DIR = "programs"
 ANALYSIS_DIR = "analysis"
 RESEARCH_DIR = "research"
 NUTRITION_DIR = "nutrition"
+RESPONSE_DIR = "response"
+RESPONSE_PREFIX = "response-profile"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -255,19 +258,24 @@ def find_session_plan(base_dir: Path, session_plan_id: str) -> SessionPlan | Non
     return None
 
 
-def _doc_path(base_dir: Path, subdir: str, prefix: str, version: int) -> Path:
-    return base_dir / subdir / f"{prefix}-v{version}.md"
+def _doc_path(base_dir: Path, subdir: str, prefix: str, version: int, suffix: str = ".md") -> Path:
+    return base_dir / subdir / f"{prefix}-v{version}{suffix}"
 
 
-def _latest_doc_version(base_dir: Path, subdir: str, prefix: str) -> int | None:
+def _latest_doc_version(
+    base_dir: Path, subdir: str, prefix: str, suffix: str = ".md"
+) -> int | None:
     doc_dir = base_dir / subdir
     if not doc_dir.is_dir():
         return None
     marker = f"{prefix}-v"
+    # Path.stem drops only the final suffix; ".plan.yaml" would leave ".plan",
+    # so strip the full suffix off the name explicitly before parsing the int.
     versions = [
         int(stem)
-        for path in doc_dir.glob(f"{marker}*.md")
-        if (stem := path.stem.removeprefix(marker)).isdigit() and str(int(stem)) == stem
+        for path in doc_dir.glob(f"{marker}*{suffix}")
+        if (stem := path.name.removeprefix(marker).removesuffix(suffix)).isdigit()
+        and str(int(stem)) == stem
     ]
     return max(versions) if versions else None
 
@@ -447,6 +455,57 @@ def read_program(base_dir: Path, version: int | None = None) -> ProgramRead | No
         markdown=body,
         plan=plan,
     )
+
+
+def latest_response_profile_version(base_dir: Path) -> int | None:
+    """Return the highest existing response-profile version, or None."""
+    return _latest_doc_version(base_dir, RESPONSE_DIR, RESPONSE_PREFIX, suffix=".yaml")
+
+
+def save_response_profile(
+    base_dir: Path,
+    profile: ResponseProfile,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next response-profile version as immutable YAML.
+
+    Same immutable-version audit trail as programs, but the payload is a YAML
+    ResponseProfile document (not markdown-with-frontmatter): versions are never
+    overwritten and every revision (v2+) requires a reason. The store stamps the
+    authoritative version, as_of date and reason onto the profile.
+    """
+    current = _latest_doc_version(base_dir, RESPONSE_DIR, RESPONSE_PREFIX, suffix=".yaml")
+    version = 1 if current is None else current + 1
+    if version > 1 and not reason:
+        msg = f"adapting response profile v{current} to v{version} requires a reason (audit trail)"
+        raise ValueError(msg)
+    stamped = profile.model_copy(
+        update={"version": version, "reason": reason, "as_of": today or date.today()}
+    )
+    path = _doc_path(base_dir, RESPONSE_DIR, RESPONSE_PREFIX, version, suffix=".yaml")
+    if path.exists():
+        msg = f"{path} already exists; response profile versions are immutable"
+        raise ValueError(msg)
+    _atomic_write(path, _to_yaml(stamped.model_dump(mode="json")))
+    return path, version
+
+
+def read_response_profile(base_dir: Path, version: int | None = None) -> ResponseProfile | None:
+    """Return the given or latest response profile, or None when none exists."""
+    target = (
+        version
+        if version is not None
+        else _latest_doc_version(base_dir, RESPONSE_DIR, RESPONSE_PREFIX, suffix=".yaml")
+    )
+    if target is None:
+        return None
+    path = _doc_path(base_dir, RESPONSE_DIR, RESPONSE_PREFIX, target, suffix=".yaml")
+    if not path.exists():
+        msg = f"response profile version {target} does not exist"
+        raise ValueError(msg)
+    raw = _load_yaml(path)
+    return _validated(path, lambda: ResponseProfile.model_validate(raw))
 
 
 def save_analysis(

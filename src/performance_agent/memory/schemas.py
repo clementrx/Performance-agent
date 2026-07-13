@@ -479,3 +479,84 @@ class Calendar(BaseModel):
     schema_version: Literal[1] = 1
     events: list[CalendarEvent] = Field(default_factory=list)
     recurring: list[RecurringConstraint] = Field(default_factory=list)
+
+
+# --- Individual response profile (versioned, immutable, honest about n) ----
+#
+# response/response-profile-v{N}.yaml distils the athlete's own logged response
+# into measured rates, tolerance flags and adherence. Every measured field
+# carries its sample size (n, window_weeks, r2) so a thin number is never
+# presented as solid; caveats spell out where population priors still stand in.
+
+ToleranceDirection = Literal[
+    "higher_volume_higher_fatigue", "higher_volume_lower_fatigue", "no_clear_direction"
+]
+
+
+class LiftRate(BaseModel):
+    """A measured weekly progression rate for one lift, with its sample size."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lift: str = Field(min_length=1)
+    pct_per_week: float
+    r2: float = Field(ge=0, le=1)
+    n: int = Field(ge=1)
+    window_weeks: float = Field(gt=0)
+
+
+class MeasuredRate(BaseModel):
+    """The goal's measured weekly rate (fraction/week or kg/week) with its n."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    value: float
+    n: int = Field(ge=1)
+    window_weeks: float = Field(gt=0)
+    r2: float = Field(ge=0, le=1)
+
+
+class VolumeToleranceFlag(BaseModel):
+    """A descriptive association between weekly volume and fatigue (never causal)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    direction: ToleranceDirection
+    correlation: float = Field(ge=-1, le=1)
+    n_weeks: int = Field(ge=1)
+
+
+class AdherenceQuality(BaseModel):
+    """Compliance rolled up for one quality tag."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    quality: str = Field(min_length=1)
+    done: int = Field(ge=0)
+    partial: int = Field(ge=0)
+    modified: int = Field(ge=0)
+    missed: int = Field(ge=0)
+    adherence_pct: float = Field(ge=0, le=100)
+
+
+class ResponseProfile(BaseModel):
+    """The athlete's individual response model, versioned and immutable.
+
+    per_goal_measured_rate is None until enough data exists (honesty about n);
+    caveats record every place a population prior still stands in. The store
+    stamps version/as_of/reason; a reason is mandatory from v2.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    version: int = Field(default=1, ge=1)
+    as_of: date
+    goal_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    reason: str | None = None
+    per_lift_rates: list[LiftRate] = Field(default_factory=list)
+    per_goal_measured_rate: MeasuredRate | None = None
+    volume_tolerance_flags: list[VolumeToleranceFlag] = Field(default_factory=list)
+    adherence_by_quality: list[AdherenceQuality] = Field(default_factory=list)
+    adjustment_patterns: list[str] = Field(default_factory=list)
+    caveats: list[str] = Field(default_factory=list)

@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 69 tools. If so, you're done — just talk to it.
+You should see 73 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -247,11 +247,15 @@ banding, external-load budgeting, goal feasibility, periodization waves, backwar
 season planning from a dated calendar, day-of session autoregulation
 (readiness-based adjustment, time compression, exercise substitution),
 intra-week sequencing & interference guard (heavy-pattern spacing, HIIT-before-lower
-interference, consecutive-high-day and match-window rules); 860 tests
-incl. property-based) · 69 MCP
+interference, consecutive-high-day and match-window rules), individualized
+recalibration from the athlete's own logs (measured progression rate honest about n,
+prescribed-vs-actual compliance, volume-tolerance association, a versioned response
+profile) that recomputes goal feasibility against the measured rate; 902 tests
+incl. property-based) · 73 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
-a day-of adjustment log with escalation signals, and an adaptation audit trail ·
+a day-of adjustment log with escalation signals, a versioned individual response
+profile, and an adaptation audit trail ·
 activity-file import (.fit/.tcx/.gpx/CSV) that
 proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication

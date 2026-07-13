@@ -10,7 +10,8 @@ tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         read_nutrition_frame, compute_session_load, compute_monotony_strain,
         compute_fitness_fatigue, compute_acwr, compute_readiness,
         estimate_srpe_from_hr, budget_weekly_load, import_activity_file,
-        read_session_adjustments, write_profile, upsert_calendar_event,
+        read_session_adjustments, compute_response_profile, save_response_profile,
+        compare_prescribed_actual, write_profile, upsert_calendar_event,
         remove_calendar_event]
 ---
 
@@ -122,6 +123,19 @@ After logging, scan `read_sessions` and `read_checkins` for the recent window:
   refer out to a health professional, and record the flag — the same rule
   nutrition-planning applies. The engine hard-guards the numbers; the
   conversational signals are YOURS to catch.
+
+## Recalibrate at each mesocycle end
+
+When `read_program`'s plan shows this check-in lands at (or just past) a mesocycle
+boundary or a `TestMilestone` week, recompute the athlete's response model:
+`compute_response_profile` (it reads the logs and the plan), then
+`save_response_profile` with a reason naming the milestone. Narrate the deltas that
+matter in plain language — "you're progressing at ~0.5%/week on the squat; I planned
+with the 1%/week beginner prior, so the next block will size to your measured rate".
+Where the profile still returns a null rate, say the data is thin and the population
+prior stands. Use `compare_prescribed_actual` to show the block's adherence and
+prescribed-vs-performed volume alongside it. Then route to program-adaptation so the
+next version is sized to the measured response.
 
 ## Route
 
