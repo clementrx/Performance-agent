@@ -256,8 +256,10 @@ counter) and a graded return-to-load ramp after time off (clearance-gated),
 proactive follow-up that surfaces what is due (overdue check-in, imminent race,
 missed sessions, readiness gaps, a stale response profile) severity-ordered so the
 coach speaks first, and a deterministic end-to-end simulation (no LLM) that drives
-the real engine + store across three synthetic athletes to prove the whole loop
-composes, a sport-agnostic PerformanceModel (the researched, versioned answer to
+the real engine + store across synthetic athletes — including an UNSEEDED sport
+(kayak sprint) whose hand-authored model flows through the whole pipeline exactly
+like a seeded one, proving the machine is sport-independent — to prove the whole
+loop composes, a sport-agnostic PerformanceModel (the researched, versioned answer to
 "what determines performance in this event" — trainable qualities with normalized
 weights, KPIs with level benchmarks, injury risks and energy-system split, every
 value provenance-labeled cited/prior/judgment) that drives gap analysis (measured
@@ -290,7 +292,7 @@ typed backward from the major event with per-year quality-emphasis budgets deriv
 from the gap priorities, feeding the season) and a training-residuals guard (warns
 where a maintained quality would decay past its Issurin retention window without a
 refresh);
-1223 tests
+1242 tests
 incl. property-based) · 93 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),

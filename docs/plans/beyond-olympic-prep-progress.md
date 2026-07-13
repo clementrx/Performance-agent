@@ -21,8 +21,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 6 | 5 | Load-velocity profiling & VBT autoregulation | done (merged) | `feat/phase-5-load-velocity` / PR #20 `e013009` | 1168 tests (+20); 87 tools (+1) |
 | 7 | 6 | Fitted Banister model | done (merged) | `feat/phase-6-fitted-banister` / PR #21 `4fb2438` | 1181 tests (+13); 88 tools (+1) |
 | 8 | 7 | Individual taper response & per-quality profile | done (merged) | `feat/phase-7-taper-response` / PR #22 `778a927` | 1196 tests (+15); 89 tools (+1) |
-| 9 | 8 | Multi-year planning & residuals | done | `feat/phase-8-macro-residuals` / PR pending | 1223 tests (+27); 93 tools (+4) |
-| 10 | 9 | Property tests & multi-sport e2e sim | pending | — | |
+| 9 | 8 | Multi-year planning & residuals | done (merged) | `feat/phase-8-macro-residuals` / PR #23 `62f7172` | 1223 tests (+27); 93 tools (+4) |
+| 10 | 9 | Property tests & multi-sport e2e sim | done | `feat/phase-9-multisport-sim` / PR pending | 1242 tests (+19); 93 tools (no new) |
 | 11 | 10 | Skills/docs/i18n/corpus & release prep | pending | — | |
 
 Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` when parked.
@@ -143,6 +143,17 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
   still works and wins when both are given.
 - **P8 — residual durations & macro tilts are team-chosen priors** (Issurin 2010 lands
   in the P10 corpus pass). Tool count 93 (≤95 cap; P9/P10 add no tools).
+- **P9 — new sim personas drive the memory/engine layer directly** (not via MCP
+  tools) for determinism/speed; a separate `test_new_tool_coverage.py` exercises every
+  new Phase 0-8 MCP tool through the in-process client. Personas: P4 sprinter (seeded,
+  Banister gate), P5 powerlifter (seeded, load-velocity + individual taper), P6 kayak
+  (UNSEEDED, hand-authored mixed prior/judgment model — seed-independence proof).
+- **P9 — kayak model uses prior/judgment provenance, not `cited`** (no corpus study
+  for canoe sprint; fabricating a citation would violate anti-fabrication). "Mixed
+  provenance" is satisfied by prior+judgment; `cited` is exercised in the P0 tool tests.
+- **P9 — consolidated cross-cutting property file** re-asserts load-velocity/Banister
+  recovery, selection contraindication monotonicity, and residual gap monotonicity in
+  one suite; per-module property tests remain.
 
 ## Resume notes
 
