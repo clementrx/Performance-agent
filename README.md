@@ -270,16 +270,20 @@ specificity level and qualities trained — filterable, and extensible with the
 athlete's own additions) with deterministic scored exercise selection (quality
 match × phase-appropriate specificity × equipment feasibility × contraindication
 hard-gate × novelty, ranked with a per-attribute justification), stimulus-equivalence
-substitution and a mesocycle specificity-mix guard;
-1126 tests
+substitution and a mesocycle specificity-mix guard, plus optional high-resolution
+data ingestion (velocity-based-training CSV imports as structured sets, .fit/.tcx
+rides yield power/normalized-power/cadence/lap-splits, and jump/sprint measurements
+land in the KPI log — every high-res input optional, missing data lowers stated
+resolution rather than blocking);
+1148 tests
 incl. property-based) · 86 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response
 profile, versioned performance models, a dated KPI-results log, and an adaptation
 audit trail ·
-activity-file import (.fit/.tcx/.gpx/CSV) that
-proposes a session for the athlete to confirm before logging ·
+activity-file import (.fit/.tcx/.gpx/CSV, incl. power/cadence/splits and VBT
+exports) that proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
 behind a double verification gate · twelve coaching skills incl. a mandatory delivery

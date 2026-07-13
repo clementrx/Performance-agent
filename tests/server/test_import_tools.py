@@ -55,6 +55,27 @@ async def test_import_hrv_csv_returns_readings(client):
 
 
 @pytest.mark.anyio
+async def test_import_ride_surfaces_power_and_splits(client):
+    result = await client.call_tool("import_activity_file", {"path": str(FIXTURES / "ride.tcx")})
+    proposal = result.structuredContent
+    assert proposal["kind"] == "activity"
+    assert proposal["summary"]["avg_watts"] == pytest.approx(220.0)
+    assert proposal["summary"]["avg_cadence"] == pytest.approx(90.0)
+    assert len(proposal["summary"]["splits"]) == 2
+
+
+@pytest.mark.anyio
+async def test_import_vbt_csv_returns_sets(client):
+    result = await client.call_tool("import_activity_file", {"path": str(FIXTURES / "vbt.csv")})
+    proposal = result.structuredContent
+    assert proposal["kind"] == "vbt"
+    assert proposal["needs_srpe"] is True
+    sets = proposal["proposed_session"]["vbt_sets"]
+    assert len(sets) == 3
+    assert sets[0]["mean_velocity"] == pytest.approx(0.75)
+
+
+@pytest.mark.anyio
 async def test_malformed_file_returns_a_readable_error(client):
     result = await client.call_tool(
         "import_activity_file", {"path": str(FIXTURES / "malformed.fit")}
