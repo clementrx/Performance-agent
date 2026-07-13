@@ -70,6 +70,24 @@ not the athlete names the problem.
      `sprint_split` for a timed split (value = seconds). `kpi_id` links to a model
      KPI when one matches, else leave it null. One entry per measured value; these
      feed gap analysis and the response profile.
+3e. **Session-log carnet paste-back — the zero-friction path.** When the athlete
+   pastes a block starting with `📋 LOG — <label>` (the fill-in carnet the
+   program ships), parse it in one shot instead of interrogating set by set:
+   - **The Douleur line wins first.** If `Douleur (…)` is anything but `non` (or
+     any pain is written), STOP — do not log a normal session over a safety
+     signal. Ask which movement, apply the RED FLAG rules, and route to
+     program-adaptation before anything else.
+   - Otherwise parse each non-empty exercise line into sets. Per token:
+     `poids×reps` (`x`/`×`/`*`, decimals ok) → `{load_kg, reps}`; a bare number →
+     reps at bodyweight (`load_kg=0`); `Ns` → an N-second hold, kept in that
+     exercise's `notes` (never fabricate reps/load for a hold). Dumbbell loads are
+     per arm. A unilateral exercise's rep count is per side. An empty exercise line
+     = not done, skip it. Match names to the active program's exercises.
+   - `performed_at` from `Date:`, `rpe` from `RPE séance:`, `Notes:` into the
+     session notes, `session_plan_id` from the `<label>`, `source="programmed"`.
+   - **Confirm in one line before writing** — "6 exos, 22 sets, RPE 8 — je
+     logue ?" — then `log_session`. Never a silent log. A block that is ambiguous
+     or unparseable → ask, do not guess the numbers.
 4. `log_checkin` with what you collected. Quote the stored days_since_last back.
    If any session this window carried an implausibility flag on `log_session`,
    confirm the value with the athlete before you treat it as fact.

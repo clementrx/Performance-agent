@@ -45,8 +45,15 @@ Notes:
 - `22x9` = 22 kg, 9 reps.
 - Séparateurs de multiplication acceptés : `x`, `×`, `*`.
 - Décimales autorisées pour la charge : `11.3x15`.
+- **Poids du corps** (bird dog, dead bug…) : nombre seul = reps au poids du
+  corps. `10 10 10` = 3 séries de 10 reps, charge 0.
+- **Isométrie** (planches, gainage latéral) : `Ns` = tenue de N secondes.
+  `30s 35s 30s` = 3 tenues. Logué avec la durée en `notes` de l'exercice
+  (pas de reps/charge inventés).
 - Ligne d'exercice laissée vide = exercice non réalisé (non logué).
 - Charges haltères = **charge par bras** (cohérent avec les logs existants).
+- Suffixe `/côté` implicite : pour un exercice unilatéral, un seul nombre de
+  reps vaut « par côté » (le programme porte déjà la mention).
 
 **Champs d'en-tête :**
 

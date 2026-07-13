@@ -56,7 +56,9 @@ performance-coach ritual routes here.
    / equipment / manual, the `inputs`, the `deltas_summary` the engine returned,
    `applied` = whether the athlete took it). This is NOT `log_session` (that is for a
    completed session, later) and it is NOT a program version. When the session is done,
-   the athlete logs it normally via training-checkin's `log_session`.
+   the athlete logs it normally via training-checkin's `log_session` — including by
+   pasting back the program's `📋 LOG` carnet block (parse it per the training-checkin
+   paste-back rule: Douleur line first, `poids×reps` per set, confirm before logging).
 
 ## Escalation (the plan no longer fits the life)
 
