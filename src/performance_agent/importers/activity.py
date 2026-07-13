@@ -42,6 +42,27 @@ class ActivityImportError(ValueError):
     """A file could not be parsed into an activity (bad format or missing data)."""
 
 
+_NP_WINDOW_S = 30  # normalized-power rolling window (Coggan), assumes ~1s records
+_NP_EXPONENT = 4
+
+
+@dataclass(frozen=True)
+class LapSplit:
+    """One lap's distance and duration (either may be None when the file omits it)."""
+
+    distance_m: float | None
+    duration_s: float | None
+
+
+@dataclass(frozen=True)
+class PowerSummary:
+    """Power/cadence summary parsed from a ride (any field None when absent)."""
+
+    avg_watts: float | None
+    normalized_watts: float | None
+    avg_cadence: float | None
+
+
 @dataclass(frozen=True)
 class ParsedActivity:
     """A normalized activity summary; any field may be None when absent from the file."""
@@ -51,6 +72,33 @@ class ParsedActivity:
     duration_s: float | None
     distance_m: float | None
     avg_hr: float | None
+    splits: tuple[LapSplit, ...] = ()
+    power: PowerSummary | None = None
+
+
+def _normalized_power(powers: list[float]) -> float | None:
+    """Coggan normalized power: 4th-power mean of the 30s rolling average."""
+    if len(powers) < _NP_WINDOW_S:
+        return None
+    rolling: list[float] = []
+    window_sum = sum(powers[:_NP_WINDOW_S])
+    rolling.append(window_sum / _NP_WINDOW_S)
+    for i in range(_NP_WINDOW_S, len(powers)):
+        window_sum += powers[i] - powers[i - _NP_WINDOW_S]
+        rolling.append(window_sum / _NP_WINDOW_S)
+    fourth = sum(value**_NP_EXPONENT for value in rolling) / len(rolling)
+    return fourth ** (1 / _NP_EXPONENT)
+
+
+def _power_summary(
+    avg_power: float | None, powers: list[float], cadences: list[float]
+) -> PowerSummary | None:
+    normalized = _normalized_power(powers) if powers else None
+    mean_power = avg_power if avg_power is not None else _mean(powers)
+    mean_cadence = _mean(cadences)
+    if mean_power is None and normalized is None and mean_cadence is None:
+        return None
+    return PowerSummary(avg_watts=mean_power, normalized_watts=normalized, avg_cadence=mean_cadence)
 
 
 @dataclass(frozen=True)
@@ -103,36 +151,86 @@ def parse_activity_file(path: Path) -> ParsedActivity:
     return parser(path)
 
 
-def _parse_fit(path: Path) -> ParsedActivity:
+_FIT_SESSION_FIELDS = (
+    "start_time",
+    "total_elapsed_time",
+    "total_distance",
+    "avg_heart_rate",
+    "avg_power",
+    "normalized_power",
+    "avg_cadence",
+    "sport",
+)
+_FIT_RECORD_FIELDS = ("timestamp", "distance", "heart_rate", "power", "cadence")
+_FIT_LAP_FIELDS = ("total_distance", "total_elapsed_time")
+
+
+def _read_fit_frames(
+    path: Path,
+) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]]]:
+    """Read a FIT file into its (first session, laps, records) messages."""
     session: dict[str, object] = {}
     records: list[dict[str, object]] = []
+    laps: list[dict[str, object]] = []
     try:
         with fitdecode.FitReader(str(path)) as reader:
             for frame in reader:
                 if not isinstance(frame, fitdecode.FitDataMessage):
                     continue
                 if frame.name == "session" and not session:
-                    session = _fit_fields(
-                        frame,
-                        (
-                            "start_time",
-                            "total_elapsed_time",
-                            "total_distance",
-                            "avg_heart_rate",
-                            "sport",
-                        ),
-                    )
+                    session = _fit_fields(frame, _FIT_SESSION_FIELDS)
+                elif frame.name == "lap":
+                    laps.append(_fit_fields(frame, _FIT_LAP_FIELDS))
                 elif frame.name == "record":
-                    records.append(_fit_fields(frame, ("timestamp", "distance", "heart_rate")))
+                    records.append(_fit_fields(frame, _FIT_RECORD_FIELDS))
     except fitdecode.FitError as exc:
         msg = f"'{path.name}' is not a readable FIT file: {exc}"
         raise ActivityImportError(msg) from exc
+    return session, laps, records
+
+
+def _parse_fit(path: Path) -> ParsedActivity:
+    session, laps, records = _read_fit_frames(path)
+    splits = _fit_splits(laps)
+    power = _fit_power(session, records)
     if session:
-        return _activity_from_fit_session(session)
+        return _activity_from_fit_session(session, splits, power)
     if records:
-        return _activity_from_fit_records(records)
+        return _activity_from_fit_records(records, splits, power)
     msg = f"'{path.name}' has no session or record data to import"
     raise ActivityImportError(msg)
+
+
+def _fit_splits(laps: list[dict[str, object]]) -> tuple[LapSplit, ...]:
+    return tuple(
+        LapSplit(
+            distance_m=_as_float(lap.get("total_distance")),
+            duration_s=_as_float(lap.get("total_elapsed_time")),
+        )
+        for lap in laps
+    )
+
+
+def _fit_power(session: dict[str, object], records: list[dict[str, object]]) -> PowerSummary | None:
+    powers = [p for r in records if (p := _as_float(r.get("power"))) is not None]
+    cadences = [c for r in records if (c := _as_float(r.get("cadence"))) is not None]
+    summary = _power_summary(_as_float(session.get("avg_power")), powers, cadences)
+    session_np = _as_float(session.get("normalized_power"))
+    session_cadence = _as_float(session.get("avg_cadence"))
+    if summary is None:
+        if session_np is None and session_cadence is None:
+            return None
+        return PowerSummary(
+            avg_watts=_as_float(session.get("avg_power")),
+            normalized_watts=session_np,
+            avg_cadence=session_cadence,
+        )
+    # Prefer the device's own NP/cadence when the session message carries them.
+    return PowerSummary(
+        avg_watts=summary.avg_watts,
+        normalized_watts=session_np if session_np is not None else summary.normalized_watts,
+        avg_cadence=session_cadence if session_cadence is not None else summary.avg_cadence,
+    )
 
 
 def _fit_fields(frame: fitdecode.FitDataMessage, names: tuple[str, ...]) -> dict[str, object]:
@@ -145,7 +243,9 @@ def _as_float(value: object) -> float | None:
     return None
 
 
-def _activity_from_fit_session(session: dict[str, object]) -> ParsedActivity:
+def _activity_from_fit_session(
+    session: dict[str, object], splits: tuple[LapSplit, ...], power: PowerSummary | None
+) -> ParsedActivity:
     start = session.get("start_time")
     sport = session.get("sport")
     return ParsedActivity(
@@ -154,10 +254,14 @@ def _activity_from_fit_session(session: dict[str, object]) -> ParsedActivity:
         duration_s=_as_float(session.get("total_elapsed_time")),
         distance_m=_as_float(session.get("total_distance")),
         avg_hr=_as_float(session.get("avg_heart_rate")),
+        splits=splits,
+        power=power,
     )
 
 
-def _activity_from_fit_records(records: list[dict[str, object]]) -> ParsedActivity:
+def _activity_from_fit_records(
+    records: list[dict[str, object]], splits: tuple[LapSplit, ...], power: PowerSummary | None
+) -> ParsedActivity:
     times = [r["timestamp"] for r in records if isinstance(r.get("timestamp"), datetime)]
     distances = [d for r in records if (d := _as_float(r.get("distance"))) is not None]
     hrs = [h for r in records if (h := _as_float(r.get("heart_rate"))) is not None]
@@ -168,6 +272,8 @@ def _activity_from_fit_records(records: list[dict[str, object]]) -> ParsedActivi
         duration_s=duration,
         distance_m=max(distances) if distances else None,
         avg_hr=sum(hrs) / len(hrs) if hrs else None,
+        splits=splits,
+        power=power,
     )
 
 
@@ -200,13 +306,36 @@ def _parse_tcx(path: Path) -> ParsedActivity:
     ]
     id_node = activity.find(f"{_TCX_NS}Id")
     start = _parse_iso(id_node.text) if id_node is not None and id_node.text else None
+    splits = tuple(
+        LapSplit(
+            distance_m=_child_float(lap, f"{_TCX_NS}DistanceMeters"),
+            duration_s=_child_float(lap, f"{_TCX_NS}TotalTimeSeconds"),
+        )
+        for lap in laps
+    )
     return ParsedActivity(
         sport=activity.get("Sport"),
         start_time=start,
         duration_s=_sum_present(durations),
         distance_m=_sum_present(distances),
         avg_hr=_mean(hrs),
+        splits=splits,
+        power=_tcx_power(laps),
     )
+
+
+def _tcx_power(laps: list[ET.Element]) -> PowerSummary | None:
+    """Average watts/cadence from TCX laps (Cadence element, extension AvgWatts)."""
+    cadences = [c for lap in laps if (c := _child_float(lap, f"{_TCX_NS}Cadence")) is not None]
+    watts = [
+        w
+        for lap in laps
+        for ext in lap.iter()
+        if ext.tag.rsplit("}", 1)[-1] == "AvgWatts" and (w := _to_float(ext.text or "")) is not None
+    ]
+    if not cadences and not watts:
+        return None
+    return PowerSummary(avg_watts=_mean(watts), normalized_watts=None, avg_cadence=_mean(cadences))
 
 
 def _child_float(node: ET.Element | None, tag: str) -> float | None:

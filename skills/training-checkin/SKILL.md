@@ -10,6 +10,7 @@ tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
         read_nutrition_frame, compute_session_load, compute_monotony_strain,
         compute_fitness_fatigue, compute_acwr, compute_readiness,
         estimate_srpe_from_hr, budget_weekly_load, import_activity_file,
+        log_kpi_result,
         recommend_deload, read_session_adjustments, compute_response_profile,
         save_response_profile,
         compare_prescribed_actual, write_profile, upsert_calendar_event,
@@ -55,6 +56,20 @@ not the athlete names the problem.
    For an HRV CSV the proposal returns dated readings; collect the four Hooper
    items for each before `log_readiness`. A malformed file returns a readable
    error — tell the athlete what to re-export, never guess the numbers.
+3d. **High-resolution measurements — only when the athlete has the hardware.**
+   Check `read_athlete`'s `equipment_sensors`. When it lists them, raise the data
+   ceiling; when it is empty, skip this entirely (zero new friction). With the
+   hardware present:
+   - **VBT** (bar sensor): a VBT CSV export imports through `import_activity_file`
+     too — the proposal returns structured `vbt_sets` (load, mean velocity, reps) on
+     a session to confirm and `log_session`. A ride's `.fit`/`.tcx` now also surfaces
+     power (avg/normalized watts), cadence and lap splits in the proposal summary.
+   - **Jumps and sprints** (force plate, jump mat, timing gates): log each measured
+     value with `log_kpi_result` — protocol `cmj` for a countermovement jump
+     (value = height in cm; put jump type/RSI/conditions in `context`), protocol
+     `sprint_split` for a timed split (value = seconds). `kpi_id` links to a model
+     KPI when one matches, else leave it null. One entry per measured value; these
+     feed gap analysis and the response profile.
 4. `log_checkin` with what you collected. Quote the stored days_since_last back.
    If any session this window carried an implausibility flag on `log_session`,
    confirm the value with the athlete before you treat it as fact.

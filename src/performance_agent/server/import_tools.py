@@ -33,6 +33,13 @@ class MatchView(TypedDict):
     rationale: str
 
 
+class SplitView(TypedDict):
+    """One lap split parsed from the activity."""
+
+    distance_m: float | None
+    duration_s: float | None
+
+
 class ActivitySummaryView(TypedDict):
     """The raw values parsed from the file, before matching or estimation."""
 
@@ -41,6 +48,10 @@ class ActivitySummaryView(TypedDict):
     duration_min: int | None
     distance_m: float | None
     avg_hr: float | None
+    avg_watts: float | None
+    normalized_watts: float | None
+    avg_cadence: float | None
+    splits: list[SplitView]
 
 
 class HrvReadingView(TypedDict):
@@ -71,12 +82,19 @@ class ActivityImportProposal(TypedDict):
 
 
 def _summary(activity: ParsedActivity, session: SessionEntry) -> ActivitySummaryView:
+    power = activity.power
     return ActivitySummaryView(
         sport=activity.sport,
         start_time=activity.start_time.isoformat() if activity.start_time else None,
         duration_min=session.duration_min,
         distance_m=activity.distance_m,
         avg_hr=activity.avg_hr,
+        avg_watts=power.avg_watts if power else None,
+        normalized_watts=power.normalized_watts if power else None,
+        avg_cadence=power.avg_cadence if power else None,
+        splits=[
+            SplitView(distance_m=s.distance_m, duration_s=s.duration_s) for s in activity.splits
+        ],
     )
 
 
@@ -118,23 +136,42 @@ def _hrv_proposal(readings: list[HrvReading]) -> ActivityImportProposal:
     )
 
 
+def _vbt_proposal(session: SessionProposal) -> ActivityImportProposal:
+    return ActivityImportProposal(
+        kind="vbt",
+        confirm=_CONFIRM,
+        proposed_session=session.entry,
+        match=MatchView(source="external", session_plan_id=None, rationale=session.rationale),
+        srpe_estimated=False,
+        needs_srpe=session.needs_srpe,
+        flags=session.flags,
+        proposed_readiness=[],
+        summary=None,
+    )
+
+
 def import_activity_file(path: str) -> ActivityImportProposal:
     """Parse an activity file and PROPOSE a session to confirm (never logs it).
 
-    Supports .fit (binary), .tcx/.gpx (XML) and .csv (Garmin/Strava summary, or
-    an HRV export). Extracts duration, distance and average HR; matches the
-    activity to today's planned session by duration/distance proximity
+    Supports .fit (binary), .tcx/.gpx (XML) and .csv (Garmin/Strava summary, an
+    HRV export, or a VBT export). Extracts duration, distance, average HR and —
+    where present — power (avg/normalized watts), cadence and lap splits; matches
+    the activity to today's planned session by duration/distance proximity
     (source="programmed" + session_plan_id) or falls back to source="external";
-    estimates session-RPE from average HR when present (needs_srpe=true means
-    ask the athlete). An HRV CSV returns dated readings for readiness instead.
-    The athlete MUST confirm before you log anything: call log_session (or
-    log_readiness for HRV, after collecting the Hooper items). Malformed files
-    return a readable error.
+    estimates session-RPE from average HR when present (needs_srpe=true means ask
+    the athlete). An HRV CSV returns dated readings for readiness; a VBT CSV
+    returns a proposed session carrying structured vbt_sets. The athlete MUST
+    confirm before you log anything: call log_session (or log_readiness for HRV,
+    after collecting the Hooper items). Malformed files return a readable error.
     """
     proposal = propose_import(resolve_athlete_dir(), Path(path).expanduser())
-    if proposal.session is None or proposal.activity is None:
+    if proposal.kind == "hrv":
         return _hrv_proposal(proposal.hrv_readings)
-    return _activity_proposal(proposal.activity, proposal.session)
+    if proposal.kind == "vbt" and proposal.session is not None:
+        return _vbt_proposal(proposal.session)
+    if proposal.activity is not None and proposal.session is not None:
+        return _activity_proposal(proposal.activity, proposal.session)
+    return _hrv_proposal(proposal.hrv_readings)
 
 
 def register(mcp: FastMCP) -> None:

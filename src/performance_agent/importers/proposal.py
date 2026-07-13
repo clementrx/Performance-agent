@@ -19,9 +19,16 @@ from performance_agent.importers.activity import (
     parse_activity_file,
     parse_hrv_csv,
 )
+from performance_agent.importers.vbt_csv import looks_like_vbt_csv, parse_vbt_csv
 from performance_agent.memory import monitoring, store
 from performance_agent.memory.monitoring import PlausibilityFlag
-from performance_agent.memory.schemas import Profile, ProgramPlan, SessionEntry, SessionPlan
+from performance_agent.memory.schemas import (
+    Profile,
+    ProgramPlan,
+    SessionEntry,
+    SessionPlan,
+    VbtSet,
+)
 
 # Team-chosen priors (no cohort tuning):
 _MATCH_TOLERANCE = 0.20  # mean relative duration/distance error to accept a plan match
@@ -49,26 +56,51 @@ class SessionProposal:
 
 @dataclass(frozen=True)
 class ImportProposal:
-    """The full import proposal: either a session or a batch of HRV readings."""
+    """The full import proposal: a session, a batch of HRV readings, or VBT sets."""
 
-    kind: Literal["activity", "hrv"]
+    kind: Literal["activity", "hrv", "vbt"]
     activity: ParsedActivity | None = None
     session: SessionProposal | None = None
     hrv_readings: list[HrvReading] = field(default_factory=list)
+    vbt_sets: list[VbtSet] = field(default_factory=list)
 
 
 def propose_import(base_dir: Path, path: Path, today: date | None = None) -> ImportProposal:
     """Parse a file and build a confirmable proposal (never writes anything).
 
-    A .csv that carries HRV but no activity columns becomes an HRV proposal
-    (dated rMSSD readings for readiness.jsonl); everything else becomes a
-    session proposal matched against the active program.
+    A .csv carrying HRV (and no activity columns) becomes an HRV proposal; a .csv
+    with VBT columns (exercise/load/velocity/reps) becomes a VBT proposal (a
+    proposed session carrying vbt_sets); everything else becomes a session
+    proposal matched against the active program.
     """
-    if path.suffix.casefold() == ".csv" and looks_like_hrv_csv(path):
-        return ImportProposal(kind="hrv", hrv_readings=parse_hrv_csv(path))
+    if path.suffix.casefold() == ".csv":
+        if looks_like_hrv_csv(path):
+            return ImportProposal(kind="hrv", hrv_readings=parse_hrv_csv(path))
+        if looks_like_vbt_csv(path):
+            return _propose_vbt(path, today)
     activity = parse_activity_file(path)
     session = _propose_session(base_dir, activity, today)
     return ImportProposal(kind="activity", activity=activity, session=session)
+
+
+def _propose_vbt(path: Path, today: date | None) -> ImportProposal:
+    vbt_sets = parse_vbt_csv(path)
+    entry = SessionEntry(
+        performed_at=datetime.combine(today or date.today(), time(12, 0)),
+        kind="vbt_session",
+        source="external",
+        vbt_sets=vbt_sets,
+        notes=f"imported VBT session ({len(vbt_sets)} sets)",
+    )
+    session = SessionProposal(
+        entry=entry,
+        source="external",
+        session_plan_id=None,
+        rationale="VBT export: confirm the sets and the session RPE before logging",
+        srpe_estimated=False,
+        needs_srpe=True,
+    )
+    return ImportProposal(kind="vbt", session=session, vbt_sets=vbt_sets)
 
 
 def _propose_session(

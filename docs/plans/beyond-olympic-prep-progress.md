@@ -16,8 +16,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 1 | 0 | PerformanceModel schemas, store & tools | done (merged) | `feat/phase-0-performance-model` / PR #15 `55718c9` | 1043 tests (+27); 78 tools (+2) |
 | 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | done (merged) | `feat/phase-1-gaps-kpi-battery` / PR #16 `51b5496` | 1083 tests (+40); 82 tools (+4); 4 seed models |
 | 3 | 2 | Exercise ontology & libraries | done (merged) | `feat/phase-2-exercise-ontology` / PR #17 `0a8048d` | 1097 tests (+14); 84 tools (+2); 123 seed exercises |
-| 4 | 3 | Selection engine & specificity guard | done | `feat/phase-3-selection-engine` / PR pending | 1126 tests (+29); 86 tools (+2) |
-| 5 | 4 | High-resolution ingestion | pending | — | |
+| 4 | 3 | Selection engine & specificity guard | done (merged) | `feat/phase-3-selection-engine` / PR #18 `daf6215` | 1126 tests (+29); 86 tools (+2) |
+| 5 | 4 | High-resolution ingestion | done | `feat/phase-4-highres-ingestion` / PR pending | 1148 tests (+22); 86 tools (import extended, no new) |
 | 6 | 5 | Load-velocity profiling & VBT autoregulation | pending | — | |
 | 7 | 6 | Fitted Banister model | pending | — | |
 | 8 | 7 | Individual taper response & per-quality profile | pending | — | |
@@ -85,6 +85,20 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P3 — selection-layer domain logic in `memory/exercise_library.py`** (scoring,
   stimulus substitution, program-specificity), keeping engine pure in
   `engine/exercise_selection.py` + `engine/specificity.py`.
+- **P4 — no standalone `JumpTestResult`/`SplitSeries` pydantic models.** Jumps/
+  sprints log through the existing `KpiResult` (protocol `cmj`/`sprint_split`,
+  value + `context`) — "carried as the context payload" per the plan; power/splits
+  live on the `ParsedActivity` dataclass and the import proposal, not stored on
+  `SessionEntry` (the plan's data layout adds only `vbt_sets` to sessions). No
+  phantom schemas.
+- **P4 — FIT power/lap extraction unit-tested at the helper level** (`_fit_power`,
+  `_fit_splits`, `_normalized_power`, `_power_summary`) plus a full TCX-ride
+  end-to-end fixture (`ride.tcx`); a hand-encoded power/lap FIT binary fixture was
+  skipped as low-value given the helpers carry the logic. `.fit` session/record
+  reading stays covered by the existing `run.fit` fixture.
+- **P4 — VBT CSV importer reuses `activity.py`'s `_read_csv_rows`/`_to_float`**;
+  no new MCP tool (import_activity_file extended to detect VBT and return a `vbt`
+  proposal). Tool count stays 86.
 
 ## Resume notes
 

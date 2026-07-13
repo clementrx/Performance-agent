@@ -91,6 +91,35 @@ class ExercisePerformed(BaseModel):
     notes: str | None = None
 
 
+_MAX_VELOCITY_MPS = 10.0
+
+
+class VbtSet(BaseModel):
+    """One set with velocity-based training data (a set-level optional input).
+
+    mean_velocity is the mean concentric velocity (m/s); top_velocity the peak.
+    rep_velocities carries per-rep mean velocities when the device exports them.
+    Optional throughout so a session logged without VBT stays valid.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    exercise: str = Field(min_length=1)
+    load_kg: float = Field(ge=0, le=1000)
+    mean_velocity: float = Field(gt=0, le=10)
+    reps: int = Field(ge=1, le=100)
+    top_velocity: float | None = Field(default=None, gt=0, le=10)
+    rep_velocities: list[float] | None = None
+
+    @field_validator("rep_velocities")
+    @classmethod
+    def _rep_velocities_positive(cls, value: list[float] | None) -> list[float] | None:
+        if value is not None and any(not 0 < v <= _MAX_VELOCITY_MPS for v in value):
+            msg = f"rep_velocities must each be in (0, {_MAX_VELOCITY_MPS}] m/s, got {value}"
+            raise ValueError(msg)
+        return value
+
+
 CalendarType = Literal["single_deadline", "recurring_fixtures", "open_ended"]
 
 
@@ -126,6 +155,9 @@ class Profile(BaseModel):
     body_fat_pct: float | None = Field(default=None, ge=3, le=60)
     calendar_type: CalendarType | None = None
     split_preferences: list[str] = Field(default_factory=list)
+    # Measurement hardware the athlete has (e.g. vbt, force_plate, timing_gates,
+    # power_meter) — raises the coaching data ceiling when present, ignored when not.
+    equipment_sensors: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 
@@ -167,6 +199,7 @@ class SessionEntry(BaseModel):
         default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64
     )
     avg_hr: float | None = Field(default=None, gt=0, le=230)
+    vbt_sets: list[VbtSet] = Field(default_factory=list)
     notes: str | None = None
 
     _naive_performed_at = field_validator("performed_at")(staticmethod(_require_naive))
@@ -293,7 +326,15 @@ MesocyclePhase = Literal[
     "taper",
     "return_to_load",
 ]
-TestProtocol = Literal["amrap_rir1", "timetrial", "one_rm_test"]
+TestProtocol = Literal[
+    "amrap_rir1",
+    "timetrial",
+    "one_rm_test",
+    "cmj",
+    "sprint_split",
+    "vbt_profile",
+    "ftp",
+]
 BlockPriority = Literal["primary", "secondary", "optional"]
 
 # A block prescribes intensity through exactly one of these channels; setting
