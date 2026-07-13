@@ -18,7 +18,6 @@ from performance_agent.engine import (
     InseasonWeek,
     PeakingWeek,
     ProgressionDecision,
-    SeasonModality,
     ToleranceAdjustment,
     TopSetBackoff,
     TrainingAge,
@@ -48,7 +47,6 @@ from performance_agent.engine import (
     prescribe_energy_target,
     readiness_score,
     recalibrated_feasibility,
-    recommend_taper_length,
     riegel_predict,
     rir_from_rpe,
     session_rpe_load,
@@ -170,12 +168,6 @@ class RirValue(TypedDict):
     rir: float
 
 
-class TaperLength(TypedDict):
-    """Recommended taper length in days."""
-
-    taper_days: int
-
-
 class MeasuredView(TypedDict):
     """The measured-rate half of a recalibrated verdict (null when no rate given)."""
 
@@ -230,22 +222,6 @@ def _measured_view(
         probability=result.probability,
         small_n=result.small_n,
     )
-
-
-def recommend_taper(
-    buildup_weeks: int,
-    modality: SeasonModality,
-    event_priority: Literal["A", "B", "C"],
-) -> TaperLength:
-    """Recommend a taper length in days (4-14) before a competition.
-
-    Endurance events taper longest and strength shortest (corpus taper
-    meta-analysis, tapering-performance-meta-2007); a short buildup shortens
-    it, and a B event gets a mini-taper (never a full one). modality is
-    strength, endurance or mixed; buildup_weeks is the weeks of loading before
-    the taper (non-negative). Returns days, clamped to [4, 14].
-    """
-    return TaperLength(taper_days=recommend_taper_length(buildup_weeks, modality, event_priority))
 
 
 def _goal_assessment(
@@ -1008,7 +984,6 @@ def register(mcp: FastMCP) -> None:
         prescribe_top_set_backoff,
         prescribe_wave_loading,
         convert_rpe_to_rir,
-        recommend_taper,
         recommend_deload,
         build_return_progression,
     ):

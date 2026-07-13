@@ -12,6 +12,7 @@ from performance_agent.server import (
     performance_tools,
     report_tools,
     response_tools,
+    taper_tools,
 )
 
 mcp = FastMCP("performance-agent")
@@ -24,6 +25,7 @@ import_tools.register(mcp)
 response_tools.register(mcp)
 performance_tools.register(mcp)
 exercise_tools.register(mcp)
+taper_tools.register(mcp)
 
 
 def main() -> None:

@@ -581,6 +581,25 @@ class AdherenceQuality(BaseModel):
     adherence_pct: float = Field(ge=0, le=100)
 
 
+class QualityRate(BaseModel):
+    """A measured weekly progression rate for one trainable quality, keyed via a KPI.
+
+    Linked to the quality through its KPI (KpiSpec.quality); pct_per_week is the
+    least-squares slope as a fraction of the first fitted value (negative when the
+    KPI improves by getting smaller, e.g. a sprint time). Carries its sample size.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    # A trainable-quality name (validated as PerformanceQuality upstream on the KPI).
+    quality: str = Field(min_length=1)
+    kpi_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    pct_per_week: float
+    r2: float = Field(ge=0, le=1)
+    n: int = Field(ge=1)
+    window_weeks: float = Field(gt=0)
+
+
 class BanisterParams(BaseModel):
     """Fitted two-component Banister impulse-response params (honest about fit quality).
 
@@ -616,12 +635,14 @@ class ResponseProfile(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[1] = 1
+    # v2 (Phase 7) adds per_quality_rates; v1 profiles stay readable (field defaults empty).
+    schema_version: Literal[1, 2] = 2
     version: int = Field(default=1, ge=1)
     as_of: date
     goal_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
     reason: str | None = None
     per_lift_rates: list[LiftRate] = Field(default_factory=list)
+    per_quality_rates: list[QualityRate] = Field(default_factory=list)
     per_goal_measured_rate: MeasuredRate | None = None
     volume_tolerance_flags: list[VolumeToleranceFlag] = Field(default_factory=list)
     adherence_by_quality: list[AdherenceQuality] = Field(default_factory=list)
