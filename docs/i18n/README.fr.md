@@ -98,7 +98,7 @@ relancez `claude`.
 > Liste les outils performance-agent.
 ```
 
-Vous devez voir 47 outils. Si oui, c'est terminé — parlez-lui, tout simplement.
+Vous devez voir 76 outils. Si oui, c'est terminé — parlez-lui, tout simplement.
 
 ## Comment l'utiliser, pas à pas
 
@@ -260,14 +260,25 @@ fait. L'agent que vous utilisez déjà assemble le tout avec votre abonnement ex
 **zéro coût LLM supplémentaire**.
 
 **Disponible aujourd'hui :** moteur déterministe (estimation de 1RM, prédiction de
-course de Riegel, charge session-RPE & ACWR, faisabilité d'objectif, vagues de
-périodisation ; 597 tests dont des tests par propriétés) · 47 outils MCP · mémoire
-athlète en fichiers avec programmes versionnés et journal d'audit des adaptations ·
-corpus de preuves vérifiées par DOI/PMID/ISBN avec contrôle anti-fabrication des
-citations · recherche bibliographique en direct (PubMed, OpenAlex, Crossref, Semantic
-Scholar) derrière une double vérification · onze compétences de coaching dont un
-portail de livraison obligatoire avec contre-expertise adversariale · rapports PDF
-Typst (en/fr/es) derrière un verrou strict de citations.
+course de Riegel, charge session-RPE & ACWR, monotonie/contrainte, forme-fatigue
+CTL/ATL/TSB, classement de readiness, budgétisation de charge externe, faisabilité
+d'objectif, vagues de périodisation, planification de saison à rebours depuis un
+calendrier daté, autorégulation de séance le jour même (ajustement selon la readiness,
+compression du temps, substitution d'exercices), séquençage intra-semaine & garde-fou
+d'interférence, recalibrage individualisé à partir des journaux de l'athlète (taux de
+progression mesuré honnête sur n, conformité prescrit-vs-réalisé, tolérance au volume,
+profil de réponse versionné) qui recalcule la faisabilité, recommandations de décharge
+fondées sur les données et rampe progressive de retour à la charge après une coupure,
+suivi proactif qui fait remonter ce qui est dû, et une simulation déterministe de bout
+en bout (sans LLM) ; 1016 tests dont des tests par propriétés) · 76 outils MCP ·
+mémoire athlète en fichiers avec calendrier de saison, journaux de readiness,
+programmes versionnés lisibles par machine, journal d'ajustements du jour, profil de
+réponse versionné et journal d'audit des adaptations · import de fichiers d'activité
+(.fit/.tcx/.gpx/CSV) · corpus de preuves vérifiées par DOI/PMID/ISBN avec contrôle
+anti-fabrication des citations · recherche bibliographique en direct (PubMed, OpenAlex,
+Crossref, Semantic Scholar) derrière une double vérification · douze compétences de
+coaching dont un portail de livraison obligatoire avec contre-expertise adversariale ·
+rapports PDF Typst (en/fr/es) derrière un verrou strict de citations.
 
 **Feuille de route :** corpus étendu vers ~200 études · simulation de résultats
 (Banister + Monte Carlo) · nouvelles verticales sportives (outils moteur spécifiques

@@ -97,7 +97,7 @@ esegui di nuovo `claude`.
 > Elenca gli strumenti di performance-agent.
 ```
 
-Dovresti vedere 47 strumenti. Se sì, hai finito — parlagli e basta.
+Dovresti vedere 76 strumenti. Se sì, hai finito — parlagli e basta.
 
 ## Come usarlo, passo dopo passo
 
@@ -258,14 +258,25 @@ possiedono ogni fatto. L'agente che già usi mette tutto insieme con il tuo abbo
 esistente — **zero costi LLM aggiuntivi**.
 
 **Disponibile oggi:** motore deterministico (stima dell'1RM, previsione di gara di
-Riegel, carico session-RPE e ACWR, fattibilità degli obiettivi, onde di
-periodizzazione; 597 test incl. property-based) · 47 strumenti MCP · memoria atleta su
-file con programmi versionati e registro di audit degli adattamenti · corpus di
-evidenze verificate via DOI/PMID/ISBN con controllo anti-fabbricazione delle
-citazioni · ricerca di evidenze in tempo reale (PubMed, OpenAlex, Crossref, Semantic
-Scholar) dietro doppia verifica · undici skill di coaching incl. un gate di consegna
-obbligatorio con seconda opinione avversariale · report PDF Typst (en/fr/es) dietro un
-blocco rigido delle citazioni.
+Riegel, carico session-RPE e ACWR, monotonia/strain, forma-fatica CTL/ATL/TSB,
+classificazione della readiness, budget del carico esterno, fattibilità degli
+obiettivi, onde di periodizzazione, pianificazione della stagione a ritroso da un
+calendario con date, autoregolazione della seduta in giornata (aggiustamento in base
+alla readiness, compressione del tempo, sostituzione degli esercizi), sequenziamento
+intra-settimana e guardia sulle interferenze, ricalibrazione individualizzata dai log
+dell'atleta (tasso di progressione misurato onesto su n, conformità prescritto-vs-reale,
+tolleranza al volume, profilo di risposta versionato) che ricalcola la fattibilità,
+raccomandazioni di scarico basate sui dati e rampa progressiva di ritorno al carico
+dopo una pausa, follow-up proattivo che fa emergere ciò che è dovuto, e una simulazione
+deterministica end-to-end (senza LLM); 1016 test incl. property-based) · 76 strumenti
+MCP · memoria atleta su file con calendario di stagione, log di readiness, programmi
+versionati leggibili dalla macchina, registro degli aggiustamenti in giornata, profilo
+di risposta versionato e registro di audit degli adattamenti · import di file di
+attività (.fit/.tcx/.gpx/CSV) · corpus di evidenze verificate via DOI/PMID/ISBN con
+controllo anti-fabbricazione delle citazioni · ricerca di evidenze in tempo reale
+(PubMed, OpenAlex, Crossref, Semantic Scholar) dietro doppia verifica · dodici skill di
+coaching incl. un gate di consegna obbligatorio con seconda opinione avversariale ·
+report PDF Typst (en/fr/es) dietro un blocco rigido delle citazioni.
 
 **Roadmap:** crescita del corpus verso ~200 studi · simulazione dei risultati
 (Banister + Monte Carlo) · nuove verticali sportive (strumenti del motore specifici

@@ -97,7 +97,7 @@ y ejecuta `claude` de nuevo.
 > Lista las herramientas de performance-agent.
 ```
 
-Deberías ver 47 herramientas. Si es así, ya está — simplemente háblale.
+Deberías ver 76 herramientas. Si es así, ya está — simplemente háblale.
 
 ## Cómo usarlo, paso a paso
 
@@ -258,14 +258,26 @@ cada hecho. El agente que ya usas lo une todo con tu suscripción existente — 
 coste adicional de LLM**.
 
 **Disponible hoy:** motor determinista (estimación de 1RM, predicción de carrera de
-Riegel, carga sesión-RPE y ACWR, viabilidad de objetivos, ondas de periodización; 597
-tests, incl. basados en propiedades) · 47 herramientas MCP · memoria del atleta en
-archivos con programas versionados e historial de auditoría de adaptaciones · corpus
-de evidencia verificada por DOI/PMID/ISBN con control anti-fabricación de citas ·
-búsqueda de evidencia en vivo (PubMed, OpenAlex, Crossref, Semantic Scholar) tras una
-doble verificación · once habilidades de coaching, incl. una puerta de entrega
-obligatoria con segunda opinión adversarial · informes PDF Typst (en/fr/es) tras un
-bloqueo estricto de citas.
+Riegel, carga sesión-RPE y ACWR, monotonía/tensión, forma-fatiga CTL/ATL/TSB,
+clasificación de readiness, presupuesto de carga externa, viabilidad de objetivos,
+ondas de periodización, planificación de temporada hacia atrás desde un calendario con
+fechas, autorregulación de la sesión el mismo día (ajuste según la readiness,
+compresión del tiempo, sustitución de ejercicios), secuenciación intrasemanal y
+salvaguarda de interferencia, recalibración individualizada a partir de los registros
+del atleta (ritmo de progresión medido honesto sobre n, cumplimiento prescrito-vs-real,
+tolerancia al volumen, perfil de respuesta versionado) que recalcula la viabilidad,
+recomendaciones de descarga basadas en datos y rampa progresiva de retorno a la carga
+tras una pausa, seguimiento proactivo que hace aflorar lo que toca, y una simulación
+determinista de extremo a extremo (sin LLM); 1016 tests, incl. basados en propiedades)
+· 76 herramientas MCP · memoria del atleta en archivos con calendario de temporada,
+registros de readiness, programas versionados legibles por máquina, registro de ajustes
+del día, perfil de respuesta versionado e historial de auditoría de adaptaciones ·
+importación de archivos de actividad (.fit/.tcx/.gpx/CSV) · corpus de evidencia
+verificada por DOI/PMID/ISBN con control anti-fabricación de citas · búsqueda de
+evidencia en vivo (PubMed, OpenAlex, Crossref, Semantic Scholar) tras una doble
+verificación · doce habilidades de coaching, incl. una puerta de entrega obligatoria
+con segunda opinión adversarial · informes PDF Typst (en/fr/es) tras un bloqueo
+estricto de citas.
 
 **Hoja de ruta:** ampliación del corpus hacia ~200 estudios · simulación de resultados
 (Banister + Monte Carlo) · más verticales deportivas (herramientas de motor

@@ -2,7 +2,41 @@ from dataclasses import replace
 
 import pytest
 
+from performance_agent.reports.sections import (
+    AdherenceRow,
+    LoadTrends,
+    RateRow,
+    ResponseSummary,
+    SeasonEventRow,
+    SeasonOverview,
+    ToleranceRow,
+)
 from performance_agent.reports.source import ReportContext, build_report_source
+
+SEASON = SeasonOverview(
+    season_ref="two races 16 weeks apart",
+    events=[SeasonEventRow(date="2026-10-03", priority="A", label="Championnat")],
+    phases=[],
+    taper_weeks=[6],
+    test_weeks=[4],
+)
+LOAD = LoadTrends(
+    last_week_total=1030.0,
+    external_share=0.34,
+    monotony=1.8,
+    strain=1854.0,
+    ctl=42.0,
+    atl=55.0,
+    tsb=-13.0,
+    days_of_history=21,
+)
+RESPONSE = ResponseSummary(
+    goal_rate=RateRow(label="10 km", pct_per_week=0.012, n=6, window_weeks=6.0, r2=0.7),
+    lift_rates=[],
+    adherence=[AdherenceRow("endurance_easy", 82.0, 9, 1, 0, 1)],
+    tolerance=[ToleranceRow("higher_volume_higher_fatigue", 0.6, 5)],
+    caveats=["mesuré sur six séances provisoires"],
+)
 
 CONTEXT = ReportContext(
     locale="fr",
@@ -14,6 +48,9 @@ CONTEXT = ReportContext(
     reason="plateau à la semaine 4",
     body_markdown="# Semaine 1\n- footing 45 min **facile**",
     citations=["Doe J (2020). Strength and economy. J Sports Sci. DOI: 10.1000/x."],
+    season=SEASON,
+    load=LOAD,
+    response=RESPONSE,
 )
 
 
@@ -64,3 +101,32 @@ def test_unknown_locale_is_a_readable_error():
 def test_french_labels_used():
     source = build_report_source(CONTEXT)
     assert "Rapport d'entraînement" in source
+
+
+def test_expert_mode_renders_all_three_sections():
+    source = build_report_source(CONTEXT)
+    assert "Vue de saison" in source
+    assert "Championnat" in source
+    assert "Tendances de charge" in source
+    assert "Monotonie" in source
+    assert "Synthèse de la réponse" in source
+    assert "mesuré sur six séances provisoires" in source
+
+
+def test_coach_mode_is_terse():
+    coach = replace(CONTEXT, mode="coach")
+    source = build_report_source(coach)
+    # season stays (events + taper) but the response summary is expert-only
+    assert "Championnat" in source
+    assert "Synthèse de la réponse" not in source
+    # load collapses to a one-line summary, not the full table
+    assert "Charge (dernière semaine)" in source
+    assert "Tendances de charge" not in source
+
+
+def test_sections_absent_when_data_missing():
+    bare = replace(CONTEXT, season=None, load=None, response=None)
+    source = build_report_source(bare)
+    assert "Vue de saison" not in source
+    assert "Tendances de charge" not in source
+    assert "Synthèse de la réponse" not in source

@@ -202,8 +202,8 @@ MCP servers are only loaded when a session *starts*. If you had a session alread
 open, fully quit it and run `claude` (or your CLI's equivalent) again — a new tab of
 the same running session won't pick up the new server.
 
-Ask your agent: *"List the performance-agent tools."* You should see 47 tools (24
-engine + 16 memory + 6 evidence + 1 report: assess_endurance_goal, read_athlete,
+Ask your agent: *"List the performance-agent tools."* You should see 76 tools (across
+the engine, memory, evidence, and report categories: assess_endurance_goal, read_athlete,
 search_evidence, search_evidence_live, verify_reference, save_evidence, …).
 
 Also verify the coaching skills (see the section above): ask what the

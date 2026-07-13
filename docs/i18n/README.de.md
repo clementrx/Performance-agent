@@ -97,7 +97,7 @@ komplett und führe `claude` erneut aus.
 > Liste die performance-agent-Werkzeuge auf.
 ```
 
-Du solltest 47 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit ihm.
+Du solltest 76 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit ihm.
 
 ## Schritt für Schritt benutzen
 
@@ -262,13 +262,25 @@ Fakt. Der Agent, den du bereits nutzt, fügt alles mit deinem bestehenden Abo zu
 — **null zusätzliche LLM-Kosten**.
 
 **Heute verfügbar:** deterministische Engine (1RM-Schätzung, Riegel-Wettkampfprognose,
-Session-RPE-Last & ACWR, Zielmachbarkeit, Periodisierungswellen; 597 Tests inkl.
-property-based) · 47 MCP-Werkzeuge · dateibasiertes Athletengedächtnis mit
-versionierten Programmen und Anpassungs-Audit-Protokoll · DOI/PMID/ISBN-verifizierter
-Evidenzkorpus mit Anti-Fabrikations-Zitatprüfung · Live-Evidenzsuche (PubMed,
-OpenAlex, Crossref, Semantic Scholar) hinter doppelter Verifikation · elf
-Coaching-Skills inkl. verpflichtendem Liefer-Gate mit adversarialer Zweitmeinung ·
-Typst-PDF-Berichte (en/fr/es) hinter einer harten Zitatsperre.
+Session-RPE-Last & ACWR, Monotonie/Strain, Form-Ermüdung CTL/ATL/TSB,
+Readiness-Einstufung, Budgetierung externer Last, Zielmachbarkeit,
+Periodisierungswellen, rückwärts geplante Saison aus einem datierten Kalender,
+Sitzungs-Autoregulation am Tag selbst (Readiness-basierte Anpassung, Zeitkompression,
+Übungssubstitution), Sequenzierung innerhalb der Woche & Interferenzschutz,
+individualisierte Rekalibrierung aus den Logs des Athleten (gemessene
+Progressionsrate ehrlich über n, Soll-Ist-Compliance, Volumentoleranz, versioniertes
+Antwortprofil), die die Machbarkeit neu berechnet, datengestützte
+Entlastungsempfehlungen und eine schrittweise Rückkehr zur Last nach einer Pause,
+proaktives Follow-up, das Fälliges hervorhebt, und eine deterministische
+End-to-End-Simulation (ohne LLM); 1016 Tests inkl. property-based) · 76 MCP-Werkzeuge ·
+dateibasiertes Athletengedächtnis mit Saisonkalender, Readiness-Logs, versionierten
+maschinenlesbaren Programmen, Tages-Anpassungsprotokoll, versioniertem Antwortprofil
+und Anpassungs-Audit-Protokoll · Import von Aktivitätsdateien (.fit/.tcx/.gpx/CSV) ·
+DOI/PMID/ISBN-verifizierter Evidenzkorpus mit Anti-Fabrikations-Zitatprüfung ·
+Live-Evidenzsuche (PubMed, OpenAlex, Crossref, Semantic Scholar) hinter doppelter
+Verifikation · zwölf Coaching-Skills inkl. verpflichtendem Liefer-Gate mit
+adversarialer Zweitmeinung · Typst-PDF-Berichte (en/fr/es) hinter einer harten
+Zitatsperre.
 
 **Roadmap:** Korpusausbau auf ~200 Studien · Ergebnissimulation (Banister +
 Monte Carlo) · weitere Sport-Vertikalen (Hyrox-spezifische Engine-Werkzeuge, Fußball,

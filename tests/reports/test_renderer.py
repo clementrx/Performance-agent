@@ -1,11 +1,26 @@
 import shutil
 import subprocess
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
-from performance_agent.memory.schemas import Goal, Profile
-from performance_agent.memory.store import save_program, upsert_goal, write_profile
+from performance_agent.memory.schemas import (
+    AdherenceQuality,
+    CalendarEvent,
+    Goal,
+    MeasuredRate,
+    Profile,
+    ResponseProfile,
+    SessionEntry,
+)
+from performance_agent.memory.store import (
+    append_session,
+    save_program,
+    save_response_profile,
+    upsert_calendar_event,
+    upsert_goal,
+    write_profile,
+)
 from performance_agent.reports.renderer import render_report_files
 from tests.program_plans import minimal_plan
 
@@ -78,6 +93,111 @@ def test_expert_references_carry_stars(tmp_path):
     assert "★" in references_block
     # stars on the citation bullet itself, not just in the legend below it
     assert "- ★" in references_block
+
+
+def _no_typst(monkeypatch):
+    monkeypatch.setattr("performance_agent.reports.renderer._typst_binary", lambda: None)
+
+
+def test_descriptive_sections_land_in_source(tmp_path, monkeypatch):
+    _seed_athlete(tmp_path, "# Plan\n- footing 45 min")
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="nats", date=date(2026, 10, 3), kind="competition", priority="A", label="Championnat"
+        ),
+    )
+    for day, rpe in ((1, 6), (3, 7), (5, 8)):
+        append_session(
+            tmp_path,
+            SessionEntry(performed_at=datetime(2026, 7, day, 9, 0), rpe=rpe, duration_min=50),
+        )
+    _no_typst(monkeypatch)
+    with pytest.raises(ValueError, match="typst"):
+        render_report_files(tmp_path, mode="coach")
+    source = (tmp_path / "reports" / "program-v1-coach-fr.typ").read_text(encoding="utf-8")
+    assert "Vue de saison" in source
+    assert "Championnat" in source
+    assert "Charge (dernière semaine)" in source
+
+
+def test_response_summary_lands_in_expert_source(tmp_path, monkeypatch):
+    _seed_athlete(tmp_path, "# Plan\n- footing 45 min")
+    save_response_profile(
+        tmp_path,
+        ResponseProfile(
+            as_of=date(2026, 7, 12),
+            goal_id="sub-45-10k",
+            per_goal_measured_rate=MeasuredRate(value=0.012, n=6, window_weeks=6.0, r2=0.7),
+            adherence_by_quality=[
+                AdherenceQuality(
+                    quality="endurance_easy",
+                    done=9,
+                    partial=1,
+                    modified=0,
+                    missed=1,
+                    adherence_pct=82.0,
+                )
+            ],
+            caveats=["mesuré sur six séances provisoires"],
+        ),
+    )
+    _no_typst(monkeypatch)
+    with pytest.raises(ValueError, match="typst"):
+        render_report_files(tmp_path, mode="expert")
+    source = (tmp_path / "reports" / "program-v1-expert-fr.typ").read_text(encoding="utf-8")
+    assert "Synthèse de la réponse" in source
+    assert "mesuré sur six séances provisoires" in source
+
+
+def test_sections_skip_gracefully_when_no_extra_data(tmp_path, monkeypatch):
+    # only a program is seeded; season data still comes from the plan's season_ref
+    _seed_athlete(tmp_path, "# Plan\n- footing 45 min")
+    _no_typst(monkeypatch)
+    with pytest.raises(ValueError, match="typst"):
+        render_report_files(tmp_path, mode="coach")
+    source = (tmp_path / "reports" / "program-v1-coach-fr.typ").read_text(encoding="utf-8")
+    # no sessions and no response profile -> those sections are absent
+    assert "Tendances de charge" not in source
+    assert "Synthèse de la réponse" not in source
+
+
+@pytest.mark.skipif(not HAS_TYPST, reason="typst CLI not installed")
+def test_report_with_sections_compiles_end_to_end(tmp_path):
+    _seed_athlete(tmp_path, "# Plan\n- footing 45 min")
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="nats", date=date(2026, 10, 3), kind="competition", priority="A", label="Championnat"
+        ),
+    )
+    for day, rpe in ((1, 6), (3, 7), (5, 8)):
+        append_session(
+            tmp_path,
+            SessionEntry(performed_at=datetime(2026, 7, day, 9, 0), rpe=rpe, duration_min=50),
+        )
+    save_response_profile(
+        tmp_path,
+        ResponseProfile(
+            as_of=date(2026, 7, 12),
+            goal_id="sub-45-10k",
+            per_goal_measured_rate=MeasuredRate(value=0.012, n=6, window_weeks=6.0, r2=0.7),
+            adherence_by_quality=[
+                AdherenceQuality(
+                    quality="endurance_easy",
+                    done=9,
+                    partial=1,
+                    modified=0,
+                    missed=1,
+                    adherence_pct=82.0,
+                )
+            ],
+            caveats=["mesuré sur six séances provisoires"],
+        ),
+    )
+    result = render_report_files(tmp_path, mode="expert")
+    assert result.pdf_path.exists()
+    assert result.pdf_path.stat().st_size > 1000
 
 
 def test_bare_digits_do_not_inject_references():

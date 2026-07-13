@@ -26,15 +26,59 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 untouched across the whole stack). Baseline 597 → **1001 tests**; 47 → **76 tools**.
 
 ### Remaining before release (batched wrap-up, then user-gated merge + publish)
-1. Typst report-template sections: P1 season overview, P2/P9 load trends, P5 response
-   summary — coach & expert modes, en/fr/es (deferred each phase; required by Global
-   DoD item 4). Hard citation gate applies.
-2. i18n README refresh (`docs/i18n/README.{fr,it,es,de}.md`): test count → 1001,
-   tool count → 76, new-capability lines.
-3. `docs/installing.md` tool-count check string (still 47).
-4. **User-gated:** merge the stacked PRs #4→#13 into main in order; then the single
-   version bump + changelog per `RELEASING.md` and the PyPI publish (irreversible
-   external action — requires explicit user go-ahead).
+1. ~~Typst report-template sections: P1 season overview, P2/P9 load trends, P5 response
+   summary — coach & expert modes, en/fr/es. Hard citation gate applies.~~ **Done**
+   (branch `feat/report-sections-and-docs`); see wrap-up notes below.
+2. ~~i18n README refresh (`docs/i18n/README.{fr,it,es,de}.md`): test count → 1001,
+   tool count → 76, new-capability lines.~~ **Done.**
+3. ~~`docs/installing.md` tool-count check string (still 47).~~ **Done** (→ 76).
+4. **User-gated:** merge the stacked PRs #4→#13 (and this wrap-up PR on top) into main
+   in order; then the single version bump + changelog per `RELEASING.md` and the PyPI
+   publish (irreversible external action — requires explicit user go-ahead).
+
+### Pre-release wrap-up notes (branch `feat/report-sections-and-docs`)
+
+Three descriptive report annexes were added, each rendered from ALREADY-STORED athlete
+data and computing its numbers via the real engine functions (never fabricated), each
+skipping gracefully when its data is absent:
+
+- **Season overview (P1)** — from `read_calendar` (dated A/B/C events) + the saved
+  `ProgramPlan` (mesocycle `phase` sequence, `test_milestones`, `season_ref`). Lists
+  events, the phase timeline, and where the taper lands. Reads what the program already
+  encodes (no fresh `date.today()` season re-plan), so the report stays deterministic.
+  Skips when there are no events, no `season_ref` and no test milestones.
+- **Load trends (P2/P9)** — from `read_sessions` (with the `source` field). Builds the
+  daily session-RPE series via `engine.load.session_rpe_load`, then quotes last-week
+  total load + external share, `weekly_monotony` / `weekly_strain` over the last 7
+  daily loads, and the CTL/ATL/TSB tail from `fitness_fatigue_series` — all descriptive
+  ("trend", never an injury probability). Skips when no session carries both RPE and
+  duration.
+- **Response summary (P5)** — from `read_response_profile` (latest): measured goal rate
+  with n / window_weeks / r2 (or the population-prior note when unmeasured), per-lift
+  rates, adherence-by-quality, volume-tolerance flags, and the profile's caveats
+  verbatim. Skips when no response profile exists.
+
+New code: `reports/sections.py` (builders + dataclasses, may import datetime + engine),
+`reports/source.py` (Typst rendering of the sections; new `ReportContext` fields),
+`reports/labels.py` (new keys for en/fr/es). The renderer (`reports/renderer.py`)
+gathers the extra stored data and runs the citation gate over the program body **plus**
+the sections' free-text (`collect_prose`), so the hard DOI/PMID/ISBN gate still covers
+everything the report prints. **Coach mode** stays terse (season events + taper, a
+one-line load summary); **expert mode** is fuller (season timeline + full load table +
+response summary + caveats). Verified: full gate green (1016 tests, +15), engine purity
+held, and a real Typst PDF compiles with all three sections present.
+
+Docs: `docs/i18n/README.{fr,it,es,de}.md` updated to 1001 tests / 76 tools with a
+mirrored capability line (season planning, monitoring, day-of autoregulation,
+sequencing, response profile/recalibration, deloads/return-to-load, proactive
+follow-up, activity import, simulated e2e eval); `docs/installing.md` tool-count check
+string 47 → 76. Reports are en/fr/es; the READMEs stay fr/it/es/de (expected).
+
+Residual translation-polish follow-up (non-blocking): the i18n capability lines are
+faithful working translations, not literary copy — a native-speaker pass could tighten
+phrasing in it/es/de. Report section phase names render as the English enum values
+(e.g. `accumulation`, `taper`); localizing those technical terms is a possible later
+refinement.
 
 ## Deviations from the plan
 

@@ -15,6 +15,16 @@ from performance_agent.evidence.citations import find_unknown_references, format
 from performance_agent.evidence.corpus import load_corpus
 from performance_agent.evidence.schemas import STARS
 from performance_agent.memory import store
+from performance_agent.memory.schemas import Goal, ProgramPlan
+from performance_agent.reports.sections import (
+    LoadTrends,
+    ResponseSummary,
+    SeasonOverview,
+    build_load_trends,
+    build_response_summary,
+    build_season_overview,
+    collect_prose,
+)
 from performance_agent.reports.source import ReportContext, ReportMode, build_report_source
 
 REPORTS_DIR = "reports"
@@ -55,6 +65,21 @@ def _citations_for(body: str) -> list[str]:
     return citations
 
 
+def _gather_sections(
+    base_dir: Path, plan: ProgramPlan | None, goal: Goal | None
+) -> tuple[SeasonOverview | None, LoadTrends | None, ResponseSummary | None]:
+    """Build the descriptive annexes from stored data (each None when absent)."""
+    season = build_season_overview(store.read_calendar(base_dir), plan)
+    load = build_load_trends(store.read_sessions(base_dir))
+    profile = store.read_response_profile(base_dir)
+    response = (
+        build_response_summary(profile, goal.statement if goal else None)
+        if profile is not None
+        else None
+    )
+    return season, load, response
+
+
 def render_report_files(
     base_dir: Path, mode: ReportMode = "coach", version: int | None = None
 ) -> RenderedReport:
@@ -65,7 +90,12 @@ def render_report_files(
         raise ValueError(msg)
     body = program.markdown
 
-    unknown = find_unknown_references(body, load_corpus())
+    profile = store.read_profile(base_dir)
+    goals = {goal.id: goal for goal in store.read_goals(base_dir)}
+    goal = goals.get(program.goal_id)
+    season, load, response = _gather_sections(base_dir, program.plan, goal)
+
+    unknown = find_unknown_references(f"{body}\n{collect_prose(season, response)}", load_corpus())
     if unknown:
         msg = (
             "report aborted: the program cites references that are not in the "
@@ -74,9 +104,6 @@ def render_report_files(
         )
         raise ValueError(msg)
 
-    profile = store.read_profile(base_dir)
-    goals = {goal.id: goal for goal in store.read_goals(base_dir)}
-    goal = goals.get(program.goal_id)
     context = ReportContext(
         locale=profile.locale,
         mode=mode,
@@ -87,6 +114,9 @@ def render_report_files(
         reason=program.reason if mode == "expert" else None,
         body_markdown=body,
         citations=_citations_for(body) if mode == "expert" else [],
+        season=season,
+        load=load,
+        response=response,
     )
     source = build_report_source(context)
 
