@@ -12,8 +12,8 @@ tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         prescribe_wave_loading, convert_rpe_to_rir, predict_race_time,
         compute_pace, read_nutrition_frame, read_calendar, budget_weekly_load,
         list_exercises, score_exercises, propose_exercise,
-        check_program_specificity, substitute_exercise, check_week_sequencing,
-        save_program]
+        check_program_specificity, substitute_exercise, fit_load_velocity,
+        check_week_sequencing, save_program]
 ---
 
 # Program Optimization — l'Optimiseur
@@ -66,6 +66,13 @@ render any corpus id you quote with `get_citation`.
 - No recent set or benchmark to compute from? Open the program with a
   benchmark/test week and label the early loads provisional — do not guess a
   number to fill the gap.
+- **Velocity data raises the ceiling (optional).** When the athlete logs VBT sets,
+  `fit_load_velocity(exercise)` returns a load-velocity profile — read `usable`
+  first (it refuses on too few/too-narrow loads, never a fabricated 1RM). With a
+  usable profile you may state velocity-loss set-termination thresholds by goal
+  (tighter for strength/power, looser for hypertrophy) in the block notes, and the
+  `prescribe_load` narrative may reference the profile's daily e1RM. Without VBT
+  data, nothing changes — RIR/%1RM stays the path.
 
 ## 2b. Choose exercises from the ontology — scored, not free-hand
 

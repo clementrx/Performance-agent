@@ -161,6 +161,15 @@ from performance_agent.engine.test_battery import (
     cadence_for,
     plan_test_battery,
 )
+from performance_agent.engine.vbt import (
+    LoadAdjustment,
+    LoadVelocityPoint,
+    LoadVelocityProfile,
+    daily_e1rm,
+    fit_load_velocity,
+    velocity_load_adjustment,
+    velocity_loss_threshold,
+)
 
 __all__ = [
     "AcwrMethod",
@@ -188,7 +197,10 @@ __all__ = [
     "InseasonWeek",
     "KpiGap",
     "KpiTarget",
+    "LoadAdjustment",
     "LoadBudget",
+    "LoadVelocityPoint",
+    "LoadVelocityProfile",
     "LoggedSession",
     "MeasuredFeasibility",
     "Measurement",
@@ -245,10 +257,12 @@ __all__ = [
     "compress_session",
     "compute_gaps",
     "count_escalation_signals",
+    "daily_e1rm",
     "double_progression",
     "e1rm_timeline",
     "endurance_feasibility",
     "estimate_srpe_from_hr",
+    "fit_load_velocity",
     "fitness_fatigue_series",
     "flag_implausible_session",
     "hypertrophy_feasibility",
@@ -280,6 +294,8 @@ __all__ = [
     "tdee_from_bmr",
     "top_set_backoff",
     "training_zones_from_race",
+    "velocity_load_adjustment",
+    "velocity_loss_threshold",
     "volume_tolerance",
     "warmup_scheme",
     "wave_loading",

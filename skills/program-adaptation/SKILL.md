@@ -7,6 +7,7 @@ tools: [read_athlete, get_time_context, read_program, read_sessions, read_checki
         read_session_adjustments, compute_session_load, compute_weekly_loads, compute_acwr,
         assess_endurance_goal, assess_strength_goal, assess_hypertrophy_goal,
         assess_bodycomp_goal, weekly_set_targets_for, prescribe_load, estimate_1rm,
+        fit_load_velocity,
         build_periodization_waves, compare_prescribed_actual, read_response_profile,
         compute_monotony_strain, compute_fitness_fatigue, compute_readiness,
         recommend_deload, build_return_progression,
@@ -75,9 +76,13 @@ Smallest change that addresses the diagnosis: swap sessions, cut a week's volume
 (deload), extend the timeline, re-negotiate the goal (route back to needs-analysis
 when the goal itself must move). Recompute affected loads/paces with the engine
 tools (`prescribe_load` from a fresh `estimate_1rm` for strength; the pace tools for
-endurance) — never carry stale numbers forward. If you rebuild waves via
-`build_periodization_waves`, apply the factors to the recomputed loads/paces — a
-wave you don't apply is decoration (see program-planning §3). Session-level
+endurance) — never carry stale numbers forward. When the athlete logs VBT sets,
+`fit_load_velocity(exercise)` gives a load-velocity profile: use its daily e1RM
+(only when `usable`) to recalibrate strength loads on measured bar speed rather
+than a stale tested 1RM, and to justify a velocity-loss-driven volume cut on a
+plateau. If you rebuild waves via `build_periodization_waves`, apply the factors to
+the recomputed loads/paces — a wave you don't apply is decoration (see
+program-planning §3). Session-level
 rebuilds follow program-optimization's load and formatting rules; if the
 STRUCTURE itself must change (new periodization model, changed calendar),
 route through program-planning instead of patching sessions in place.
