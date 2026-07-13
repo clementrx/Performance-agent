@@ -16,7 +16,7 @@ Execution order: 0, 1, 2, 9, 3, 4, 5, 6, 7, 8.
 | 4 | 9 | Activity file import | done (PR open) | `feat/phase-9-activity-import` — [PR #7](https://github.com/clementrx/Performance-agent/pull/7) | 782 tests; +1 tool (63 total); +fitdecode dep |
 | 5 | 3 | Day-of session autoregulation | done (PR open) | `feat/phase-3-session-autoregulation` — [PR #8](https://github.com/clementrx/Performance-agent/pull/8) | 823 tests; +5 tools (68 total) |
 | 6 | 4 | Intra-week sequencing & interference | done (PR open) | `feat/phase-4-sequencing` — [PR #9](https://github.com/clementrx/Performance-agent/pull/9) (base: phase 3) | 860 tests; +1 tool (69 total) |
-| 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — PR (base: phase 4) | 902 tests; +4 tools (73 total) |
+| 7 | 5 | Individual response profile | done (PR open) | `feat/phase-5-response-profile` — [PR #10](https://github.com/clementrx/Performance-agent/pull/10) (base: phase 4) | 902 tests; +4 tools (73 total) |
 | 8 | 6 | Deloads, adherence, return-to-load | pending | — | — |
 | 9 | 7 | Proactive follow-up | pending | — | — |
 | 10 | 8 | End-to-end simulated evaluation | pending | — | — |
