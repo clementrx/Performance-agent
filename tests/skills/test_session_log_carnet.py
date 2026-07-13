@@ -20,6 +20,14 @@ def test_optimization_emits_the_carnet(skills):
     assert "carnet" in body
     assert FILL_RULE in body, "optimizer lost the fill rule"
     assert "douleur" in body
+    # The block carries the prescription in brackets (plan + log in one).
+    assert "brackets" in body
+
+
+def test_checkin_ignores_the_prescription_bracket(skills):
+    body = _skill(skills, "training-checkin").body.casefold()
+    # The printed prescription bracket must not be parsed as logged data.
+    assert "parse only what the athlete wrote after" in body
 
 
 def test_checkin_documents_the_paste_back(skills):

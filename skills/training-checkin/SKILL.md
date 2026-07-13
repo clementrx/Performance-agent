@@ -77,6 +77,10 @@ not the athlete names the problem.
      any pain is written), STOP — do not log a normal session over a safety
      signal. Ask which movement, apply the RED FLAG rules, and route to
      program-adaptation before anything else.
+   - Each exercise line is `Nom [prescription]: <filled>`. The `[...]` bracket is
+     the printed prescription (target sets×reps/RPE/rest) — **ignore it for the
+     log**; parse only what the athlete wrote after the `:`. An empty right side =
+     not done.
    - Otherwise parse each non-empty exercise line into sets. Per token:
      `poids×reps` (`x`/`×`/`*`, decimals ok) → `{load_kg, reps}`; a bare number →
      reps at bodyweight (`load_kg=0`); `Ns` → an N-second hold, kept in that

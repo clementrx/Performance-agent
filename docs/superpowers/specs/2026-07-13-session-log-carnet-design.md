@@ -23,7 +23,10 @@ modèle en conversation.
 
 ## Le contrat de format
 
-Chaque séance-type embarque un bloc autoportant, prêt à coller dans Notes :
+Chaque séance-type embarque un bloc autoportant, prêt à coller dans Notes. Le
+bloc est **à la fois le plan à suivre et le log à remplir** : chaque ligne
+d'exercice porte sa consigne entre `[...]` (séries × reps · RPE · récup), et
+l'athlète écrit après les `:` ce qu'il a réellement fait.
 
 ```
 📋 LOG — S1 J1 Push
@@ -31,14 +34,17 @@ Date:
 Douleur (dos/épaule/coude): non
 RPE séance:
 —
-Dév incliné halt:
-Dév épaule dossier:
-Écarté poulie:
-Élévations lat:
-Rot. ext. L-fly:
-Ext. triceps:
+Dév incliné halt [4×8-10 · RPE7-8 · r2-3min]:
+Dév épaule dossier [4×8-10 · RPE7-8 · r2min]:
+Écarté poulie [3×12-15 · RPE8 · r90s]:
+Élévations lat [4×12-15 · RPE8-9 · r60-90s]:
+Rot. ext. L-fly [3×15 · RPE7 · r60s]:
+Ext. triceps [3×12-15 · RPE8 · r60-90s]:
 Notes:
 ```
+
+Le `[...]` est la consigne imprimée (ignorée au parsing) ; seul ce qui suit les
+`:` est logué.
 
 **Règle de saisie unique :** par série, `poids×reps` séparés par des espaces.
 
