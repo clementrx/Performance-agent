@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 87 tools. If so, you're done — just talk to it.
+You should see 88 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -277,9 +277,13 @@ land in the KPI log — every high-res input optional, missing data lowers state
 resolution rather than blocking), load-velocity profiling (a fitted per-exercise
 velocity-load line with an estimated 1RM, gated honestly and refused when the loads
 are too few or too narrow) that feeds day-of velocity-based load suggestions
-(bounded, labeled, never auto-applied);
-1168 tests
-incl. property-based) · 87 MCP
+(bounded, labeled, never auto-applied), and a fitted per-athlete two-component
+Banister impulse-response model (deterministic pure-Python grid fit of the
+fitness/fatigue time constants and gains, gated honestly — refused without ≥8 weeks
+of load and ≥5 spanning performance points, or when pinned/implausible — feeding the
+athlete's own time constants into the fitness-fatigue trend);
+1181 tests
+incl. property-based) · 88 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response

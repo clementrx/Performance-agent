@@ -18,8 +18,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 3 | 2 | Exercise ontology & libraries | done (merged) | `feat/phase-2-exercise-ontology` / PR #17 `0a8048d` | 1097 tests (+14); 84 tools (+2); 123 seed exercises |
 | 4 | 3 | Selection engine & specificity guard | done (merged) | `feat/phase-3-selection-engine` / PR #18 `daf6215` | 1126 tests (+29); 86 tools (+2) |
 | 5 | 4 | High-resolution ingestion | done (merged) | `feat/phase-4-highres-ingestion` / PR #19 `0a8e60f` | 1148 tests (+22); 86 tools |
-| 6 | 5 | Load-velocity profiling & VBT autoregulation | done | `feat/phase-5-load-velocity` / PR pending | 1168 tests (+20); 87 tools (+1) |
-| 7 | 6 | Fitted Banister model | pending | — | |
+| 6 | 5 | Load-velocity profiling & VBT autoregulation | done (merged) | `feat/phase-5-load-velocity` / PR #20 `e013009` | 1168 tests (+20); 87 tools (+1) |
+| 7 | 6 | Fitted Banister model | done | `feat/phase-6-fitted-banister` / PR pending | 1181 tests (+13); 88 tools (+1) |
 | 8 | 7 | Individual taper response & per-quality profile | pending | — | |
 | 9 | 8 | Multi-year planning & residuals | pending | — | |
 | 10 | 9 | Property tests & multi-sport e2e sim | pending | — | |
@@ -108,6 +108,16 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
   (single source of truth), matching how response profiles compute from logs.
 - **P5 — MVT / velocity-loss thresholds are team-chosen priors** (Sánchez-Medina /
   González-Badillo studies land in the P10 corpus pass; labeled priors until then).
+- **P6 — Banister property test asserts fit REPRODUCES the data (R² > 0.9) + τ1 > τ2,
+  not exact parameter recovery.** Exact recovery isn't identifiable with a coarse
+  grid and collinear decay features (the classic Banister issue); one well-conditioned
+  clean-recovery test covers exact params, the property test covers goodness-of-fit
+  across athletes. Honest about the limitation.
+- **P6 — fitted params fold into `compute_response_profile`** via an optional
+  `banister_kpi_id` param + a new `ResponseProfile.banister` field, and a standalone
+  `fit_banister` tool; `compute_fitness_fatigue` gained optional `ctl_tau`/`atl_tau`
+  (pass fitted τ1/τ2). EWMA defaults unchanged when omitted. Banister 1975 / Morton
+  1990 corpus citations deferred to P10 (τ bounds are priors until then).
 
 ## Resume notes
 

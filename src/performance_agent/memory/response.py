@@ -33,6 +33,7 @@ from performance_agent.engine.response import (
     PlannedSession,
 )
 from performance_agent.engine.strength import MAX_ESTIMATION_REPS, one_rm_epley
+from performance_agent.memory import banister as banister_layer
 from performance_agent.memory import store
 from performance_agent.memory.schemas import (
     AdherenceQuality,
@@ -232,7 +233,10 @@ def _to_adherence(stat: AdherenceByQuality) -> AdherenceQuality:
 
 
 def compute_response_profile(
-    base_dir: Path, goal_id: str | None = None, today: date | None = None
+    base_dir: Path,
+    goal_id: str | None = None,
+    today: date | None = None,
+    banister_kpi_id: str | None = None,
 ) -> ResponseProfile:
     """Distil the athlete's logged response into a ResponseProfile (unsaved).
 
@@ -241,7 +245,9 @@ def compute_response_profile(
     rates, the goal's measured rate, a volume/fatigue association, adherence by
     quality and adjustment patterns. Returns a ResponseProfile with None (and a
     caveat) wherever the data is too thin — never a fabricated number. Raises
-    when no structured program exists (the alignment anchor is missing).
+    when no structured program exists (the alignment anchor is missing). When
+    banister_kpi_id is given, also fits the Banister model against that KPI and
+    attaches it (usable=False when the history does not qualify).
     """
     as_of = today or date.today()
     program = store.read_program(base_dir)
@@ -284,6 +290,11 @@ def compute_response_profile(
         if tolerance is not None
         else []
     )
+    banister = (
+        banister_layer.fit_kpi_banister(base_dir, banister_kpi_id)
+        if banister_kpi_id is not None
+        else None
+    )
     return ResponseProfile(
         as_of=as_of,
         goal_id=resolved_goal_id,
@@ -292,6 +303,7 @@ def compute_response_profile(
         volume_tolerance_flags=tolerance_flags,
         adherence_by_quality=[_to_adherence(s) for s in data.adherence_by_quality],
         adjustment_patterns=_adjustment_patterns(base_dir),
+        banister=banister,
         caveats=data.caveats,
     )
 

@@ -581,6 +581,31 @@ class AdherenceQuality(BaseModel):
     adherence_pct: float = Field(ge=0, le=100)
 
 
+class BanisterParams(BaseModel):
+    """Fitted two-component Banister impulse-response params (honest about fit quality).
+
+    tau1 > tau2 (fitness decays slower than fatigue). CIs are approximate (OLS SEs),
+    labeled as such. usable says whether the fit passed the honesty gates; when
+    False the params are recorded for transparency but not used for decisions.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    p0: float
+    k1: float
+    k2: float
+    tau1: float = Field(gt=0)
+    tau2: float = Field(gt=0)
+    r2: float
+    residual_se: float = Field(ge=0)
+    k1_ci_half: float = Field(ge=0)
+    k2_ci_half: float = Field(ge=0)
+    fitted_kpi_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    n_load_days: int = Field(ge=0)
+    n_performance_points: int = Field(ge=0)
+    usable: bool = False
+
+
 class ResponseProfile(BaseModel):
     """The athlete's individual response model, versioned and immutable.
 
@@ -601,6 +626,7 @@ class ResponseProfile(BaseModel):
     volume_tolerance_flags: list[VolumeToleranceFlag] = Field(default_factory=list)
     adherence_by_quality: list[AdherenceQuality] = Field(default_factory=list)
     adjustment_patterns: list[str] = Field(default_factory=list)
+    banister: BanisterParams | None = None
     caveats: list[str] = Field(default_factory=list)
 
 
