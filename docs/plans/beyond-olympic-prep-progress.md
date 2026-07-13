@@ -17,8 +17,8 @@ in 3.72s**. Branch `main`, clean tree. Matches plan-time figure. Proceeding to P
 | 2 | 1 | Gaps, KPI results, test battery, seeds, needs-analysis rewrite | done (merged) | `feat/phase-1-gaps-kpi-battery` / PR #16 `51b5496` | 1083 tests (+40); 82 tools (+4); 4 seed models |
 | 3 | 2 | Exercise ontology & libraries | done (merged) | `feat/phase-2-exercise-ontology` / PR #17 `0a8048d` | 1097 tests (+14); 84 tools (+2); 123 seed exercises |
 | 4 | 3 | Selection engine & specificity guard | done (merged) | `feat/phase-3-selection-engine` / PR #18 `daf6215` | 1126 tests (+29); 86 tools (+2) |
-| 5 | 4 | High-resolution ingestion | done | `feat/phase-4-highres-ingestion` / PR pending | 1148 tests (+22); 86 tools (import extended, no new) |
-| 6 | 5 | Load-velocity profiling & VBT autoregulation | pending | — | |
+| 5 | 4 | High-resolution ingestion | done (merged) | `feat/phase-4-highres-ingestion` / PR #19 `0a8e60f` | 1148 tests (+22); 86 tools |
+| 6 | 5 | Load-velocity profiling & VBT autoregulation | done | `feat/phase-5-load-velocity` / PR pending | 1168 tests (+20); 87 tools (+1) |
 | 7 | 6 | Fitted Banister model | pending | — | |
 | 8 | 7 | Individual taper response & per-quality profile | pending | — | |
 | 9 | 8 | Multi-year planning & residuals | pending | — | |
@@ -99,6 +99,15 @@ Statuses: pending → in_progress → done (merged). Use `BLOCKED: <reason>` whe
 - **P4 — VBT CSV importer reuses `activity.py`'s `_read_csv_rows`/`_to_float`**;
   no new MCP tool (import_activity_file extended to detect VBT and return a `vbt`
   proposal). Tool count stays 86.
+- **P5 — velocity autoregulation extends `adjust_session`** with three optional
+  params (velocity_exercise/load/velocity) and an optional `velocity_suggestion`
+  output field, rather than a separate tool — the plan says adjust_session
+  "accepts optional velocity evidence". `fit_load_velocity` is the one new tool.
+- **P5 — load-velocity profiles are fit on demand, not persisted.** Both
+  `fit_load_velocity` and the day-of suggestion refit from logged `vbt_sets`
+  (single source of truth), matching how response profiles compute from logs.
+- **P5 — MVT / velocity-loss thresholds are team-chosen priors** (Sánchez-Medina /
+  González-Badillo studies land in the P10 corpus pass; labeled priors until then).
 
 ## Resume notes
 

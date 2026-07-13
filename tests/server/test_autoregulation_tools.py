@@ -1,7 +1,11 @@
 """In-process tests for the day-of autoregulation MCP tools."""
 
+from datetime import datetime
+
 import pytest
 
+from performance_agent.memory import store
+from performance_agent.memory.schemas import SessionEntry, VbtSet
 from tests.program_plans import plan_dict
 
 
@@ -37,6 +41,63 @@ async def test_adjust_session_red_is_recovery(client):
     payload = result.structuredContent
     assert payload["kind"] == "recovery"
     assert payload["session"]["qualities"] == ["recovery"]
+
+
+def _log_squat_vbt(base_dir):
+    for i, (load, vel) in enumerate([(60, 1.14), (100, 0.9), (140, 0.66), (180, 0.42)]):
+        store.append_session(
+            base_dir,
+            SessionEntry(
+                performed_at=datetime(2026, 7, 1 + i, 10, 0),
+                vbt_sets=[VbtSet(exercise="Back Squat", load_kg=load, mean_velocity=vel, reps=1)],
+            ),
+        )
+
+
+@pytest.mark.anyio
+async def test_fit_load_velocity_tool(client, athlete_home):
+    _log_squat_vbt(athlete_home)
+    result = await client.call_tool("fit_load_velocity", {"exercise": "Back Squat"})
+    assert not result.isError
+    profile = result.structuredContent
+    assert profile["usable"] is True
+    assert profile["e1rm_kg"] == pytest.approx(200.0, abs=2.0)
+
+
+@pytest.mark.anyio
+async def test_fit_load_velocity_too_few_sets_errors(client):
+    result = await client.call_tool("fit_load_velocity", {"exercise": "Deadlift"})
+    assert result.isError
+    assert "at least 2 logged VBT sets" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_adjust_session_with_velocity_suggestion(client, athlete_home):
+    await _save_program(client)
+    _log_squat_vbt(athlete_home)
+    result = await client.call_tool(
+        "adjust_session",
+        {
+            "session_plan_id": "w01-s1-lower-heavy",
+            "band": "green",
+            "velocity_exercise": "Back Squat",
+            "velocity_load_kg": 100.0,
+            "velocity_mean_velocity": 0.78,
+        },
+    )
+    assert not result.isError
+    suggestion = result.structuredContent["velocity_suggestion"]
+    assert suggestion is not None
+    assert suggestion["pct_change"] < 0  # slow warm-up -> back off
+
+
+@pytest.mark.anyio
+async def test_adjust_session_without_velocity_has_null_suggestion(client):
+    await _save_program(client)
+    result = await client.call_tool(
+        "adjust_session", {"session_plan_id": "w01-s1-lower-heavy", "band": "green"}
+    )
+    assert result.structuredContent["velocity_suggestion"] is None
 
 
 @pytest.mark.anyio

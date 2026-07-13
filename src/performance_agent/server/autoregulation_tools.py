@@ -13,12 +13,14 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from performance_agent.memory import autoregulation, store
+from performance_agent.memory import vbt as vbt_layer
 from performance_agent.memory.paths import resolve_athlete_dir
 from performance_agent.memory.schemas import (
     ReadinessBand,
     SessionAdjustmentEntry,
     SessionPlan,
 )
+from performance_agent.memory.vbt import LoadVelocityProfileView, VelocitySuggestionView
 
 
 class AdjustedSessionView(TypedDict):
@@ -26,13 +28,17 @@ class AdjustedSessionView(TypedDict):
 
     kind is unchanged (green), reduced (amber), or recovery (red). session is the
     adjusted SessionPlan to present; deltas_summary lists what changed, one item
-    per block, for the athlete-facing why and for logging.
+    per block, for the athlete-facing why and for logging. velocity_suggestion is
+    present only when warm-up velocity evidence was supplied AND a usable
+    load-velocity profile exists — a bounded, labeled load nudge, never applied
+    automatically.
     """
 
     kind: str
     band: str
     session: SessionPlan
     deltas_summary: list[str]
+    velocity_suggestion: VelocitySuggestionView | None
 
 
 class CutBlockView(TypedDict):
@@ -119,7 +125,13 @@ def _escalation_view(signals: autoregulation.EscalationSignals) -> EscalationVie
     )
 
 
-def adjust_session(session_plan_id: str, band: ReadinessBand) -> AdjustedSessionView:
+def adjust_session(
+    session_plan_id: str,
+    band: ReadinessBand,
+    velocity_exercise: str | None = None,
+    velocity_load_kg: Annotated[float, Field(gt=0, le=1000)] | None = None,
+    velocity_mean_velocity: Annotated[float, Field(gt=0, le=10)] | None = None,
+) -> AdjustedSessionView:
     """Adjust today's planned session to a readiness band (green/amber/red).
 
     Looks the session up by id in the latest structured program. green leaves it
@@ -129,15 +141,47 @@ def adjust_session(session_plan_id: str, band: ReadinessBand) -> AdjustedSession
     the adjusted session and a per-block delta summary. Get the band from
     compute_readiness first. This NEVER creates a program version -- log it with
     log_session_adjustment.
+
+    OPTIONAL velocity evidence: pass velocity_exercise + velocity_load_kg +
+    velocity_mean_velocity from today's warm-up set. When a usable load-velocity
+    profile exists for that exercise (from logged VBT sets), the result carries a
+    bounded (+/-10%) velocity_suggestion comparing today's e1RM to the profile's --
+    a labeled coaching nudge, never auto-applied. Without velocity evidence (or a
+    usable profile) the suggestion is null and behavior is unchanged.
     """
     session = _require_session(session_plan_id)
     result = autoregulation.adjust_session(session, band)
+    suggestion: VelocitySuggestionView | None = None
+    if (
+        velocity_exercise is not None
+        and velocity_load_kg is not None
+        and velocity_mean_velocity is not None
+    ):
+        suggestion = vbt_layer.velocity_suggestion(
+            resolve_athlete_dir(), velocity_exercise, velocity_load_kg, velocity_mean_velocity
+        )
     return AdjustedSessionView(
         kind=result.kind,
         band=result.band,
         session=result.session,
         deltas_summary=result.deltas_summary,
+        velocity_suggestion=suggestion,
     )
+
+
+def fit_load_velocity(
+    exercise: str,
+    mvt: Annotated[float, Field(gt=0, le=2)] = 0.30,
+) -> LoadVelocityProfileView:
+    """Fit an exercise's load-velocity profile from its logged VBT sets.
+
+    Reads every logged vbt_set for the exercise, fits mean velocity vs load, and
+    estimates 1RM at the minimal velocity threshold mvt (default 0.30 m/s). The
+    result carries usable + reason: it refuses (usable=false) with fewer than 4
+    distinct loads, a load span under 30% of the estimated 1RM, or a bad fit --
+    never presenting a fabricated 1RM. Errors when fewer than 2 VBT sets exist.
+    """
+    return vbt_layer.fit_exercise_profile(resolve_athlete_dir(), exercise, mvt)
 
 
 def compress_session(
@@ -230,6 +274,7 @@ def register(mcp: FastMCP) -> None:
         adjust_session,
         compress_session,
         substitute_exercise,
+        fit_load_velocity,
         log_session_adjustment,
         read_session_adjustments,
     ):

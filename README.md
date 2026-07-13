@@ -90,7 +90,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 86 tools. If so, you're done — just talk to it.
+You should see 87 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -274,9 +274,12 @@ substitution and a mesocycle specificity-mix guard, plus optional high-resolutio
 data ingestion (velocity-based-training CSV imports as structured sets, .fit/.tcx
 rides yield power/normalized-power/cadence/lap-splits, and jump/sprint measurements
 land in the KPI log — every high-res input optional, missing data lowers stated
-resolution rather than blocking);
-1148 tests
-incl. property-based) · 86 MCP
+resolution rather than blocking), load-velocity profiling (a fitted per-exercise
+velocity-load line with an estimated 1RM, gated honestly and refused when the loads
+are too few or too narrow) that feeds day-of velocity-based load suggestions
+(bounded, labeled, never auto-applied);
+1168 tests
+incl. property-based) · 87 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response
