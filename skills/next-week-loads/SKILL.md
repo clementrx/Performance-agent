@@ -11,8 +11,8 @@ tools: [read_athlete, get_time_context, read_program, read_sessions,
 
 The weekly review ritual: the athlete finished their training week, the logs are
 in — hand them next week's numbers. All math is engine math: this skill quotes
-`suggest_next_week_loads`, it never invents a load and it NEVER versions the
-program (structure changes belong to program-adaptation).
+`suggest_next_week_loads`, it never invents a load, and it NEVER versions the program
+(structure changes belong to program-adaptation).
 
 ## Ritual
 

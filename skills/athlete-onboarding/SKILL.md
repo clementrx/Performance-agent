@@ -96,5 +96,8 @@ insist more than once. Collect, in this order:
 
 ## Exit
 
-Summarize what you stored (quote the profile back briefly), then route: new goal →
+Summarize what you stored (quote the profile back briefly). Tell the athlete about
+their `documentation/` folder (created with the profile): studies, physio or
+medical reports, lab results, past programs dropped there are picked up
+automatically at the next conversation. Then route: new goal →
 needs-analysis. Never skip the needs analysis on the way to a program.

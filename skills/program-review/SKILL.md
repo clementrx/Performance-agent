@@ -86,6 +86,13 @@ Work the list in order; every item is pass/fail with the evidence quoted.
    `notes` — an unacknowledged `warn` is itself a fail (program-optimization is
    required to note the tradeoff, so a missing note means the check was skipped).
 
+- Structured progression: every block prescribing load_kg, pct_1rm or rir has a
+  `progression` rule whose kind matches the prescription (a pct_1rm block with
+  kind=double is an objection); the prose progression_rule tells the same story.
+- Guidance honesty: every advice/rationale line either cites a corpus id
+  (verify each with get_citation) or is phrased as coaching judgment; dosage
+  claims without a cite are an objection.
+
 ## 3. Pass two — ADVERSARIAL second opinion
 
 Compliance proves the numbers; it does not prove the coaching. Run this pass
