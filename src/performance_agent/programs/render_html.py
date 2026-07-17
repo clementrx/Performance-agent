@@ -317,11 +317,16 @@ def _week_html(week: WeekPlan, catalog: _MediaCatalog, locale: str, is_first: bo
     )
 
 
+def _title(plan: ProgramPlan, locale: str) -> str:
+    return (
+        f"{_t(locale, 'program')} v{plan.version} — "
+        f"{plan.created_on:%Y%m%d} — {html.escape(plan.goal_id)}"
+    )
+
+
 def _header_html(plan: ProgramPlan, locale: str) -> str:
-    title = f"{_t(locale, 'program')} v{plan.version} — {html.escape(plan.goal_id)}"
-    lines = [f"<h1>{title}</h1>"]
+    lines = [f"<h1>{_title(plan, locale)}</h1>"]
     meta = [
-        str(plan.created_on),
         _t(locale, "checkin").format(days=plan.checkin_cadence_days),
     ]
     if plan.reason:
@@ -372,7 +377,7 @@ def render_program_html(
             '<a href="https://github.com/hasaneyldrm/exercises-dataset">exercises-dataset'
             "</a> (MIT + media terms)</footer>"
         )
-    title = f"{_t(locale, 'program')} v{plan.version} — {html.escape(plan.goal_id)}"
+    title = _title(plan, locale)
     return (
         f'<!doctype html><html lang="{locale}"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'

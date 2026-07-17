@@ -1,5 +1,6 @@
 """In-process tests for the memory MCP tools (isolated athlete dir per test)."""
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -164,7 +165,10 @@ async def test_program_versioning_through_tools(client):
     assert latest.structuredContent["version"] == 2
     assert latest.structuredContent["reason"] == "plateau at week 4"
     first_version = await client.call_tool("read_program", {"version": 1})
-    assert "# Program v1 — sub-45-10k" in first_version.structuredContent["markdown"]
+    assert (
+        f"# Program v1 — {date.today():%Y%m%d} — sub-45-10k"
+        in first_version.structuredContent["markdown"]
+    )
     assert first_version.structuredContent["plan"]["goal_id"] == "sub-45-10k"
 
 

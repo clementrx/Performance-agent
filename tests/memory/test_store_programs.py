@@ -33,7 +33,7 @@ def test_first_program_writes_yaml_and_md_pair(tmp_path):
     assert program.reason is None
     assert program.plan is not None
     assert program.plan.mesocycles[0].weeks[0].sessions[0].id == "w01-s1-lower-heavy"
-    assert "# Program v1 — squat-160" in program.markdown
+    assert "# Program v1 — 20260712 — squat-160" in program.markdown
 
 
 def test_store_stamps_authoritative_version_over_the_plan(tmp_path):

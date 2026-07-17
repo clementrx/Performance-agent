@@ -1,4 +1,4 @@
-# Program v1 — squat-160
+# Program v1 — 20260712 — squat-160
 
 - Check-in cadence: every 7 days
 - Season plan: two races 16 weeks apart

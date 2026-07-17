@@ -2,6 +2,16 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## 0.6.1 — Dated Program Titles
+
+### Changed
+
+- **Program titles carry their date** — the markdown H1 and the session-HTML
+  `<title>`/`<h1>` now read `Program v2 — 20260717 — <goal>`: each version is
+  stamped with its creation date (YYYYMMDD), so versions are tellable apart at
+  a glance. File names are unchanged (`program-vN.md`/`.html` — the store's
+  immutable version chain).
+
 ## 0.6.0 — One Folder per Athlete
 
 The directory the server is launched from IS the athlete's data directory, so a
