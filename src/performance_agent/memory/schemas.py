@@ -530,6 +530,139 @@ class ProgramPlan(BaseModel):
         return self
 
 
+# --- Competition protocol (per-event final-days plan) ---------------------
+
+
+class ProtocolLine(BaseModel):
+    """One line of a protocol day: what to do, optionally when and why."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=300)
+    time_hint: str | None = Field(default=None, max_length=20)
+    cite: str | None = None
+    warning: bool = False
+
+
+class ProtocolDay(BaseModel):
+    """One day of the pre-competition window; day_offset 0 is the event day."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    day_offset: int = Field(ge=-21, le=0)
+    title: str = Field(min_length=1, max_length=80)
+    lines: list[ProtocolLine] = Field(min_length=1)
+
+
+class PacingSegment(BaseModel):
+    """One race segment with its target pace and cumulative split."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(min_length=1, max_length=40)
+    distance_m: float = Field(gt=0)
+    target_pace_s_per_km: float = Field(gt=0)
+    cumulative_time_s: float = Field(gt=0)
+
+
+class AttemptPlan(BaseModel):
+    """Meet-day attempts for one lift; engine-computed or athlete-agreed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lift: str = Field(min_length=1, max_length=60)
+    e1rm_kg: float = Field(gt=0)
+    opener_kg: float = Field(gt=0)
+    second_kg: float = Field(gt=0)
+    third_kg: float = Field(gt=0)
+    basis: Literal["engine", "agreed"]
+    flags: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _attempts_increase(self) -> Self:
+        if not self.opener_kg < self.second_kg < self.third_kg:
+            msg = (
+                f"{self.lift}: attempts must be strictly increasing, got "
+                f"{self.opener_kg}/{self.second_kg}/{self.third_kg}"
+            )
+            raise ValueError(msg)
+        return self
+
+
+class FuelingPlan(BaseModel):
+    """Engine-computed carbohydrate targets for the final window and the race."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    carb_g_per_kg_low: float = Field(gt=0)
+    carb_g_per_kg_high: float = Field(gt=0)
+    window_hours: int = Field(gt=0)
+    race_carb_g_per_h_low: float | None = Field(default=None, ge=0)
+    race_carb_g_per_h_high: float | None = Field(default=None, ge=0)
+    cite: str | None = None
+
+    @model_validator(mode="after")
+    def _low_not_above_high(self) -> Self:
+        if self.carb_g_per_kg_low > self.carb_g_per_kg_high:
+            msg = (
+                "carb_g_per_kg low must not exceed high, got "
+                f"{self.carb_g_per_kg_low} > {self.carb_g_per_kg_high}"
+            )
+            raise ValueError(msg)
+        return self
+
+
+class DocumentedPractice(BaseModel):
+    """A risky-but-documented practice: described with its grade, never dosed.
+
+    warning is schema-required and non-empty — a practice cannot be stored
+    without one (owner decision: labeled advice, never engine-quantified).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=80)
+    summary: str = Field(min_length=1, max_length=400)
+    cite: str | None = None
+    warning: str = Field(min_length=1, max_length=300)
+
+
+class CompetitionProtocol(BaseModel):
+    """The per-event final-days plan: days J-N to J0 plus computed sections."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    version: int = Field(ge=1)
+    event_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    event_date: date
+    goal_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    created_on: date
+    reason: str | None = None
+    window_days: int = Field(ge=1, le=21)
+    days: list[ProtocolDay] = Field(min_length=1)
+    pacing: list[PacingSegment] = Field(default_factory=list)
+    attempts: list[AttemptPlan] = Field(default_factory=list)
+    fueling: FuelingPlan | None = None
+    practices: list[DocumentedPractice] = Field(default_factory=list)
+    checklist: list[str] = Field(default_factory=list)
+    advice: list[Guidance] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _days_cover_the_window(self) -> Self:
+        offsets = [day.day_offset for day in self.days]
+        if offsets != sorted(offsets) or len(set(offsets)) != len(offsets):
+            msg = f"day_offset values must be unique and increasing, got {offsets}"
+            raise ValueError(msg)
+        if offsets[-1] != 0:
+            msg = f"the last day must be J0 (day_offset 0), got {offsets[-1]}"
+            raise ValueError(msg)
+        if self.window_days < -offsets[0]:
+            msg = f"window_days ({self.window_days}) must cover the earliest day (J{offsets[0]})"
+            raise ValueError(msg)
+        return self
+
+
 # --- Season calendar (dated events + weekly recurring constraints) --------
 #
 # calendar.yaml is the scheduling source of truth; the season planner reads it
