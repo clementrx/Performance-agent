@@ -100,6 +100,8 @@ After a skill hands back:
   action fires → **next-week-loads**.
 - Two weeks since the last audit, a mesocycle boundary, or "is this program
   still right?" → **program-watch** (run it as a subagent; bring back verdicts).
+- competition_protocol action fires, or "my competition is in N days" →
+  **pre-competition** (authors the final-days protocol and the event-day page).
 
 Re-evaluate routing after each skill completes.
 

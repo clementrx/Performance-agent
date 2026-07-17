@@ -5,7 +5,7 @@ description: Use when the athlete says they train tonight, now, or in an hour an
   hand. Adjusts the session in under a minute and never versions the program.
 tools: [read_athlete, get_time_context, read_program, read_readiness, compute_readiness,
   adjust_session, compress_session, substitute_exercise, log_session, log_session_adjustment,
-  read_session_adjustments]
+  read_session_adjustments, read_competition_protocol]
 ---
 
 # Session-day autoregulation
@@ -22,6 +22,11 @@ The athlete signals an imminent session: "I train tonight / now / in an hour",
 performance-coach ritual routes here.
 
 ## Protocol
+
+If today is an event day (J0) and a saved protocol exists
+(read_competition_protocol for the calendar event), open FROM the protocol page
+instead of improvising: quote its timeline, paces or attempts as written.
+Adjustments follow the protocol's fallbacks, never a rewrite an hour before.
 
 1. **Locate today's session.** From the session-start ritual you already ran
    `read_athlete` and `get_time_context`. Call `read_program` and pick today's

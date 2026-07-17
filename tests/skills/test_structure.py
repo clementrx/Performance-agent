@@ -15,6 +15,7 @@ EXPECTED_SKILLS = {
     "session-day",
     "next-week-loads",
     "program-watch",
+    "pre-competition",
 }
 
 
@@ -53,6 +54,7 @@ def test_coach_skill_carries_the_global_rules(skills):
         "program-optimization",
         "nutrition-planning",
         "program-review",
+        "pre-competition",
     ):
         assert needle in body, f"coach skill lost the rule: {needle}"
 
@@ -171,6 +173,7 @@ def test_checkin_skill_protocol(skills):
         "stop prescribing",
         "list_athlete_documents",
         "mesocycle boundary",
+        "debrief",
     ):
         assert needle in body, f"checkin skill lost: {needle}"
 
@@ -251,6 +254,8 @@ def test_review_skill_protocol(skills):
         "verbatim",
         "program-planning",
         "program-optimization",
+        "protocol",
+        "warning",
     ):
         assert needle in body, f"program-review skill lost: {needle}"
 
@@ -325,3 +330,22 @@ def test_program_watch_skill_protocol(skills):
         "subagent",
     ):
         assert needle in body, f"program-watch skill lost: {needle}"
+
+
+def test_pre_competition_skill_protocol(skills):
+    precomp = next(s for s in skills if s.frontmatter["name"] == "pre-competition")
+    body = precomp.body.casefold()
+    for needle in (
+        "save_competition_protocol",
+        "carb_loading_targets",
+        "select_attempts",
+        "pacing_plan",
+        "recommend_taper",
+        "mini-wave",
+        "warning",
+        "program-review",
+        "never edits the program",
+        "log_kpi_result",
+        "coaching judgment",
+    ):
+        assert needle in body, f"pre-competition skill lost: {needle}"

@@ -14,8 +14,8 @@ tools: [read_athlete, get_time_context, read_calendar, read_program,
 
 The protocol author: the final days before a competition, planned day by day and
 handed over as a phone page the athlete reads on the morning of the event. Sport
-comes from the research, numbers come from the engine, and this skill NEVER
-edits the program — taper structure changes route to program-adaptation.
+comes from the research, numbers come from the engine, and this skill
+NEVER edits the program — taper structure changes route to program-adaptation.
 
 ## Ritual
 

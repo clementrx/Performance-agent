@@ -199,6 +199,13 @@ first; (2) route to program-watch for the per-exercise audit. The
 loads_review and program_watch due actions surface both when overdue — treat
 them like any other due action: open with them.
 
+## Around a competition
+
+A competition_protocol due action routes to pre-competition. The first check-in
+AFTER an event owns the debrief: how it went vs the protocol, log the result
+with log_kpi_result (it feeds the individual taper response), and any pain or
+red flag follows the normal rules.
+
 ## Route
 
 - Any trigger above → its named destination (program-adaptation, or

@@ -92,6 +92,12 @@ Work the list in order; every item is pass/fail with the evidence quoted.
 - Guidance honesty: every advice/rationale line either cites a corpus id
   (verify each with get_citation) or is phrased as coaching judgment; dosage
   claims without a cite are an objection.
+- Competition protocols (when the draft is a protocol, not a program): every
+  documented practice carries an evidence grade (verify cites with
+  get_citation) and an explicit warning; every engine-attributed number
+  (attempts, paces, carb targets) matches a tool recomputation; dehydration or
+  water-manipulation content stated as a computed or prescriptive line — rather
+  than a warned, graded practice — is an objection.
 
 ## 3. Pass two — ADVERSARIAL second opinion
 
