@@ -6,7 +6,10 @@ Warm-up ramps for auto strength blocks are emitted here via the engine helper,
 so a printed program carries the ramp-up sets a coach writes by hand.
 """
 
+from collections.abc import Mapping
+
 from performance_agent.engine import warmup_scheme
+from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.memory.schemas import (
     ExerciseBlock,
     ProgramPlan,
@@ -166,12 +169,69 @@ def _header_lines(plan: ProgramPlan) -> list[str]:
     return lines
 
 
-def render_program(plan: ProgramPlan) -> str:
-    """Render a ProgramPlan to the human markdown view (deterministic)."""
+def _guidance_lines(plan: ProgramPlan) -> list[str]:
+    lines: list[str] = []
+    for title, items in (("Advice", plan.advice), ("Why this program", plan.rationale)):
+        if not items:
+            continue
+        lines += ["", f"## {title}"]
+        for guidance in items:
+            suffix = f" [{guidance.cite}]" if guidance.cite else ""
+            lines.append(f"- {guidance.text}{suffix}")
+    return lines
+
+
+def _sources_lines(plan: ProgramPlan, citations: Mapping[str, ResolvedCitation]) -> list[str]:
+    ids = [cid for cid in plan_citation_ids(plan) if cid in citations]
+    if not ids:
+        return []
+    lines = ["", "## Sources"]
+    for number, cid in enumerate(ids, start=1):
+        resolved = citations[cid]
+        lines.append(f"{number}. {resolved.stars} {resolved.citation}")
+    return lines
+
+
+def render_program(
+    plan: ProgramPlan, citations: Mapping[str, ResolvedCitation] | None = None
+) -> str:
+    """Render a ProgramPlan to the human markdown view (deterministic).
+
+    citations maps corpus ids to their resolved rendering; when provided the
+    advice/rationale sections and a final Sources section are emitted (the
+    Sources DOIs are what the Typst PDF bibliography picks up).
+    """
     lines = _header_lines(plan)
+    lines += _guidance_lines(plan)
     for meso in plan.mesocycles:
         lines += ["", f"## Mesocycle {meso.index} — {meso.phase}"]
         for week in meso.weeks:
             lines.append("")
             lines.extend(_week_lines(week))
+    if citations is not None:
+        lines += _sources_lines(plan, citations)
     return "\n".join(lines).strip() + "\n"
+
+
+def plan_citation_ids(plan: ProgramPlan) -> list[str]:
+    """Every corpus id the plan cites, in order of first appearance, deduplicated.
+
+    Order: advice, then rationale, then blocks in program order — this is the
+    [n] numbering of the HTML page and the Sources section.
+    """
+    ids: list[str] = []
+    seen: set[str] = set()
+
+    def add(cite: str | None) -> None:
+        if cite and cite not in seen:
+            seen.add(cite)
+            ids.append(cite)
+
+    for guidance in (*plan.advice, *plan.rationale):
+        add(guidance.cite)
+    for meso in plan.mesocycles:
+        for week in meso.weeks:
+            for session in week.sessions:
+                for block in session.blocks:
+                    add(block.cite)
+    return ids

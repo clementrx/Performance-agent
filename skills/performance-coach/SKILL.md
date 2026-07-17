@@ -3,7 +3,8 @@ name: performance-coach
 description: Use at the START of any coaching conversation about training, physical
   preparation, race goals, strength, or athlete follow-up. Establishes the session
   ritual, language, honesty and safety rules, and routes to the specialized skills.
-tools: [read_athlete, get_time_context, list_due_actions, check_citations, search_evidence]
+tools: [read_athlete, get_time_context, list_due_actions, list_athlete_documents,
+        check_citations, search_evidence]
 ---
 
 # PerformanceAgent Coach
@@ -38,6 +39,8 @@ every fact comes from a performance-agent MCP tool.
    to log it. Frame it as the standard a real programme runs on, never as a blocker —
    you still coach fully on partial data; missing readiness is a follow-up, not a
    refusal.
+6. `list_athlete_documents` — dropped files are messages: acknowledge new ones
+   and have them processed (deep-research §0) before they go stale.
 
 ## Honesty rules (non-negotiable)
 
@@ -93,6 +96,10 @@ After a skill hands back:
   mandatory delivery gate; only its APPROVED verdict lets program-optimization
   — or program-adaptation for an adapted version — save and deliver)
 - Check-in shows poor adherence, plateau, pain, or schedule change → program-adaptation
+- Training week logged, athlete wants next week's weights, or the loads_review
+  action fires → **next-week-loads**.
+- Two weeks since the last audit, a mesocycle boundary, or "is this program
+  still right?" → **program-watch** (run it as a subagent; bring back verdicts).
 
 Re-evaluate routing after each skill completes.
 

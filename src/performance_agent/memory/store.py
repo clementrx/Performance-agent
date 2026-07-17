@@ -5,7 +5,7 @@ never deletes history: logs are append-only and program versions are immutable.
 """
 
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -13,6 +13,8 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
+from performance_agent.evidence.citations import ResolvedCitation
+from performance_agent.memory.documents import ensure_documentation_dir
 from performance_agent.memory.schemas import (
     Calendar,
     CalendarEvent,
@@ -53,6 +55,7 @@ MACRO_DIR = "macro"
 MACRO_PLAN_PREFIX = "macro-plan"
 EXERCISES_DIR = "exercises"
 EXERCISE_LIBRARY_FILE = "library.yaml"
+WATCH_DIR = "watch"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -101,9 +104,13 @@ def read_profile(base_dir: Path) -> Profile:
 
 
 def write_profile(base_dir: Path, profile: Profile) -> Path:
-    """Persist the profile as readable YAML; returns the file path."""
+    """Persist the profile as readable YAML; returns the file path.
+
+    Also bootstraps the documentation/ drop folder so onboarding creates it.
+    """
     path = base_dir / PROFILE_FILE
     _atomic_write(path, _to_yaml(profile.model_dump(mode="json")))
+    ensure_documentation_dir(base_dir)
     return path
 
 
@@ -479,6 +486,7 @@ def save_program(
     plan: ProgramPlan,
     reason: str | None = None,
     today: date | None = None,
+    citations: Mapping[str, ResolvedCitation] | None = None,
 ) -> tuple[Path, int]:
     """Validate, render, and atomically write a program as a yaml+md pair.
 
@@ -488,7 +496,9 @@ def save_program(
     drift. Versions are immutable and never overwritten; adapting an existing
     program (v2+) requires a reason (the coaching-decision audit trail). The
     store owns version numbering — the plan's version/created_on/reason are
-    stamped here.
+    stamped here. citations maps the plan's corpus ids to their resolved
+    rendering; the server resolves them — None keeps the legacy citation-less
+    rendering for direct store users.
     """
     current = latest_program_version(base_dir)
     version = 1 if current is None else current + 1
@@ -504,7 +514,13 @@ def save_program(
         "created_on": created.isoformat(),
         "reason": reason,
     }
-    content = "---\n" + _to_yaml(frontmatter) + "---\n\n" + render_program(stamped).strip() + "\n"
+    content = (
+        "---\n"
+        + _to_yaml(frontmatter)
+        + "---\n\n"
+        + render_program(stamped, citations=citations).strip()
+        + "\n"
+    )
     _atomic_write(yaml_path, _to_yaml(stamped.model_dump(mode="json")))
     try:
         _atomic_write(md_path, content)
@@ -798,5 +814,48 @@ def read_nutrition_frame(
         subdir=NUTRITION_DIR,
         prefix="frame",
         label="nutrition frame",
+        version=version,
+    )
+
+
+def latest_watch_report_version(base_dir: Path) -> int | None:
+    """Return the highest existing watch-report version, or None."""
+    return _latest_doc_version(base_dir, WATCH_DIR, "report")
+
+
+def save_watch_report(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next program-watch report version; v2+ requires a reason.
+
+    Same immutable-version audit trail as the other doc families; lives in
+    watch/. The latest report's created_on is also the diligence anchor for
+    "program watch due".
+    """
+    return _save_versioned_doc(
+        base_dir,
+        markdown_body,
+        goal_id,
+        subdir=WATCH_DIR,
+        prefix="report",
+        label="watch report",
+        reason=reason,
+        today=today,
+    )
+
+
+def read_watch_report(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest watch report; None when empty."""
+    return _read_versioned_doc(
+        base_dir,
+        subdir=WATCH_DIR,
+        prefix="report",
+        label="watch report",
         version=version,
     )

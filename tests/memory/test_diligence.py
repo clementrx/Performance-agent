@@ -23,6 +23,7 @@ from performance_agent.memory.store import (
     upsert_calendar_event,
     upsert_goal,
 )
+from performance_agent.memory.weekly_review import LOADS_REVIEW_STATE_FILE
 from tests.program_plans import a_session, minimal_plan
 
 TODAY = date(2026, 7, 13)
@@ -55,8 +56,8 @@ def test_empty_directory_is_all_green(tmp_path):
 
 
 def test_fully_tended_athlete_is_all_green(tmp_path):
-    # One-weekday plan, a session + green readiness two days ago, a recent check-in,
-    # no dated deadline, no profile: nothing is due.
+    # One-weekday plan, a session + green readiness two days ago, a recent check-in
+    # and loads review, no dated deadline, no profile: nothing is due.
     save_program(tmp_path, minimal_plan())
     two_days_ago = datetime.combine(TODAY - timedelta(days=2), datetime.min.time().replace(hour=18))
     append_session(tmp_path, SessionEntry(performed_at=two_days_ago))
@@ -65,6 +66,9 @@ def test_fully_tended_athlete_is_all_green(tmp_path):
         ReadinessEntry(at=two_days_ago, sleep=1, fatigue=1, soreness=1, stress=1),
     )
     append_checkin(tmp_path, CheckinEntry(at=two_days_ago))
+    (tmp_path / LOADS_REVIEW_STATE_FILE).write_text(
+        f"last_run: {(TODAY - timedelta(days=1)).isoformat()}\n", encoding="utf-8"
+    )
     assert list_due_actions(tmp_path, today=TODAY) == []
 
 

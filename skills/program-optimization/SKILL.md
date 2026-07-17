@@ -74,6 +74,14 @@ render any corpus id you quote with `get_citation`.
   `prescribe_load` narrative may reference the profile's daily e1RM. Without VBT
   data, nothing changes — RIR/%1RM stays the path.
 
+Every load-bearing block (load_kg, pct_1rm or rir intensity) carries a
+STRUCTURED `progression` rule alongside the prose `progression_rule`: kind
+`double` (rep_min/rep_max/increment_kg), `linear_load` (increment_kg),
+`rir_target` (target_rir), `from_pct` (percent-planned weeks), or `none`
+(pace/technique blocks). The prose is the human rendering of the structured
+rule — write both from the same decision. This is what powers the weekly
+loads review; a block left unstructured surfaces as `no_rule` every week.
+
 ## 2b. Choose exercises from the ontology — scored, not free-hand
 
 Exercise selection is a scored decision, not authoring from memory. For each slot
@@ -199,6 +207,15 @@ Do not save until the athlete validates the layout. Stalemate exit: after three
 revision rounds on the same session with no resolution, stop looping — name the
 disagreement plainly and hand back to performance-coach instead of iterating a
 fourth time.
+
+## 4b. Header guidance — advice and rationale
+
+Fill the plan's `advice` (nutrition, supplements, recovery — the frame's
+numbers from read_nutrition_frame become athlete-facing lines here) and
+`rationale` ("why this program" — the 3-5 decisions that shaped it). Every
+line either carries a corpus `cite` (rendered with stars in the HTML header
+and bibliography) or reads as coaching judgment. save_program refuses unknown
+cite ids — never invent one.
 
 ## 5. The gate, then save and deliver
 

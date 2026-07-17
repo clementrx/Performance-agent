@@ -12,7 +12,8 @@ tools: [read_athlete, get_time_context, read_program, read_sessions, read_checki
         compute_monotony_strain, compute_fitness_fatigue, compute_readiness,
         recommend_deload, build_return_progression,
         search_evidence, search_evidence_live, save_evidence, verify_reference,
-        get_citation, check_citations, save_program]
+        get_citation, check_citations, save_program,
+        read_research_dossier, save_research_dossier]
 ---
 
 # Program Adaptation
@@ -163,6 +164,20 @@ Never shame — diagnose the cause in the athlete's own words and re-scope:
   weakening the claim into something unverifiable. The repaired vN+1 carries
   the reason "citation repair" and goes through §3 like every other
   proposal — it is not saved here.
+
+## Research refresh — the mini-wave
+
+**Adapt first, research second**: tonight's session never waits for literature.
+When the trigger is substantive — a confirmed plateau, recurring pain, a
+calendar or method change — run a mini-wave AFTER the immediate fix is agreed:
+
+1. `read_research_dossier` for what the dossier already says on the question.
+2. One question, 2-3 live queries (English + locale, +1 language if thin), the
+   deep-research verification and save rules unchanged.
+3. Fold what you learned into the dossier with `save_research_dossier` (v+1,
+   reason = the trigger, with a "what changed" section).
+4. If the finding contradicts the ACTIVE program, propose the sourced change to
+   the athlete through this skill's normal versioned flow — never edit silently.
 
 ## 3. Confirm, then version
 

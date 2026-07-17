@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from performance_agent.evidence.corpus import load_corpus
 from tests.exercises.test_dataset import write_fixture_dataset
 from tests.program_plans import plan_dict
 
@@ -495,3 +496,25 @@ async def test_read_readiness_empty_on_fresh_dir(client):
     result = await client.call_tool("read_readiness", {})
     assert not result.isError
     assert result.structuredContent["readiness"] == []
+
+
+@pytest.mark.anyio
+async def test_save_program_rejects_unknown_cite(client):
+    plan = plan_dict(goal_id="sub-45-10k")
+    plan["advice"] = [{"text": "Creatine 5 g/day.", "cite": "phantom-id"}]
+    result = await client.call_tool("save_program", {"plan": plan})
+    assert result.isError
+    assert "phantom-id" in result.content[0].text
+
+
+@pytest.mark.anyio
+async def test_save_program_with_corpus_cite_renders_sources(client):
+    real_id = load_corpus()[0].id
+    plan = plan_dict(goal_id="sub-45-10k")
+    plan["advice"] = [{"text": "Backed advice.", "cite": real_id}]
+    saved = await client.call_tool("save_program", {"plan": plan})
+    assert not saved.isError
+    read = await client.call_tool("read_program", {})
+    assert "## Sources" in read.structuredContent["markdown"]
+    html_page = Path(saved.structuredContent["html_path"]).read_text(encoding="utf-8")
+    assert "Sources" in html_page

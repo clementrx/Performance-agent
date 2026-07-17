@@ -6,6 +6,7 @@ description: Use when a returning athlete with an active program shows up — or
   bodyweight drift off the nutrition frame, fixture pile-up), and routes to
   adaptation when triggers fire.
 tools: [read_athlete, get_time_context, read_program, log_checkin, log_session,
+        list_athlete_documents,
         log_readiness, read_readiness, read_sessions, read_checkins,
         read_nutrition_frame, compute_session_load, compute_monotony_strain,
         compute_fitness_fatigue, compute_acwr, compute_readiness,
@@ -30,6 +31,9 @@ not the athlete names the problem.
 1. Open by quoting `get_time_context`: "your last update was N days ago; W weeks to
    [goal]". If days_since_last_session is null, nothing was ever logged — say so and
    start logging today.
+2a. `list_athlete_documents`: new or modified files in the drop folder are part
+   of the check-in — acknowledge them, and route to deep-research §0 to process
+   them (a physio report may change today's plan).
 2. Backfill: call `read_sessions` for the window since last contact to see what's
    already logged, then ask which planned sessions are still missing. `log_session`
    each one the athlete reports — for strength sessions collect the structured
@@ -185,6 +189,15 @@ weeks of load and >= 5 spanning measurements), pass its id as `banister_kpi_id` 
 fitness-fatigue time constants — read `usable` FIRST and treat an unusable fit as
 "not enough data yet", never as a number to act on. Then route to program-adaptation
 so the next version is sized to the measured response.
+
+## Mesocycle boundary duties
+
+When this check-in crosses into a new mesocycle (compare today against the
+program's week boundaries): (1) route to deep-research's incremental watch —
+replay the dossier facets with year_from = the dossier's year, thin facets
+first; (2) route to program-watch for the per-exercise audit. The
+loads_review and program_watch due actions surface both when overdue — treat
+them like any other due action: open with them.
 
 ## Route
 

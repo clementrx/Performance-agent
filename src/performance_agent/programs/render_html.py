@@ -13,8 +13,10 @@ rather than with the wrong GIF.
 
 import html
 import re
+from collections.abc import Mapping
 
 from performance_agent.engine import warmup_scheme
+from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.exercises.dataset import DatasetExercise, ExerciseMediaIndex
 from performance_agent.memory.schemas import (
     ExerciseBlock,
@@ -22,7 +24,12 @@ from performance_agent.memory.schemas import (
     SessionPlan,
     WeekPlan,
 )
-from performance_agent.programs.render import intensity_label, num_label, volume_label
+from performance_agent.programs.render import (
+    intensity_label,
+    num_label,
+    plan_citation_ids,
+    volume_label,
+)
 
 _LABELS = {
     "en": {
@@ -50,6 +57,9 @@ _LABELS = {
         "volume_intensity": "Volume x{volume}, intensity x{intensity}",
         "set_targets": "Weekly set targets",
         "media_credit": "Exercise media & instructions",
+        "advice": "Advice",
+        "why_program": "Why this program",
+        "sources": "Sources",
     },
     "fr": {
         "program": "Programme",
@@ -76,6 +86,9 @@ _LABELS = {
         "volume_intensity": "Volume x{volume}, intensité x{intensity}",
         "set_targets": "Cibles de séries hebdomadaires",
         "media_credit": "Médias & instructions des exercices",
+        "advice": "Conseils",
+        "why_program": "Pourquoi ce programme",
+        "sources": "Sources",
     },
     "es": {
         "program": "Programa",
@@ -102,6 +115,9 @@ _LABELS = {
         "volume_intensity": "Volumen x{volume}, intensidad x{intensity}",
         "set_targets": "Series semanales objetivo",
         "media_credit": "Medios e instrucciones de los ejercicios",
+        "advice": "Consejos",
+        "why_program": "Por qué este programa",
+        "sources": "Fuentes",
     },
 }
 
@@ -159,6 +175,14 @@ details.fb dl { margin: 0.5rem 0 0; }
 details.fb dt { font-weight: 600; }
 details.fb dd { margin: 0 0 0.4rem; color: var(--muted); }
 ul.milestones { padding-left: 1.2rem; }
+.guidance { margin: 0.75rem 0 0; }
+.guidance h2 { margin: 0.75rem 0 0.25rem; font-size: 1rem; }
+.guidance ul { margin: 0.25rem 0 0 1.1rem; padding: 0; }
+.guidance li { margin: 0.2rem 0; }
+sup.cite { color: var(--accent); font-weight: 600; }
+section.sources ol { padding-left: 1.2rem; }
+section.sources li { margin: 0.35rem 0; font-size: 0.9rem; }
+section.sources .stars { color: var(--accent); letter-spacing: 0.05em; }
 footer.credit { margin-top: 2.5rem; color: var(--muted); font-size: 0.8rem; }
 @media print { details.week, details.tech, details.fb { open: true; }
   body { background: #fff; } }
@@ -243,14 +267,19 @@ def _technique_html(record: DatasetExercise | None, locale: str) -> str:
 
 
 def _block_html(
-    session: SessionPlan, block: ExerciseBlock, catalog: _MediaCatalog, locale: str
+    session: SessionPlan,
+    block: ExerciseBlock,
+    catalog: _MediaCatalog,
+    locale: str,
+    numbers: dict[str, int],
 ) -> str:
     record, media_key = catalog.resolve(block)
     img = f'<div class="media m-{media_key}"></div>' if media_key else ""
     name = html.escape(block.exercise)
     parts = [
         f'<div class="block">{img}<div class="grow">',
-        f'<h4>{name} <span class="prio">[{block.priority}]</span></h4>',
+        f"<h4>{name}{_marker(numbers, block.cite)} "
+        f'<span class="prio">[{block.priority}]</span></h4>',
         _chips(block, locale),
         _warmup_html(session, block, locale),
         f'<p class="rule">{html.escape(block.progression_rule)}</p>',
@@ -277,13 +306,17 @@ def _fallbacks_html(session: SessionPlan, locale: str) -> str:
     )
 
 
-def _session_html(session: SessionPlan, catalog: _MediaCatalog, locale: str) -> str:
+def _session_html(
+    session: SessionPlan, catalog: _MediaCatalog, locale: str, numbers: dict[str, int]
+) -> str:
     days = _DAYS.get(locale, _DAYS["en"])
     day = days[session.weekday] if session.weekday is not None else _t(locale, "unscheduled")
     qualities = ", ".join(session.qualities)
     if session.patterns:
         qualities += f" · {_t(locale, 'patterns')} : {', '.join(session.patterns)}"
-    blocks = "".join(_block_html(session, block, catalog, locale) for block in session.blocks)
+    blocks = "".join(
+        _block_html(session, block, catalog, locale, numbers) for block in session.blocks
+    )
     return (
         f'<article class="session"><h3>{html.escape(session.id)} — {day} · '
         f"{session.est_minutes} min</h3>"
@@ -292,7 +325,13 @@ def _session_html(session: SessionPlan, catalog: _MediaCatalog, locale: str) -> 
     )
 
 
-def _week_html(week: WeekPlan, catalog: _MediaCatalog, locale: str, is_first: bool) -> str:
+def _week_html(
+    week: WeekPlan,
+    catalog: _MediaCatalog,
+    locale: str,
+    is_first: bool,
+    numbers: dict[str, int],
+) -> str:
     flags = [
         _t(locale, flag)
         for flag, on in (("deload", week.is_deload), ("taper", week.is_taper))
@@ -309,7 +348,9 @@ def _week_html(week: WeekPlan, catalog: _MediaCatalog, locale: str, is_first: bo
     if week.weekly_set_targets:
         targets = ", ".join(f"{k}: {v}" for k, v in sorted(week.weekly_set_targets.items()))
         meta_lines.append(f"{_t(locale, 'set_targets')} : {targets}")
-    sessions = "".join(_session_html(session, catalog, locale) for session in week.sessions)
+    sessions = "".join(
+        _session_html(session, catalog, locale, numbers) for session in week.sessions
+    )
     return (
         f'<details class="week"{" open" if is_first else ""}>'
         f"<summary>{_t(locale, 'week')} {week.week_index}{suffix}</summary>"
@@ -342,6 +383,53 @@ def _header_html(plan: ProgramPlan, locale: str) -> str:
     return f'<header class="top">{"".join(lines)}</header>'
 
 
+def _marker(numbers: dict[str, int], cite: str | None) -> str:
+    if cite is None or cite not in numbers:
+        return ""
+    return f'<sup class="cite">[{numbers[cite]}]</sup>'
+
+
+def _guidance_html(plan: ProgramPlan, numbers: dict[str, int], locale: str) -> str:
+    sections = []
+    for key, emoji, items in (
+        ("advice", "\U0001f48a", plan.advice),
+        ("why_program", "\U0001f52c", plan.rationale),
+    ):
+        if not items:
+            continue
+        rows = "".join(f"<li>{html.escape(g.text)}{_marker(numbers, g.cite)}</li>" for g in items)
+        sections.append(f"<h2>{emoji} {_t(locale, key)}</h2><ul>{rows}</ul>")
+    if not sections:
+        return ""
+    return f'<div class="guidance">{"".join(sections)}</div>'
+
+
+def _sources_html(
+    citations: Mapping[str, ResolvedCitation],
+    numbers: dict[str, int],
+    locale: str,
+) -> str:
+    ordered = sorted((cid for cid in numbers if cid in citations), key=lambda cid: numbers[cid])
+    if not ordered:
+        return ""
+    rows = []
+    for cid in ordered:
+        resolved = citations[cid]
+        link = (
+            f' <a href="https://doi.org/{html.escape(resolved.doi)}">DOI</a>'
+            if resolved.doi
+            else ""
+        )
+        rows.append(
+            f'<li><span class="stars">{resolved.stars}</span> '
+            f"{html.escape(resolved.citation)}{link}</li>"
+        )
+    return (
+        f'<section class="sources"><h2>\U0001f4da {_t(locale, "sources")}</h2>'
+        f"<ol>{''.join(rows)}</ol></section>"
+    )
+
+
 def _media_css(catalog: _MediaCatalog) -> str:
     """One background-image rule per GIF: dedup without any JavaScript."""
     return "".join(
@@ -350,21 +438,28 @@ def _media_css(catalog: _MediaCatalog) -> str:
 
 
 def render_program_html(
-    plan: ProgramPlan, locale: str = "en", index: ExerciseMediaIndex | None = None
+    plan: ProgramPlan,
+    locale: str = "en",
+    index: ExerciseMediaIndex | None = None,
+    citations: Mapping[str, ResolvedCitation] | None = None,
 ) -> str:
     """Render a ProgramPlan to a standalone, offline-ready HTML page.
 
     locale drives labels and exercise instructions (en/fr/es); index provides
     the media and is optional — without it the page still carries the full
-    prescription, just without GIFs and technique steps.
+    prescription, just without GIFs and technique steps. citations enables the
+    advice/rationale banner markers and the starred Sources bibliography.
     """
     catalog = _MediaCatalog(index)
+    numbers = (
+        {cid: i for i, cid in enumerate(plan_citation_ids(plan), start=1)} if citations else {}
+    )
     sections = []
     first = True
     for meso in plan.mesocycles:
         weeks = []
         for week in meso.weeks:
-            weeks.append(_week_html(week, catalog, locale, first))
+            weeks.append(_week_html(week, catalog, locale, first, numbers))
             first = False
         sections.append(
             f"<section><h2>Mesocycle {meso.index} — {meso.phase}</h2>{''.join(weeks)}</section>"
@@ -382,6 +477,7 @@ def render_program_html(
         f'<!doctype html><html lang="{locale}"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f"<title>{title}</title><style>{_CSS}{_media_css(catalog)}</style></head><body><main>"
-        f"{_header_html(plan, locale)}{''.join(sections)}{credit}</main>"
+        f"{_header_html(plan, locale)}{_guidance_html(plan, numbers, locale)}"
+        f"{''.join(sections)}{_sources_html(citations or {}, numbers, locale)}{credit}</main>"
         "</body></html>"
     )

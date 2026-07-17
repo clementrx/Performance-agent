@@ -13,6 +13,8 @@ EXPECTED_SKILLS = {
     "program-report",
     "deep-research",
     "session-day",
+    "next-week-loads",
+    "program-watch",
 }
 
 
@@ -167,6 +169,8 @@ def test_checkin_skill_protocol(skills):
         "recurring_fixtures",
         "refer out",
         "stop prescribing",
+        "list_athlete_documents",
+        "mesocycle boundary",
     ):
         assert needle in body, f"checkin skill lost: {needle}"
 
@@ -189,6 +193,9 @@ def test_adaptation_skill_protocol(skills):
         "under-stimulus",
         "weekly_set_targets_for",
         "rir",
+        "mini-wave",
+        "read_research_dossier",
+        "adapt first",
     ):
         assert needle in body, f"adaptation skill lost: {needle}"
 
@@ -214,6 +221,9 @@ def test_research_skill_protocol(skills):
         "contradiction",
         "thin evidence",
         "failed",
+        "list_athlete_documents",
+        "mini-wave",
+        "year_from",
     ):
         assert needle in body, f"deep-research skill lost: {needle}"
 
@@ -281,3 +291,37 @@ def test_session_day_skill_protocol(skills):
         "hooper",
     ):
         assert needle in body, f"session-day skill lost: {needle}"
+
+
+def test_next_week_loads_skill_protocol(skills):
+    loads = next(s for s in skills if s.frontmatter["name"] == "next-week-loads")
+    body = loads.body.casefold()
+    for needle in (
+        "suggest_next_week_loads",
+        "read_program",
+        "never versions the program",
+        "no_rule",
+        "failed_sets",
+        "clamped",
+        "program-adaptation",
+        "coaching judgment",
+    ):
+        assert needle in body, f"next-week-loads skill lost: {needle}"
+
+
+def test_program_watch_skill_protocol(skills):
+    watch = next(s for s in skills if s.frontmatter["name"] == "program-watch")
+    body = watch.body.casefold()
+    for needle in (
+        "save_watch_report",
+        "compare_prescribed_actual",
+        "estimate_1rm",
+        "score_exercises",
+        "keep",
+        "watch",
+        "substitution candidate",
+        "never edits the program",
+        "program-adaptation",
+        "subagent",
+    ):
+        assert needle in body, f"program-watch skill lost: {needle}"

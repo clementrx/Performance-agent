@@ -344,6 +344,43 @@ _INTENSITY_FIELDS = ("load_kg", "pct_1rm", "rir", "rpe", "pace_s_per_km")
 _VOLUME_FIELDS = ("reps", "duration_min", "distance_m")
 
 
+class ProgressionRule(BaseModel):
+    """Machine-readable weekly progression; the engine computes next week from it.
+
+    The free-text progression_rule on the block stays the human rendering; when
+    this structured rule is present it is the source of computation. Defaults
+    (3%/RIR, 2.5 kg rounding, the ±10% weekly clamp in the engine) are
+    team-chosen priors.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["double", "linear_load", "rir_target", "from_pct", "none"]
+    rep_min: int | None = Field(default=None, ge=1, le=100)
+    rep_max: int | None = Field(default=None, ge=1, le=100)
+    increment_kg: float | None = Field(default=None, gt=0, le=50)
+    target_rir: float | None = Field(default=None, ge=0, le=10)
+    adjust_pct_per_rir: float = Field(default=0.03, gt=0, le=0.2)
+    rounding_kg: float = Field(default=2.5, gt=0, le=10)
+
+    @model_validator(mode="after")
+    def _params_match_kind(self) -> Self:
+        if self.kind == "double":
+            if self.rep_min is None or self.rep_max is None or self.increment_kg is None:
+                msg = "kind=double requires rep_min, rep_max and increment_kg"
+                raise ValueError(msg)
+            if self.rep_min >= self.rep_max:
+                msg = f"rep_min must be < rep_max, got {self.rep_min}..{self.rep_max}"
+                raise ValueError(msg)
+        if self.kind == "linear_load" and self.increment_kg is None:
+            msg = "kind=linear_load requires increment_kg"
+            raise ValueError(msg)
+        if self.kind == "rir_target" and self.target_rir is None:
+            msg = "kind=rir_target requires target_rir"
+            raise ValueError(msg)
+        return self
+
+
 class ExerciseBlock(BaseModel):
     """One prescribed exercise inside a session, with a single intensity mode."""
 
@@ -364,6 +401,7 @@ class ExerciseBlock(BaseModel):
     pace_s_per_km: float | None = Field(default=None, gt=0, le=3600)
     rest_s: int | None = Field(default=None, ge=0, le=1800)
     progression_rule: str = Field(min_length=1)
+    progression: ProgressionRule | None = None
     cite: str | None = None
     notes: str | None = None
 
@@ -453,6 +491,19 @@ class TestMilestone(BaseModel):
     targets: list[str] = Field(min_length=1)
 
 
+class Guidance(BaseModel):
+    """One header guidance line: advice or program rationale, optionally cited.
+
+    cite is a corpus id (same semantics as ExerciseBlock.cite). Without one the
+    line must read as coaching judgment — never a fake citation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=300)
+    cite: str | None = None
+
+
 class ProgramPlan(BaseModel):
     """Structured program: the source of truth the markdown is rendered from."""
 
@@ -466,6 +517,8 @@ class ProgramPlan(BaseModel):
     checkin_cadence_days: int = Field(default=7, ge=1, le=90)
     season_ref: str | None = None
     test_milestones: list[TestMilestone] = Field(default_factory=list)
+    advice: list[Guidance] = Field(default_factory=list)
+    rationale: list[Guidance] = Field(default_factory=list)
     mesocycles: list[Mesocycle] = Field(min_length=1)
 
     @model_validator(mode="after")

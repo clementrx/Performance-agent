@@ -32,6 +32,10 @@ _PROFILE_STALE_DAYS = 42
 # Two reds in a row is a medium concern; three-plus is high (persistent under-recovery).
 _RED_STREAK_MEDIUM = 2
 _RED_STREAK_HIGH = 3
+# A training week with logged sessions deserves a loads review within six days;
+# a running program deserves a watch pass every two weeks (team-chosen priors).
+_LOADS_REVIEW_DUE_DAYS = 6
+_WATCH_DUE_DAYS = 14
 
 _SEVERITY_RANK: dict[Severity, int] = {"high": 0, "medium": 1, "low": 2}
 
@@ -52,6 +56,9 @@ class DiligenceFacts:
     has_program gates check-in nagging (no program => no cadence expectation).
     days_since_checkin is None when nothing has ever been logged. profile_stale_days
     is None when no response profile exists (staleness only applies once one does).
+    days_since_loads_review is None when no review was ever recorded;
+    days_since_watch_anchor counts from the newest of program start / last watch
+    report, None without a program.
     """
 
     has_program: bool
@@ -64,6 +71,9 @@ class DiligenceFacts:
     goal_deadline_without_events: bool = False
     profile_stale_days: int | None = None
     readiness_red_streak: int = 0
+    sessions_logged_last_week: int = 0
+    days_since_loads_review: int | None = None
+    days_since_watch_anchor: int | None = None
 
 
 @dataclass(frozen=True)
@@ -156,6 +166,33 @@ def _red_streak_action(facts: DiligenceFacts) -> DueAction | None:
     )
 
 
+def _loads_review_action(facts: DiligenceFacts) -> DueAction | None:
+    if not facts.has_program or facts.sessions_logged_last_week < 1:
+        return None
+    never = facts.days_since_loads_review is None
+    if not never and (facts.days_since_loads_review or 0) < _LOADS_REVIEW_DUE_DAYS:
+        return None
+    return DueAction(
+        "loads_review",
+        "medium",
+        "loads_review_due",
+        due_since_days=facts.days_since_loads_review,
+    )
+
+
+def _watch_action(facts: DiligenceFacts) -> DueAction | None:
+    if not facts.has_program or facts.days_since_watch_anchor is None:
+        return None
+    if facts.days_since_watch_anchor < _WATCH_DUE_DAYS:
+        return None
+    return DueAction(
+        "program_watch",
+        "medium",
+        "program_watch_due",
+        due_since_days=facts.days_since_watch_anchor,
+    )
+
+
 def _sort_key(action: DueAction) -> tuple[int, int, str, str]:
     # Severity first; then most urgent (soonest upcoming, longest overdue); then a
     # stable tiebreak on kind + ref so the order is fully deterministic.
@@ -182,6 +219,8 @@ def list_due_actions(facts: DiligenceFacts) -> list[DueAction]:
         _calendar_action(facts),
         _profile_action(facts),
         _red_streak_action(facts),
+        _loads_review_action(facts),
+        _watch_action(facts),
     ]
     candidates.extend(_event_action(event) for event in facts.upcoming_events)
     actions = [action for action in candidates if action is not None]

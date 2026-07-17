@@ -20,7 +20,7 @@ from performance_agent.engine.diligence import (
 )
 from performance_agent.engine.diligence import list_due_actions as list_due_actions_engine
 from performance_agent.engine.load import readiness_score
-from performance_agent.memory import store
+from performance_agent.memory import store, weekly_review
 from performance_agent.memory.schemas import ProgramPlan, ReadinessEntry
 from performance_agent.memory.time_context import TimeContext, build_time_context
 
@@ -125,6 +125,32 @@ def _readiness_red_streak(base_dir: Path, current: date) -> int:
     return streak
 
 
+def _sessions_logged_last_week(base_dir: Path, current: date) -> int:
+    return sum(
+        1
+        for entry in store.read_sessions(base_dir)
+        if 0 <= (current - entry.performed_at.date()).days < _MISSED_WINDOW_DAYS
+    )
+
+
+def _days_since_loads_review(base_dir: Path, current: date) -> int | None:
+    last_run = weekly_review.read_last_run(base_dir)
+    return None if last_run is None else (current - last_run).days
+
+
+def _days_since_watch_anchor(base_dir: Path, current: date) -> int | None:
+    """Days since the newest of program start / latest watch report, or None."""
+    program = store.read_program(base_dir)
+    if program is None:
+        return None
+    anchor = date.fromisoformat(program.created_on)
+    report = store.read_watch_report(base_dir)
+    if report is not None:
+        frontmatter, _ = report
+        anchor = max(anchor, date.fromisoformat(str(frontmatter["created_on"])))
+    return (current - anchor).days
+
+
 def _upcoming_events(context: TimeContext) -> tuple[UpcomingEvent, ...]:
     events = [
         UpcomingEvent(
@@ -154,6 +180,9 @@ def _build_facts(base_dir: Path, current: date) -> DiligenceFacts:
         goal_deadline_without_events=_goal_deadline_without_events(base_dir),
         profile_stale_days=_profile_stale_days(base_dir, current),
         readiness_red_streak=_readiness_red_streak(base_dir, current),
+        sessions_logged_last_week=_sessions_logged_last_week(base_dir, current),
+        days_since_loads_review=_days_since_loads_review(base_dir, current),
+        days_since_watch_anchor=_days_since_watch_anchor(base_dir, current),
     )
 
 
