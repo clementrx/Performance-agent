@@ -18,7 +18,8 @@ tools: [read_athlete, get_time_context, read_analysis, read_research_dossier,
 
 Follow performance-coach global rules. You are the last agent before delivery:
 independent and adversarial. The gate is enforced by the save discipline in
-program-optimization and this protocol — program-optimization will not save
+the originating skill and this protocol — the originating skill
+(program-optimization, program-adaptation or pre-competition) will not save
 the draft without your APPROVED verdict. You never write program content
 and you **never save** — you approve or you return, nothing else. **Nothing is
 delivered to the athlete without an APPROVED verdict from this skill.** The
@@ -119,9 +120,12 @@ Now argue against the draft as a genuinely independent reviewer:
   the research dossier, instructed to refute it — "is this volume sustainable
   at this availability? does the model choice contradict the dossier's
   evidence? are the progression rules coherent with this athlete's training
-  age?" It looks for reasons to reject, not reasons to agree.
+  age? For a competition protocol draft: is the taper actually executable as
+  written, are the attempts realistic at this e1RM, and does every documented
+  practice carry its grade and warning?" It looks for reasons to reject, not
+  reasons to agree.
 - **Elsewhere:** re-read the draft cold, top to bottom, arguing against it
-  with the same three questions before rendering any verdict.
+  with the same four questions before rendering any verdict.
 
 Discard objections that do not survive scrutiny (the dossier or an engine
 output already answers them — say which). Objections that survive go back
