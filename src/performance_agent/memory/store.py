@@ -5,7 +5,7 @@ never deletes history: logs are append-only and program versions are immutable.
 """
 
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -13,6 +13,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
+from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.memory.documents import ensure_documentation_dir
 from performance_agent.memory.schemas import (
     Calendar,
@@ -485,6 +486,7 @@ def save_program(
     plan: ProgramPlan,
     reason: str | None = None,
     today: date | None = None,
+    citations: Mapping[str, ResolvedCitation] | None = None,
 ) -> tuple[Path, int]:
     """Validate, render, and atomically write a program as a yaml+md pair.
 
@@ -494,7 +496,9 @@ def save_program(
     drift. Versions are immutable and never overwritten; adapting an existing
     program (v2+) requires a reason (the coaching-decision audit trail). The
     store owns version numbering — the plan's version/created_on/reason are
-    stamped here.
+    stamped here. citations maps the plan's corpus ids to their resolved
+    rendering; the server resolves them — None keeps the legacy citation-less
+    rendering for direct store users.
     """
     current = latest_program_version(base_dir)
     version = 1 if current is None else current + 1
@@ -510,7 +514,13 @@ def save_program(
         "created_on": created.isoformat(),
         "reason": reason,
     }
-    content = "---\n" + _to_yaml(frontmatter) + "---\n\n" + render_program(stamped).strip() + "\n"
+    content = (
+        "---\n"
+        + _to_yaml(frontmatter)
+        + "---\n\n"
+        + render_program(stamped, citations=citations).strip()
+        + "\n"
+    )
     _atomic_write(yaml_path, _to_yaml(stamped.model_dump(mode="json")))
     try:
         _atomic_write(md_path, content)

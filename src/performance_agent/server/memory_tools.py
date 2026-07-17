@@ -5,6 +5,7 @@ start, quotes get_time_context instead of computing dates, and records every
 adaptation through the versioned program store.
 """
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, TypedDict
 
@@ -12,6 +13,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from performance_agent.engine import SeasonModality
+from performance_agent.evidence.citations import ResolvedCitation, resolve_citations
 from performance_agent.exercises.dataset import ExerciseMediaIndex
 from performance_agent.memory import diligence, monitoring, sequencing, store
 from performance_agent.memory import season as season_planner
@@ -32,6 +34,7 @@ from performance_agent.memory.schemas import (
 )
 from performance_agent.memory.season import SeasonPlanView
 from performance_agent.memory.time_context import TimeContext, build_time_context
+from performance_agent.programs.render import plan_citation_ids
 from performance_agent.programs.render_html import render_program_html
 
 
@@ -271,7 +274,12 @@ def _doc_view(result: tuple[dict[str, object], str] | None, missing_msg: str) ->
     )
 
 
-def _write_program_html(base: Path, md_path: Path, version: int) -> str | None:
+def _write_program_html(
+    base: Path,
+    md_path: Path,
+    version: int,
+    citations: Mapping[str, ResolvedCitation] | None = None,
+) -> str | None:
     """Render and write the dated program .html next to the markdown (best-effort).
 
     The page always carries the full prescription; exercise GIFs and technique
@@ -286,7 +294,7 @@ def _write_program_html(base: Path, md_path: Path, version: int) -> str | None:
     except (FileNotFoundError, NotADirectoryError):
         index = None
     locale = store.read_profile(base).locale
-    page = render_program_html(program.plan, locale=locale, index=index)
+    page = render_program_html(program.plan, locale=locale, index=index, citations=citations)
     html_path = md_path.with_suffix(".html")
     html_path.write_text(page, encoding="utf-8")
     return str(html_path)
@@ -304,11 +312,14 @@ def save_program(plan: ProgramPlan, reason: str | None = None) -> ProgramSaved:
     on the plan. Files are named after the save date (program-YYYYMMDD.md, -2
     on a same-day version). Alongside the markdown, a standalone .html session
     page is written (exercise GIFs + technique steps in the athlete's locale,
-    usable offline at the gym) — hand that file to the athlete.
+    usable offline at the gym) — hand that file to the athlete. Every cite on
+    advice/rationale/blocks must be a real corpus id — an unknown id aborts the
+    save before anything is written (anti-fabrication).
     """
     base = resolve_athlete_dir()
-    path, version = store.save_program(base, plan, reason)
-    html_path = _write_program_html(base, path, version)
+    citations = resolve_citations(plan_citation_ids(plan))
+    path, version = store.save_program(base, plan, reason, citations=citations)
+    html_path = _write_program_html(base, path, version, citations)
     return ProgramSaved(path=str(path), version=version, html_path=html_path)
 
 
