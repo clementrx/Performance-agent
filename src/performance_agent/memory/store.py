@@ -54,6 +54,7 @@ MACRO_DIR = "macro"
 MACRO_PLAN_PREFIX = "macro-plan"
 EXERCISES_DIR = "exercises"
 EXERCISE_LIBRARY_FILE = "library.yaml"
+WATCH_DIR = "watch"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -803,5 +804,48 @@ def read_nutrition_frame(
         subdir=NUTRITION_DIR,
         prefix="frame",
         label="nutrition frame",
+        version=version,
+    )
+
+
+def latest_watch_report_version(base_dir: Path) -> int | None:
+    """Return the highest existing watch-report version, or None."""
+    return _latest_doc_version(base_dir, WATCH_DIR, "report")
+
+
+def save_watch_report(
+    base_dir: Path,
+    markdown_body: str,
+    goal_id: str,
+    reason: str | None = None,
+    today: date | None = None,
+) -> tuple[Path, int]:
+    """Write the next program-watch report version; v2+ requires a reason.
+
+    Same immutable-version audit trail as the other doc families; lives in
+    watch/. The latest report's created_on is also the diligence anchor for
+    "program watch due".
+    """
+    return _save_versioned_doc(
+        base_dir,
+        markdown_body,
+        goal_id,
+        subdir=WATCH_DIR,
+        prefix="report",
+        label="watch report",
+        reason=reason,
+        today=today,
+    )
+
+
+def read_watch_report(
+    base_dir: Path, version: int | None = None
+) -> tuple[dict[str, object], str] | None:
+    """Return (frontmatter, body) for the given or latest watch report; None when empty."""
+    return _read_versioned_doc(
+        base_dir,
+        subdir=WATCH_DIR,
+        prefix="report",
+        label="watch report",
         version=version,
     )
