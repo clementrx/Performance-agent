@@ -2,6 +2,29 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## 0.6.0 — One Folder per Athlete
+
+The directory the server is launched from IS the athlete's data directory, so a
+coaching folder can hold one subfolder per athlete: `cd ~/coaching/marie && claude`.
+93 MCP tools (unchanged).
+
+### Changed
+
+- **Athlete dir = launch dir** — `resolve_athlete_dir()` now returns
+  `PERFORMANCE_AGENT_HOME` if set, else the server's working directory. The
+  `./athlete/` convention and the `~/.performance-agent` fallback are removed.
+  Launching from `$HOME` or a filesystem root is refused with an actionable
+  error. **Migration:** `mkdir -p ~/coaching/me && mv ~/.performance-agent/* ~/coaching/me/`
+  (`cache/` can stay — the shared exercises-media cache location is unchanged).
+
+### Fixed
+
+- **Session HTML GIFs on phones** — the page previously injected each GIF's
+  data URI via an inline script, so viewers that don't run JavaScript (iOS
+  Quick Look from the Files app, in-app file previews) showed no media. GIFs
+  are now embedded as shared CSS `background-image` rules — same
+  one-copy-per-GIF dedup, zero JavaScript on the page.
+
 ## 0.5.0 — Session HTML
 
 The program the athlete actually opens at the gym. 1243 → 1270 tests; 93 MCP

@@ -67,16 +67,25 @@ il récupère tout seul la bonne version de Python, rien d'autre à installer.
 terminal :
 
 ```bash
-claude mcp add performance-agent -s user \
-  --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
+claude mcp add performance-agent -s user -- uvx performance-agent
 ```
 
 Cela enregistre le « cerveau » du coach (le moteur, la bibliothèque scientifique,
 votre futur profil d'athlète) comme un outil que Claude Code peut appeler. `-s user`
 le rend disponible dans n'importe quel dossier où vous ouvrirez `claude`.
-`~/athlete-data` n'est qu'une suggestion — choisissez le dossier que vous voulez, il
-n'a pas besoin d'exister : le coach le crée à la première sauvegarde. C'est là que
-vivent toutes vos données, en fichiers simples ; rien n'est envoyé ailleurs.
+
+**Le dossier depuis lequel vous lancez `claude` est le dossier de données de
+l'athlète.** Créez un dossier par athlète et démarrez la session depuis celui-ci :
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+Toutes les données de cet athlète vivent là, en fichiers simples ; rien n'est envoyé
+ailleurs. Coacher plusieurs athlètes, c'est juste plusieurs dossiers — faites `cd`
+dans le bon. (Si votre hôte MCP ne vous laisse pas choisir le dossier de lancement —
+Claude Desktop par exemple — définissez `PERFORMANCE_AGENT_HOME` vers le dossier de
+l'athlète dans la config du serveur.)
 
 **Étape 2 — lui apprendre à coacher.** L'étape 1 donne à Claude les *outils* (les
 maths, les données). Celle-ci lui donne les *protocoles de coaching* — quoi demander
@@ -110,7 +119,7 @@ Vous devez voir 93 outils. Si oui, c'est terminé — parlez-lui, tout simplemen
    enregistre votre profil.
 4. **Recevez un verdict honnête.** Le moteur de faisabilité note votre objectif ; s'il
    est hors de portée, vous obtenez la vraie probabilité et une contre-proposition.
-5. **Dites oui** — le programme est écrit dans `athlete/programs/program-v1.md`,
+5. **Dites oui** — le programme est écrit dans `programs/program-v1.md`,
    périodisé en cycles avec décharges et affûtage, chaque prescription portant son
    but, son grade de preuve (★★★★★ → ★☆☆☆☆) et des citations vérifiées. À côté,
    `program-v1.html` est une page de séance autonome pour la salle : chaque
@@ -153,7 +162,7 @@ dans [`examples/`](../../examples/), dans les cinq langues.
 
 > Oui.
 
-📄 Programme écrit dans athlete/programs/program-v1.md
+📄 Programme écrit dans programs/program-v1.md
    21 semaines, 3 sorties/semaine : une séance d'intervalles, un tempo,
    une sortie longue — périodisé avec décharges et affûtage de 10 jours.
 ```
@@ -183,7 +192,7 @@ dans [`examples/`](../../examples/), dans les cinq langues.
 
 > Oui.
 
-📄 Programme écrit dans athlete/programs/program-v1.md
+📄 Programme écrit dans programs/program-v1.md
 ```
 
 ### 3. Des abdos dessinés et des gros bras en 3 mois
@@ -218,7 +227,7 @@ dans [`examples/`](../../examples/), dans les cinq langues.
 
 > Oui.
 
-📄 Programme écrit dans athlete/programs/program-v1.md
+📄 Programme écrit dans programs/program-v1.md
 ```
 
 ## Avec quel outil IA puis-je l'utiliser ?

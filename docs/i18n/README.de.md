@@ -66,16 +66,25 @@ es holt sich die richtige Python-Version selbst, sonst ist nichts zu installiere
 **Schritt 1 — den Coach einstecken.** Einmalig in einem beliebigen Terminal ausführen:
 
 ```bash
-claude mcp add performance-agent -s user \
-  --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
+claude mcp add performance-agent -s user -- uvx performance-agent
 ```
 
 Das registriert das „Gehirn“ des Coaches (die Engine, die Wissenschaftsbibliothek,
 dein zukünftiges Athletenprofil) als Werkzeug, das Claude Code aufrufen kann.
 `-s user` macht es in jedem Ordner verfügbar, in dem du später `claude` öffnest.
-`~/athlete-data` ist nur ein Vorschlag — wähle einen beliebigen Ordner, er muss nicht
-existieren: Der Coach legt ihn beim ersten Speichern an. Dort liegen alle deine Daten
-als einfache Dateien; nichts wird irgendwohin gesendet.
+
+**Der Ordner, aus dem du `claude` startest, ist der Datenordner des Athleten.**
+Lege pro Athlet einen Ordner an und starte die Sitzung von dort:
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+Dort liegen alle Daten dieses Athleten als einfache Dateien; nichts wird irgendwohin
+gesendet. Mehrere Athleten zu coachen heißt einfach mehrere Ordner — wechsle mit `cd`
+in den richtigen. (Wenn dein MCP-Host den Startordner nicht wählen lässt — z. B.
+Claude Desktop — setze stattdessen `PERFORMANCE_AGENT_HOME` in der Server-Konfiguration
+auf den Athletenordner.)
 
 **Schritt 2 — ihm das Coaching beibringen.** Schritt 1 gab Claude die *Werkzeuge* (die
 Mathematik, die Daten). Dieser Schritt gibt ihm die *Coaching-Protokolle* — was wann
@@ -110,7 +119,7 @@ Du solltest 93 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit i
 4. **Erhalte ein ehrliches Urteil.** Die Machbarkeits-Engine bewertet dein Ziel; ist
    es außer Reichweite, bekommst du die echte Wahrscheinlichkeit und einen
    Gegenvorschlag.
-5. **Sag ja** — das Programm wird nach `athlete/programs/program-v1.md` geschrieben,
+5. **Sag ja** — das Programm wird nach `programs/program-v1.md` geschrieben,
    periodisiert in Zyklen mit Deloads und Taper; jede Vorgabe trägt ihren Zweck, ihre
    Evidenzstufe (★★★★★ → ★☆☆☆☆) und verifizierte Zitate. Daneben ist
    `program-v1.html` eine eigenständige Trainingsseite fürs Studio: jede
@@ -154,7 +163,7 @@ in [`examples/`](../../examples/), in allen fünf Sprachen.
 
 > Ja.
 
-📄 Programm geschrieben nach athlete/programs/program-v1.md
+📄 Programm geschrieben nach programs/program-v1.md
    21 Wochen, 3 Läufe/Woche: eine Intervalleinheit, ein Tempolauf,
    ein langer Lauf — periodisiert mit Deloads und 10-Tage-Taper.
 ```
@@ -184,7 +193,7 @@ in [`examples/`](../../examples/), in allen fünf Sprachen.
 
 > Ja.
 
-📄 Programm geschrieben nach athlete/programs/program-v1.md
+📄 Programm geschrieben nach programs/program-v1.md
 ```
 
 ### 3. Sichtbare Bauchmuskeln und dickere Arme in 3 Monaten
@@ -219,7 +228,7 @@ in [`examples/`](../../examples/), in allen fünf Sprachen.
 
 > Ja.
 
-📄 Programm geschrieben nach athlete/programs/program-v1.md
+📄 Programm geschrieben nach programs/program-v1.md
 ```
 
 ## Mit welchem KI-Tool kann ich das benutzen?

@@ -59,14 +59,22 @@ def test_prescription_without_media_index():
 def test_media_embedded_once_and_credited(index):
     page = render_program_html(linked_plan(), index=index)
     assert page.count("data:image/gif;base64,") == 1
-    assert '<img data-media="0043"' in page
+    assert '<div class="media m-0043"></div>' in page
+    assert '.m-0043{background-image:url("data:image/gif;base64,' in page
     assert "gymvisual.com" in page
     assert "Stand with the bar on your back." in page
 
 
+def test_media_renders_without_javascript(index):
+    # Phone viewers (iOS Quick Look, in-app previews) don't run scripts: the
+    # GIFs must be pure HTML+CSS, so the page may not contain any <script>.
+    page = render_program_html(linked_plan(), index=index)
+    assert "<script" not in page
+
+
 def test_no_external_resources(index):
     page = render_program_html(linked_plan(), index=index)
-    for needle in ('src="http', 'href="http://', "url(", "@import", "fetch("):
+    for needle in ('src="http', 'href="http://', "url(http", "url(//", "@import", "fetch("):
         credit_free = page.replace('href="https://gymvisual.com/"', "").replace(
             'href="https://github.com/hasaneyldrm/exercises-dataset"', ""
         )
