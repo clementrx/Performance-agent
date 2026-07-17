@@ -8,8 +8,11 @@ caught at render time by citation-ID validation.
 """
 
 import re
+from collections.abc import Iterable
+from dataclasses import dataclass
 
-from performance_agent.evidence.schemas import EvidenceEntry
+from performance_agent.evidence.corpus import load_corpus
+from performance_agent.evidence.schemas import STARS, EvidenceEntry
 
 _DOI_PATTERN = re.compile(r"10\.\d{4,9}/[^\s\"'<>)\]]+", re.IGNORECASE)
 _PMID_PATTERN = re.compile(r"\bPMID:?\s*(\d{6,9})\b", re.IGNORECASE)
@@ -74,3 +77,37 @@ def find_unknown_references(text: str, corpus: list[EvidenceEntry]) -> list[str]
         if _normalized_isbn(isbn) not in known_isbns:
             unknown.append(f"ISBN:{isbn}")
     return unknown
+
+
+@dataclass(frozen=True)
+class ResolvedCitation:
+    """A corpus id rendered for a deliverable bibliography."""
+
+    citation: str
+    stars: str
+    doi: str | None
+    pmid: str | None
+
+
+def resolve_citations(ids: Iterable[str]) -> dict[str, ResolvedCitation]:
+    """Resolve corpus ids to formatted citations; unknown ids are a hard error.
+
+    This is the render-side anti-fabrication lock for structured plans: a plan
+    whose advice/rationale/blocks cite an id that is not in the corpus refuses
+    to save.
+    """
+    entries = {entry.id: entry for entry in load_corpus()}
+    wanted = list(dict.fromkeys(ids))
+    unknown = [cid for cid in wanted if cid not in entries]
+    if unknown:
+        msg = f"citation ids not in the evidence corpus: {unknown}"
+        raise ValueError(msg)
+    return {
+        cid: ResolvedCitation(
+            citation=format_citation(entries[cid]),
+            stars=STARS[entries[cid].evidence_level],
+            doi=entries[cid].doi,
+            pmid=entries[cid].pmid,
+        )
+        for cid in wanted
+    }

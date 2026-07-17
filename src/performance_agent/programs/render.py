@@ -175,3 +175,27 @@ def render_program(plan: ProgramPlan) -> str:
             lines.append("")
             lines.extend(_week_lines(week))
     return "\n".join(lines).strip() + "\n"
+
+
+def plan_citation_ids(plan: ProgramPlan) -> list[str]:
+    """Every corpus id the plan cites, in order of first appearance, deduplicated.
+
+    Order: advice, then rationale, then blocks in program order — this is the
+    [n] numbering of the HTML page and the Sources section.
+    """
+    ids: list[str] = []
+    seen: set[str] = set()
+
+    def add(cite: str | None) -> None:
+        if cite and cite not in seen:
+            seen.add(cite)
+            ids.append(cite)
+
+    for guidance in (*plan.advice, *plan.rationale):
+        add(guidance.cite)
+    for meso in plan.mesocycles:
+        for week in meso.weeks:
+            for session in week.sessions:
+                for block in session.blocks:
+                    add(block.cite)
+    return ids
