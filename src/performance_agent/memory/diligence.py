@@ -12,14 +12,16 @@ Window lengths here (recent-session and readiness lookbacks) are team-chosen pri
 
 from datetime import date
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
 
+from performance_agent.engine.competition import protocol_window_days
 from performance_agent.engine.diligence import (
     DiligenceFacts,
     UpcomingEvent,
 )
 from performance_agent.engine.diligence import list_due_actions as list_due_actions_engine
 from performance_agent.engine.load import readiness_score
+from performance_agent.engine.season import EventPriority, recommend_taper_length
 from performance_agent.memory import store, weekly_review
 from performance_agent.memory.schemas import ProgramPlan, ReadinessEntry
 from performance_agent.memory.time_context import TimeContext, build_time_context
@@ -29,6 +31,10 @@ from performance_agent.memory.time_context import TimeContext, build_time_contex
 _MISSED_WINDOW_DAYS = 7
 _READINESS_WINDOW_DAYS = 14
 _EVENT_HORIZON_DAYS = 21
+# The due-action window uses the population mixed-modality taper prior — no
+# per-athlete modality is persisted; the skill computes the individualized
+# window (recommend_taper) when it actually authors the protocol.
+_NEUTRAL_BUILDUP_WEEKS = 8
 
 
 class DueActionView(TypedDict):
@@ -151,16 +157,26 @@ def _days_since_watch_anchor(base_dir: Path, current: date) -> int | None:
     return (current - anchor).days
 
 
-def _upcoming_events(context: TimeContext) -> tuple[UpcomingEvent, ...]:
-    events = [
-        UpcomingEvent(
-            event_id=event["event_id"],
-            priority=event["priority"],
-            days_until=event["days_until"],
+def _upcoming_events(base_dir: Path, context: TimeContext) -> tuple[UpcomingEvent, ...]:
+    events = []
+    for event in context["next_events"]:
+        if (
+            event["priority"] not in ("A", "B")
+            or not 0 <= event["days_until"] <= _EVENT_HORIZON_DAYS
+        ):
+            continue
+        priority = cast(EventPriority, event["priority"])
+        taper_days = recommend_taper_length(_NEUTRAL_BUILDUP_WEEKS, "mixed", priority)
+        events.append(
+            UpcomingEvent(
+                event_id=event["event_id"],
+                priority=priority,
+                days_until=event["days_until"],
+                protocol_window_days=protocol_window_days(taper_days, priority),
+                has_protocol=store.latest_competition_protocol_version(base_dir, event["event_id"])
+                is not None,
+            )
         )
-        for event in context["next_events"]
-        if event["priority"] in ("A", "B") and 0 <= event["days_until"] <= _EVENT_HORIZON_DAYS
-    ]
     return tuple(events)
 
 
@@ -173,7 +189,7 @@ def _build_facts(base_dir: Path, current: date) -> DiligenceFacts:
         has_program=program is not None,
         checkin_cadence_days=cadence,
         days_since_checkin=context["days_since_last_checkin"],
-        upcoming_events=_upcoming_events(context),
+        upcoming_events=_upcoming_events(base_dir, context),
         missed_session_count=_missed_session_count(base_dir, plan, current),
         days_since_last_session=context["days_since_last_session"],
         training_days_without_readiness=_training_days_without_readiness(base_dir, current),

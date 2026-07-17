@@ -192,3 +192,65 @@ def test_program_watch_quiet_when_recent_or_no_program():
     for facts in (recent, no_program):
         kinds = {action.kind for action in list_due_actions(facts)}
         assert "program_watch" not in kinds
+
+
+def test_competition_protocol_due_inside_window_without_protocol():
+    facts = _facts(
+        upcoming_events=(
+            UpcomingEvent(
+                event_id="nationals",
+                priority="A",
+                days_until=8,
+                protocol_window_days=10,
+                has_protocol=False,
+            ),
+        )
+    )
+    action = next(a for a in list_due_actions(facts) if a.kind == "competition_protocol")
+    assert action.severity == "medium"
+    assert action.due_in_days == 8
+    assert action.ref == "nationals"
+
+
+def test_competition_protocol_high_when_event_is_close():
+    facts = _facts(
+        upcoming_events=(
+            UpcomingEvent(
+                event_id="nationals",
+                priority="A",
+                days_until=5,
+                protocol_window_days=10,
+                has_protocol=False,
+            ),
+        )
+    )
+    action = next(a for a in list_due_actions(facts) if a.kind == "competition_protocol")
+    assert action.severity == "high"
+
+
+def test_competition_protocol_quiet_outside_window_or_covered():
+    outside = _facts(
+        upcoming_events=(
+            UpcomingEvent(
+                event_id="nationals",
+                priority="A",
+                days_until=15,
+                protocol_window_days=10,
+                has_protocol=False,
+            ),
+        )
+    )
+    covered = _facts(
+        upcoming_events=(
+            UpcomingEvent(
+                event_id="nationals",
+                priority="A",
+                days_until=5,
+                protocol_window_days=10,
+                has_protocol=True,
+            ),
+        )
+    )
+    for facts in (outside, covered):
+        kinds = {a.kind for a in list_due_actions(facts)}
+        assert "competition_protocol" not in kinds
