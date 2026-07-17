@@ -46,7 +46,7 @@
 - Create: `src/performance_agent/memory/documents.py`
 - Test: `tests/memory/test_documents.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/memory/test_documents.py`:
 
@@ -190,12 +190,12 @@ def test_corrupt_registry_is_rebuilt_empty(tmp_path):
     assert [item["filename"] for item in result["new"]] == ["study.pdf"]
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `uv run pytest tests/memory/test_documents.py -q`
 Expected: FAIL with `ModuleNotFoundError: No module named 'performance_agent.memory.documents'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `src/performance_agent/memory/documents.py`:
 
@@ -432,12 +432,12 @@ def mark_processed(  # noqa: PLR0913 -- one keyword per registry field, all name
     return record
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/memory/test_documents.py -q`
 Expected: PASS (10 passed)
 
-- [ ] **Step 5: Lint, type-check, commit**
+- [x] **Step 5: Lint, type-check, commit**
 
 ```bash
 uv run ruff check src/performance_agent/memory/documents.py tests/memory/test_documents.py
@@ -455,7 +455,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/memory/store.py:103-108` (`write_profile`)
 - Test: `tests/memory/test_documents.py` (append)
 
-- [ ] **Step 1: Write the failing test** (append to `tests/memory/test_documents.py`)
+- [x] **Step 1: Write the failing test** (append to `tests/memory/test_documents.py`)
 
 ```python
 def test_write_profile_bootstraps_documentation_folder(tmp_path):
@@ -466,9 +466,9 @@ def test_write_profile_bootstraps_documentation_folder(tmp_path):
     assert (tmp_path / DOCUMENTATION_DIR / README_FILE).exists()
 ```
 
-- [ ] **Step 2: Run it** — `uv run pytest tests/memory/test_documents.py::test_write_profile_bootstraps_documentation_folder -q` — Expected: FAIL (no documentation dir)
+- [x] **Step 2: Run it** — `uv run pytest tests/memory/test_documents.py::test_write_profile_bootstraps_documentation_folder -q` — Expected: FAIL (no documentation dir)
 
-- [ ] **Step 3: Implement** — in `src/performance_agent/memory/store.py`, add to the imports block (after the `from performance_agent.memory.schemas import (...)` import):
+- [x] **Step 3: Implement** — in `src/performance_agent/memory/store.py`, add to the imports block (after the `from performance_agent.memory.schemas import (...)` import):
 
 ```python
 from performance_agent.memory.documents import ensure_documentation_dir
@@ -490,9 +490,9 @@ def write_profile(base_dir: Path, profile: Profile) -> Path:
 
 (Keep the original body of `write_profile` otherwise identical to what is in the file — only the docstring line and the `ensure_documentation_dir` call are added.)
 
-- [ ] **Step 4: Run** — `uv run pytest tests/memory/test_documents.py tests/memory/ -q` — Expected: PASS, no regressions
+- [x] **Step 4: Run** — `uv run pytest tests/memory/test_documents.py tests/memory/ -q` — Expected: PASS, no regressions
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/memory/store.py tests/memory/test_documents.py
@@ -508,7 +508,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/server/app.py`
 - Test: `tests/server/test_document_tools.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/server/test_document_tools.py`:
 
@@ -554,9 +554,9 @@ def test_mark_context_then_list_shows_processed(athlete_dir):
     assert inventory["processed"][0]["summary"].startswith("Physio")
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/server/test_document_tools.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `uv run pytest tests/server/test_document_tools.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/server/document_tools.py`:
 
@@ -666,9 +666,9 @@ and after `engine_tools.register(mcp)` line block add (keep existing order, appe
 document_tools.register(mcp)
 ```
 
-- [ ] **Step 4: Run** — `uv run pytest tests/server/test_document_tools.py tests/server/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `uv run pytest tests/server/test_document_tools.py tests/server/ -q` — Expected: PASS
 
-- [ ] **Step 5: Lint, commit**
+- [x] **Step 5: Lint, commit**
 
 ```bash
 uv run ruff check src/performance_agent/server/document_tools.py src/performance_agent/server/app.py tests/server/test_document_tools.py && uv run ruff format --check src tests
@@ -681,8 +681,8 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ### Task 4: Phase 1 gate
 
-- [ ] **Step 1: Full test suite** — Run: `uv run pytest -q` — Expected: all pass (1275+ tests, plus the new ones)
-- [ ] **Step 2: Zero warnings** — Run: `uv run ruff check src tests && uv run ty check` — Expected: clean. Fix anything before moving on.
+- [x] **Step 1: Full test suite** — Run: `uv run pytest -q` — Expected: all pass (1275+ tests, plus the new ones)
+- [x] **Step 2: Zero warnings** — Run: `uv run ruff check src tests && uv run ty check` — Expected: clean. Fix anything before moving on.
 
 ---
 
@@ -694,7 +694,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/memory/schemas.py` (insert `ProgressionRule` right BEFORE `class ExerciseBlock` at line 347; add one field to `ExerciseBlock`)
 - Test: `tests/memory/test_schemas_progression.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/memory/test_schemas_progression.py`:
 
@@ -756,9 +756,9 @@ def test_block_accepts_structured_progression_and_stays_optional():
     assert legacy.progression is None
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/memory/test_schemas_progression.py -q` — Expected: FAIL (`ImportError: ProgressionRule`)
+- [x] **Step 2: Run** — `uv run pytest tests/memory/test_schemas_progression.py -q` — Expected: FAIL (`ImportError: ProgressionRule`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/performance_agent/memory/schemas.py`, insert immediately before `class ExerciseBlock`:
 
@@ -806,9 +806,9 @@ In `ExerciseBlock`, add after the `progression_rule: str = Field(min_length=1)` 
     progression: ProgressionRule | None = None
 ```
 
-- [ ] **Step 4: Run** — `uv run pytest tests/memory/test_schemas_progression.py tests/memory/ -q` — Expected: PASS (old program yaml without the field still loads: covered by existing store tests)
+- [x] **Step 4: Run** — `uv run pytest tests/memory/test_schemas_progression.py tests/memory/ -q` — Expected: PASS (old program yaml without the field still loads: covered by existing store tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/memory/schemas.py tests/memory/test_schemas_progression.py
@@ -823,7 +823,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Create: `src/performance_agent/engine/progression.py`
 - Test: `tests/engine/test_progression.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/engine/test_progression.py`:
 
@@ -933,9 +933,9 @@ def test_from_pct_without_e1rm_flags():
     assert "no_e1rm" in result.flags
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/engine/test_progression.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `uv run pytest tests/engine/test_progression.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/engine/progression.py`:
 
@@ -1050,9 +1050,9 @@ def next_load_from_pct(
 
 Note: `assert` here documents schema-guaranteed invariants (the Pydantic validator makes them unreachable); if the repo's ruff config rejects `S101`, replace each assert with an explicit `if x is None: raise ValueError(...)` guard.
 
-- [ ] **Step 4: Run** — `uv run pytest tests/engine/test_progression.py tests/engine/test_engine_purity.py -q` — Expected: PASS (purity test must still pass — this module imports only schemas + dataclasses)
+- [x] **Step 4: Run** — `uv run pytest tests/engine/test_progression.py tests/engine/test_engine_purity.py -q` — Expected: PASS (purity test must still pass — this module imports only schemas + dataclasses)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 uv run ruff check src/performance_agent/engine/progression.py tests/engine/test_progression.py
@@ -1068,7 +1068,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Create: `src/performance_agent/memory/weekly_review.py`
 - Test: `tests/memory/test_weekly_review.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/memory/test_weekly_review.py`. It needs a small program fixture; build it inline:
 
@@ -1233,9 +1233,9 @@ def test_no_matching_week_returns_empty_with_flag(tmp_path):
     assert "no_matched_week" in view["flags"]
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/memory/test_weekly_review.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `uv run pytest tests/memory/test_weekly_review.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/memory/weekly_review.py`:
 
@@ -1496,9 +1496,9 @@ def suggest_next_week_loads(
     return WeeklyLoadsView(week_matched=week.week_index, blocks=blocks, flags=flags)
 ```
 
-- [ ] **Step 4: Run** — `uv run pytest tests/memory/test_weekly_review.py -q` — Expected: PASS. If the Epley expectation in `test_from_pct_uses_next_week_pct_and_logged_e1rm` is off by one rounding step, recompute by hand (100 × (1 + 5/30) = 116.67; 0.85 × 116.67 = 99.17 → 100.0 at 2.5 rounding) — fix the TEST only if your arithmetic disagrees, never the engine.
+- [x] **Step 4: Run** — `uv run pytest tests/memory/test_weekly_review.py -q` — Expected: PASS. If the Epley expectation in `test_from_pct_uses_next_week_pct_and_logged_e1rm` is off by one rounding step, recompute by hand (100 × (1 + 5/30) = 116.67; 0.85 × 116.67 = 99.17 → 100.0 at 2.5 rounding) — fix the TEST only if your arithmetic disagrees, never the engine.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 uv run ruff check src/performance_agent/memory/weekly_review.py tests/memory/test_weekly_review.py
@@ -1514,7 +1514,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/memory/store.py` (constants + three functions, after the nutrition-frame block at the end of the file)
 - Test: `tests/memory/test_store_watch.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/memory/test_store_watch.py`:
 
@@ -1547,9 +1547,9 @@ def test_latest_version_none_when_empty(tmp_path):
     assert store.latest_watch_report_version(tmp_path) is None
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/memory/test_store_watch.py -q` — Expected: FAIL (`AttributeError: save_watch_report`)
+- [x] **Step 2: Run** — `uv run pytest tests/memory/test_store_watch.py -q` — Expected: FAIL (`AttributeError: save_watch_report`)
 
-- [ ] **Step 3: Implement** — in `src/performance_agent/memory/store.py`, add to the constants block (after `EXERCISE_LIBRARY_FILE`):
+- [x] **Step 3: Implement** — in `src/performance_agent/memory/store.py`, add to the constants block (after `EXERCISE_LIBRARY_FILE`):
 
 ```python
 WATCH_DIR = "watch"
@@ -1601,9 +1601,9 @@ def read_watch_report(
     )
 ```
 
-- [ ] **Step 4: Run** — `uv run pytest tests/memory/test_store_watch.py tests/memory/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `uv run pytest tests/memory/test_store_watch.py tests/memory/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/memory/store.py tests/memory/test_store_watch.py
@@ -1619,7 +1619,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/server/app.py`
 - Test: `tests/server/test_followup_tools.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/server/test_followup_tools.py`:
 
@@ -1721,9 +1721,9 @@ def test_save_watch_report_versions(athlete_dir):
     assert result["version"] == 1
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/server/test_followup_tools.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `uv run pytest tests/server/test_followup_tools.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/server/followup_tools.py`:
 
@@ -1779,9 +1779,9 @@ def register(mcp: FastMCP) -> None:
 
 In `src/performance_agent/server/app.py`, add `followup_tools` to the import tuple (alphabetical: between `exercise_tools` and `import_tools`) and add `followup_tools.register(mcp)` after `document_tools.register(mcp)`.
 
-- [ ] **Step 4: Run** — `uv run pytest tests/server/test_followup_tools.py tests/server/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `uv run pytest tests/server/test_followup_tools.py tests/server/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 uv run ruff check src/performance_agent/server/followup_tools.py src/performance_agent/server/app.py tests/server/test_followup_tools.py
@@ -1798,7 +1798,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/memory/diligence.py` (fact extraction)
 - Test: `tests/engine/test_diligence.py` (append), `tests/memory/` covered via server tests
 
-- [ ] **Step 1: Write the failing tests** (append to `tests/engine/test_diligence.py`)
+- [x] **Step 1: Write the failing tests** (append to `tests/engine/test_diligence.py`)
 
 ```python
 def test_loads_review_due_when_sessions_logged_and_never_reviewed():
@@ -1869,9 +1869,9 @@ def test_program_watch_quiet_when_recent_or_no_program():
         assert "program_watch" not in kinds
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/engine/test_diligence.py -q` — Expected: FAIL (`unexpected keyword argument 'sessions_logged_last_week'`)
+- [x] **Step 2: Run** — `uv run pytest tests/engine/test_diligence.py -q` — Expected: FAIL (`unexpected keyword argument 'sessions_logged_last_week'`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/performance_agent/engine/diligence.py`:
 
@@ -1974,9 +1974,9 @@ And extend `_build_facts`'s returned `DiligenceFacts(...)` with:
 
 Also update the `list_due_actions` tool docstring in `src/performance_agent/server/memory_tools.py` (lines 564-577): extend the surfaced list with `a finished training week that never got its loads review, and a program unaudited for two weeks (program watch)`.
 
-- [ ] **Step 4: Run** — `uv run pytest tests/engine/test_diligence.py tests/memory/ tests/server/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `uv run pytest tests/engine/test_diligence.py tests/memory/ tests/server/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/engine/diligence.py src/performance_agent/memory/diligence.py src/performance_agent/server/memory_tools.py tests/engine/test_diligence.py
@@ -1987,7 +1987,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ### Phase 2 gate
 
-- [ ] Run: `uv run pytest -q && uv run ruff check src tests && uv run ty check` — Expected: all green, zero warnings.
+- [x] Run: `uv run pytest -q && uv run ruff check src tests && uv run ty check` — Expected: all green, zero warnings.
 
 ---
 
@@ -1999,7 +1999,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/memory/schemas.py` (insert `Guidance` right BEFORE `class ProgramPlan` at line ~456; add two fields to `ProgramPlan`)
 - Test: `tests/memory/test_schemas_progression.py` (append)
 
-- [ ] **Step 1: Write the failing test** (append to `tests/memory/test_schemas_progression.py`)
+- [x] **Step 1: Write the failing test** (append to `tests/memory/test_schemas_progression.py`)
 
 ```python
 def test_program_plan_carries_optional_guidance():
@@ -2054,9 +2054,9 @@ def test_program_plan_carries_optional_guidance():
     assert bare.advice == []
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/memory/test_schemas_progression.py -q` — Expected: FAIL (`ImportError: Guidance`)
+- [x] **Step 2: Run** — `uv run pytest tests/memory/test_schemas_progression.py -q` — Expected: FAIL (`ImportError: Guidance`)
 
-- [ ] **Step 3: Implement** — in `src/performance_agent/memory/schemas.py`, insert before `class ProgramPlan`:
+- [x] **Step 3: Implement** — in `src/performance_agent/memory/schemas.py`, insert before `class ProgramPlan`:
 
 ```python
 class Guidance(BaseModel):
@@ -2079,9 +2079,9 @@ and add to `ProgramPlan` after `test_milestones`:
     rationale: list[Guidance] = Field(default_factory=list)
 ```
 
-- [ ] **Step 4: Run** — `uv run pytest tests/memory/ -q` — Expected: PASS (old plan.yaml files load: both fields default)
+- [x] **Step 4: Run** — `uv run pytest tests/memory/ -q` — Expected: PASS (old plan.yaml files load: both fields default)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/memory/schemas.py tests/memory/test_schemas_progression.py
@@ -2097,7 +2097,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/programs/render.py` (add `plan_citation_ids` only, rendering comes in Task 13)
 - Test: `tests/evidence/test_citations_resolution.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/evidence/test_citations_resolution.py`:
 
@@ -2187,9 +2187,9 @@ def test_plan_citation_ids_orders_and_dedupes():
     assert plan_citation_ids(plan) == ["id-a", "id-b", "id-c"]
 ```
 
-- [ ] **Step 2: Run** — `uv run pytest tests/evidence/test_citations_resolution.py -q` — Expected: FAIL (`ImportError: resolve_citations`)
+- [x] **Step 2: Run** — `uv run pytest tests/evidence/test_citations_resolution.py -q` — Expected: FAIL (`ImportError: resolve_citations`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/performance_agent/evidence/citations.py`, add imports for `dataclass` and the corpus loader, then append:
 
@@ -2266,9 +2266,9 @@ def plan_citation_ids(plan: ProgramPlan) -> list[str]:
     return ids
 ```
 
-- [ ] **Step 4: Run** — `uv run pytest tests/evidence/ tests/programs/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `uv run pytest tests/evidence/ tests/programs/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/evidence/citations.py src/performance_agent/programs/render.py tests/evidence/test_citations_resolution.py
@@ -2284,7 +2284,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/programs/render_html.py`
 - Test: `tests/programs/test_render.py`, `tests/programs/test_render_html.py` (append)
 
-- [ ] **Step 1: Write the failing tests** (append to `tests/programs/test_render_html.py`; reuse that file's existing plan fixture/helpers if one exists, otherwise build the same minimal plan as in Task 12's test with `advice=[Guidance(text="Creatine 5 g/day.", cite="id-a")]`, one block citing `"id-a"`, and `citations={"id-a": ResolvedCitation(citation="Kreider et al. (2017). ISSN position stand.", stars="★★★★★", doi="10.1186/s12970-017-0173-z", pmid=None)}` — import `ResolvedCitation` from `performance_agent.evidence.citations`):
+- [x] **Step 1: Write the failing tests** (append to `tests/programs/test_render_html.py`; reuse that file's existing plan fixture/helpers if one exists, otherwise build the same minimal plan as in Task 12's test with `advice=[Guidance(text="Creatine 5 g/day.", cite="id-a")]`, one block citing `"id-a"`, and `citations={"id-a": ResolvedCitation(citation="Kreider et al. (2017). ISSN position stand.", stars="★★★★★", doi="10.1186/s12970-017-0173-z", pmid=None)}` — import `ResolvedCitation` from `performance_agent.evidence.citations`):
 
 ```python
 def test_html_renders_banner_markers_and_bibliography():
@@ -2334,9 +2334,9 @@ def test_markdown_without_citations_matches_legacy_output():
 
 (define `_guidance_plan()` / `_bare_plan()` helpers once at the bottom of each test file — same construction as Task 12's test plan, with and without advice/rationale/cites)
 
-- [ ] **Step 2: Run** — `uv run pytest tests/programs/ -q` — Expected: FAIL (unexpected keyword `citations`)
+- [x] **Step 2: Run** — `uv run pytest tests/programs/ -q` — Expected: FAIL (unexpected keyword `citations`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `src/performance_agent/programs/render.py`:
 
@@ -2489,9 +2489,9 @@ def render_program_html(
 
 Inside, before the mesocycle loop compute `numbers = {cid: i for i, cid in enumerate(plan_citation_ids(plan), start=1)} if citations else {}`, pass `numbers` to `_week_html`, insert `_guidance_html(plan, numbers, locale)` right after `_header_html(plan, locale)` in the final f-string, and insert `_sources_html(plan, citations or {}, numbers, locale)` between the sections and `credit`.
 
-- [ ] **Step 4: Run** — `uv run pytest tests/programs/ -q` — Expected: PASS, including the pre-existing golden test (bare plans render byte-identically).
+- [x] **Step 4: Run** — `uv run pytest tests/programs/ -q` — Expected: PASS, including the pre-existing golden test (bare plans render byte-identically).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 uv run ruff check src/performance_agent/programs tests/programs
@@ -2508,7 +2508,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `src/performance_agent/server/memory_tools.py` (`save_program`, `_write_program_html`)
 - Test: `tests/server/test_memory_tools.py` (append)
 
-- [ ] **Step 1: Write the failing tests** (append to `tests/server/test_memory_tools.py`, reusing that file's existing athlete-dir fixture pattern — it already tests `save_program`; follow its plan-building helper. New tests):
+- [x] **Step 1: Write the failing tests** (append to `tests/server/test_memory_tools.py`, reusing that file's existing athlete-dir fixture pattern — it already tests `save_program`; follow its plan-building helper. New tests):
 
 ```python
 def test_save_program_rejects_unknown_cite(athlete_dir):
@@ -2536,9 +2536,9 @@ def test_save_program_with_corpus_cite_renders_sources(athlete_dir):
 
 (adapt helper names to what the file actually defines; import `Guidance` and `Path` at the top with the file's imports)
 
-- [ ] **Step 2: Run** — `uv run pytest tests/server/test_memory_tools.py -q` — Expected: FAIL (no Sources section / no rejection)
+- [x] **Step 2: Run** — `uv run pytest tests/server/test_memory_tools.py -q` — Expected: FAIL (no Sources section / no rejection)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `src/performance_agent/memory/store.py` — extend `save_program`:
 
@@ -2595,9 +2595,9 @@ def save_program(plan: ProgramPlan, reason: str | None = None) -> ProgramSaved:
 
 and extend its docstring with: `Every cite on advice/rationale/blocks must be a real corpus id — an unknown id aborts the save before anything is written (anti-fabrication).`
 
-- [ ] **Step 4: Run** — `uv run pytest tests/server/ tests/memory/ tests/programs/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `uv run pytest tests/server/ tests/memory/ tests/programs/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit + phase gate**
+- [x] **Step 5: Commit + phase gate**
 
 ```bash
 uv run pytest -q && uv run ruff check src tests && uv run ty check
@@ -2616,7 +2616,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 **Files:**
 - Create: `skills/next-week-loads/SKILL.md`
 
-- [ ] **Step 1: Write the skill**
+- [x] **Step 1: Write the skill**
 
 ```markdown
 ---
@@ -2662,9 +2662,9 @@ Numbers are quoted, never negotiated upward past the engine's suggestion; the
 athlete can always choose LESS than suggested.
 ```
 
-- [ ] **Step 2: Verify structure** — Run: `uv run pytest tests/skills/ -q` — Expected: FAIL on `test_all_expected_skills_exist` (new skill not in EXPECTED_SKILLS — fixed in Task 17; the OTHER skills tests must not fail). If `test_tool_references` fails here, a declared tool name is wrong — fix the frontmatter now.
+- [x] **Step 2: Verify structure** — Run: `uv run pytest tests/skills/ -q` — Expected: FAIL on `test_all_expected_skills_exist` (new skill not in EXPECTED_SKILLS — fixed in Task 17; the OTHER skills tests must not fail). If `test_tool_references` fails here, a declared tool name is wrong — fix the frontmatter now.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add skills/next-week-loads/SKILL.md
@@ -2678,7 +2678,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 **Files:**
 - Create: `skills/program-watch/SKILL.md`
 
-- [ ] **Step 1: Write the skill**
+- [x] **Step 1: Write the skill**
 
 ```markdown
 ---
@@ -2732,9 +2732,9 @@ mesocycle boundary, pair with deep-research's incremental watch: this report
 says what to watch, the research says what the science says.
 ```
 
-- [ ] **Step 2: Verify** — Run: `uv run pytest tests/skills/test_tool_references.py -q` — Expected: only `test_all_expected_skills_exist`-style failures from test_structure (fixed next task); tool references must PASS for this file.
+- [x] **Step 2: Verify** — Run: `uv run pytest tests/skills/test_tool_references.py -q` — Expected: only `test_all_expected_skills_exist`-style failures from test_structure (fixed next task); tool references must PASS for this file.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add skills/program-watch/SKILL.md
@@ -2749,7 +2749,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `skills/deep-research/SKILL.md`, `skills/program-adaptation/SKILL.md`, `skills/training-checkin/SKILL.md`, `skills/performance-coach/SKILL.md`, `skills/athlete-onboarding/SKILL.md`, `skills/program-optimization/SKILL.md`, `skills/program-review/SKILL.md`
 - Modify: `tests/skills/test_structure.py`
 
-- [ ] **Step 1: Update `tests/skills/test_structure.py` first (failing invariants drive the edits)**
+- [x] **Step 1: Update `tests/skills/test_structure.py` first (failing invariants drive the edits)**
 
 Add to `EXPECTED_SKILLS`: `"next-week-loads", "program-watch",`
 
@@ -2797,7 +2797,7 @@ And extend three existing protocol tests with new needles (append to each tuple)
 
 Run: `uv run pytest tests/skills/ -q` — Expected: FAIL on exactly these invariants (that's the worklist).
 
-- [ ] **Step 2: `skills/deep-research/SKILL.md`**
+- [x] **Step 2: `skills/deep-research/SKILL.md`**
 
 Frontmatter: add `list_athlete_documents, mark_document_processed, verify_reference` to `tools` (keep existing entries; `verify_reference` is already declared — do not duplicate).
 
@@ -2843,7 +2843,7 @@ year — thin facets first. Something new → dossier v+1; nothing → no new ve
 say so in one line.
 ```
 
-- [ ] **Step 3: `skills/program-adaptation/SKILL.md`**
+- [x] **Step 3: `skills/program-adaptation/SKILL.md`**
 
 Frontmatter: add `read_research_dossier, save_research_dossier` to `tools`.
 
@@ -2865,7 +2865,7 @@ calendar or method change — run a mini-wave AFTER the immediate fix is agreed:
    the athlete through this skill's normal versioned flow — never edit silently.
 ```
 
-- [ ] **Step 4: `skills/training-checkin/SKILL.md`**
+- [x] **Step 4: `skills/training-checkin/SKILL.md`**
 
 Frontmatter: add `list_athlete_documents` to `tools`.
 
@@ -2890,7 +2890,7 @@ loads_review and program_watch due actions surface both when overdue — treat
 them like any other due action: open with them.
 ```
 
-- [ ] **Step 5: `skills/performance-coach/SKILL.md`**
+- [x] **Step 5: `skills/performance-coach/SKILL.md`**
 
 Frontmatter: add `list_athlete_documents` to `tools`.
 
@@ -2910,7 +2910,7 @@ In the routing table/section, add two rows/lines:
   still right?" → **program-watch** (run it as a subagent; bring back verdicts).
 ```
 
-- [ ] **Step 6: `skills/athlete-onboarding/SKILL.md`**
+- [x] **Step 6: `skills/athlete-onboarding/SKILL.md`**
 
 Add one line to the closing/wrap-up section (no tool changes — write_profile creates the folder):
 
@@ -2920,7 +2920,7 @@ profile): studies, physio or medical reports, lab results, past programs
 dropped there are picked up automatically at the next conversation.
 ```
 
-- [ ] **Step 7: `skills/program-optimization/SKILL.md`**
+- [x] **Step 7: `skills/program-optimization/SKILL.md`**
 
 In the block-construction section (where per-block fields are specified), add:
 
@@ -2945,7 +2945,7 @@ and bibliography) or reads as coaching judgment. save_program refuses unknown
 cite ids — never invent one.
 ```
 
-- [ ] **Step 8: `skills/program-review/SKILL.md`**
+- [x] **Step 8: `skills/program-review/SKILL.md`**
 
 Add to the deterministic compliance checklist:
 
@@ -2958,9 +2958,9 @@ Add to the deterministic compliance checklist:
   claims without a cite are an objection.
 ```
 
-- [ ] **Step 9: Run the full skills suite** — `uv run pytest tests/skills/ -q` — Expected: PASS (structure, tool references, protocols, no fabricated refs). If `test_bodies_do_not_reference_undeclared_tools` fails, a body mentions a tool missing from its frontmatter — add it to `tools`.
+- [x] **Step 9: Run the full skills suite** — `uv run pytest tests/skills/ -q` — Expected: PASS (structure, tool references, protocols, no fabricated refs). If `test_bodies_do_not_reference_undeclared_tools` fails, a body mentions a tool missing from its frontmatter — add it to `tools`.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add skills/ tests/skills/test_structure.py
@@ -2974,7 +2974,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Update README** — locate the tool count (search for `93`) and update to **97**; in the feature list add four bullets in the repo's existing bullet style:
+- [x] **Step 1: Update README** — locate the tool count (search for `93`) and update to **97**; in the feature list add four bullets in the repo's existing bullet style:
 
 ```markdown
 - **Athlete document drop folder** — drop studies, physio reports or past
@@ -2995,9 +2995,9 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   bibliography.
 ```
 
-- [ ] **Step 2: Full suite + linters** — Run: `uv run pytest -q && uv run ruff check src tests && uv run ty check` — Expected: everything green, zero warnings.
+- [x] **Step 2: Full suite + linters** — Run: `uv run pytest -q && uv run ruff check src tests && uv run ty check` — Expected: everything green, zero warnings.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md
@@ -3006,7 +3006,7 @@ git commit -m "Document the living-evidence and weekly follow-up features
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 4: NOT in this plan** — version bump, CHANGELOG, PyPI release, and the pre-competition spec are separate work.
+- [x] **Step 4: NOT in this plan** — version bump, CHANGELOG, PyPI release, and the pre-competition spec are separate work.
 
 ---
 
