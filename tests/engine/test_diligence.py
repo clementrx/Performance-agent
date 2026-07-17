@@ -132,3 +132,63 @@ def test_ties_break_on_urgency_soonest_event_first():
 def test_zero_cadence_is_rejected():
     with pytest.raises(ValueError, match="checkin_cadence_days"):
         list_due_actions(_facts(checkin_cadence_days=0))
+
+
+def test_loads_review_due_when_sessions_logged_and_never_reviewed():
+    facts = DiligenceFacts(
+        has_program=True,
+        checkin_cadence_days=7,
+        days_since_checkin=1,
+        sessions_logged_last_week=3,
+        days_since_loads_review=None,
+    )
+    kinds = {action.kind for action in list_due_actions(facts)}
+    assert "loads_review" in kinds
+
+
+def test_loads_review_quiet_without_recent_sessions_or_when_fresh():
+    quiet = DiligenceFacts(
+        has_program=True,
+        checkin_cadence_days=7,
+        days_since_checkin=1,
+        sessions_logged_last_week=0,
+        days_since_loads_review=None,
+    )
+    fresh = DiligenceFacts(
+        has_program=True,
+        checkin_cadence_days=7,
+        days_since_checkin=1,
+        sessions_logged_last_week=3,
+        days_since_loads_review=2,
+    )
+    for facts in (quiet, fresh):
+        kinds = {action.kind for action in list_due_actions(facts)}
+        assert "loads_review" not in kinds
+
+
+def test_program_watch_due_after_fourteen_days():
+    facts = DiligenceFacts(
+        has_program=True,
+        checkin_cadence_days=7,
+        days_since_checkin=1,
+        days_since_watch_anchor=15,
+    )
+    kinds = {action.kind for action in list_due_actions(facts)}
+    assert "program_watch" in kinds
+
+
+def test_program_watch_quiet_when_recent_or_no_program():
+    recent = DiligenceFacts(
+        has_program=True,
+        checkin_cadence_days=7,
+        days_since_checkin=1,
+        days_since_watch_anchor=13,
+    )
+    no_program = DiligenceFacts(
+        has_program=False,
+        checkin_cadence_days=7,
+        days_since_watch_anchor=100,
+    )
+    for facts in (recent, no_program):
+        kinds = {action.kind for action in list_due_actions(facts)}
+        assert "program_watch" not in kinds

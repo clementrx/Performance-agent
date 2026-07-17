@@ -569,8 +569,10 @@ def list_due_actions() -> list[DueActionView]:
     profile to surface: an overdue check-in, an A/B event within three weeks
     (taper/peaking about to start), planned sessions missed this week, three-plus
     training days with no readiness read, an active goal whose deadline has no dated
-    events, a response profile older than six weeks, and a streak of red readiness
-    days. Each action is {kind, severity, due_since_days|due_in_days, message_key,
+    events, a response profile older than six weeks, a streak of red readiness
+    days, a finished training week that never got its loads review, and a program
+    unaudited for two weeks (program watch).
+    Each action is {kind, severity, due_since_days|due_in_days, message_key,
     ref}; render the message_key yourself in the athlete's language and quote the
     numbers. An all-green athlete returns []. Severity is high, medium or low.
     """
