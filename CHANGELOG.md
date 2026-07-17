@@ -2,7 +2,10 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
-## Unreleased
+## 0.5.0 — Session HTML
+
+The program the athlete actually opens at the gym. 1243 → 1270 tests; 93 MCP
+tools (unchanged).
 
 ### Added
 

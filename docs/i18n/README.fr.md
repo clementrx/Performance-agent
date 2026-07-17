@@ -276,7 +276,7 @@ progression mesuré honnête sur n, conformité prescrit-vs-réalisé, toléranc
 profil de réponse versionné) qui recalcule la faisabilité, recommandations de décharge
 fondées sur les données et rampe progressive de retour à la charge après une coupure,
 suivi proactif qui fait remonter ce qui est dû, et une simulation déterministe de bout
-en bout (sans LLM) ; 1243 tests dont des tests par propriétés) · 93 outils MCP ·
+en bout (sans LLM) ; 1270 tests dont des tests par propriétés) · 93 outils MCP ·
 mémoire athlète en fichiers avec calendrier de saison, journaux de readiness,
 programmes versionnés lisibles par machine, journal d'ajustements du jour, profil de
 réponse versionné et journal d'audit des adaptations · import de fichiers d'activité

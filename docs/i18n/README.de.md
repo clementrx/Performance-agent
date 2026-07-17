@@ -278,7 +278,7 @@ Progressionsrate ehrlich über n, Soll-Ist-Compliance, Volumentoleranz, versioni
 Antwortprofil), die die Machbarkeit neu berechnet, datengestützte
 Entlastungsempfehlungen und eine schrittweise Rückkehr zur Last nach einer Pause,
 proaktives Follow-up, das Fälliges hervorhebt, und eine deterministische
-End-to-End-Simulation (ohne LLM); 1243 Tests inkl. property-based) · 93 MCP-Werkzeuge ·
+End-to-End-Simulation (ohne LLM); 1270 Tests inkl. property-based) · 93 MCP-Werkzeuge ·
 dateibasiertes Athletengedächtnis mit Saisonkalender, Readiness-Logs, versionierten
 maschinenlesbaren Programmen, Tages-Anpassungsprotokoll, versioniertem Antwortprofil
 und Anpassungs-Audit-Protokoll · Import von Aktivitätsdateien (.fit/.tcx/.gpx/CSV) ·
