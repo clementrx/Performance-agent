@@ -16,7 +16,7 @@
 - Modify: `src/performance_agent/memory/paths.py`
 - Test: `tests/memory/test_paths.py`
 
-- [ ] **Step 1: Replace the test file with the new contract**
+- [x] **Step 1: Replace the test file with the new contract**
 
 ```python
 from pathlib import Path
@@ -64,12 +64,12 @@ def test_env_var_bypasses_the_guard(monkeypatch):
     assert resolve_athlete_dir() == Path.home()
 ```
 
-- [ ] **Step 2: Run the tests to verify the new ones fail**
+- [x] **Step 2: Run the tests to verify the new ones fail**
 
 Run: `uv run pytest tests/memory/test_paths.py -v`
 Expected: `test_cwd_is_the_athlete_dir`, `test_refuses_home_as_cwd`, `test_refuses_filesystem_root_as_cwd` FAIL (old fallback logic returns `~/.performance-agent` instead of erroring/cwd); the two env-var tests PASS.
 
-- [ ] **Step 3: Rewrite `paths.py`**
+- [x] **Step 3: Rewrite `paths.py`**
 
 Full new content of `src/performance_agent/memory/paths.py`:
 
@@ -110,29 +110,29 @@ def resolve_athlete_dir() -> Path:
 
 Note: `PROJECT_DIR_NAME` is deleted. Step 5 checks nothing else imports it.
 
-- [ ] **Step 4: Run the paths tests to verify they pass**
+- [x] **Step 4: Run the paths tests to verify they pass**
 
 Run: `uv run pytest tests/memory/test_paths.py -v`
 Expected: 6 PASS.
 
-- [ ] **Step 5: Check nothing else references the removed convention**
+- [x] **Step 5: Check nothing else references the removed convention**
 
 Run: `/usr/bin/grep -rn "PROJECT_DIR_NAME" src tests --include="*.py"`
 Expected: no output. If a reference exists, remove it as part of this task.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `uv run pytest -q`
 Expected: all ~1270 tests pass. If a test relied on the `./athlete/` or home
 fallback, point it at `tmp_path` via `monkeypatch.setenv("PERFORMANCE_AGENT_HOME", ...)`
 like the rest of the suite does.
 
-- [ ] **Step 7: Lint and typecheck**
+- [x] **Step 7: Lint and typecheck**
 
 Run: `uv run ruff check src/performance_agent/memory/paths.py tests/memory/test_paths.py && uv run ruff format --check src tests && uv run ty check`
 Expected: clean.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/performance_agent/memory/paths.py tests/memory/test_paths.py
@@ -153,7 +153,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `README.md` (Step 1 block around lines 68-79)
 - Modify: `docs/installing.md` ("Where your data lives" section, lines ~181-198)
 
-- [ ] **Step 1: Rewrite README Step 1**
+- [x] **Step 1: Rewrite README Step 1**
 
 Replace the Step 1 paragraph + snippet (the `claude mcp add ... --env PERFORMANCE_AGENT_HOME=~/athlete-data ...` block and the paragraph after it) with:
 
@@ -182,7 +182,7 @@ example — set `PERFORMANCE_AGENT_HOME` to the athlete folder in the server con
 instead.)
 ````
 
-- [ ] **Step 2: Rewrite "Where your data lives" in docs/installing.md**
+- [x] **Step 2: Rewrite "Where your data lives" in docs/installing.md**
 
 Replace the numbered resolution list and the env-var paragraph with:
 
@@ -214,14 +214,14 @@ Move it into a per-athlete folder: `mkdir -p ~/coaching/me && mv ~/.performance-
 athlete data).
 ````
 
-- [ ] **Step 3: Check no stale references remain in the two files**
+- [x] **Step 3: Check no stale references remain in the two files**
 
 Run: `/usr/bin/grep -n "athlete-data\|./athlete/" README.md docs/installing.md`
 Expected: no hits (or only hits inside the migration note / transcript examples that
 show `athlete/programs/...` paths in old session transcripts — update those transcript
 lines to `programs/program-v1.md` since the files now live at the athlete-folder root).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add README.md docs/installing.md
@@ -240,7 +240,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `docs/i18n/README.es.md` (line ~70)
 - Modify: `docs/i18n/README.it.md` (line ~70)
 
-- [ ] **Step 1: Apply the same Step 1 rewrite as Task 2 in each language**
+- [x] **Step 1: Apply the same Step 1 rewrite as Task 2 in each language**
 
 Same structural change as Task 2 Step 1, translated. The snippet becomes
 `claude mcp add performance-agent -s user -- uvx performance-agent` plus the
@@ -255,12 +255,12 @@ example. Key sentence per language (translate the rest to match the English flow
 Also update transcript lines showing `athlete/programs/program-v1.md` to
 `programs/program-v1.md` in each translated README (grep `athlete/` per file).
 
-- [ ] **Step 2: Verify no stale snippet remains**
+- [x] **Step 2: Verify no stale snippet remains**
 
 Run: `/usr/bin/grep -n "athlete-data" docs/i18n/*.md`
 Expected: no output.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/i18n/README.fr.md docs/i18n/README.de.md docs/i18n/README.es.md docs/i18n/README.it.md
@@ -277,11 +277,11 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Modify: `pyproject.toml:3` (`version = "0.5.0"` → `"0.6.0"`)
 - Modify: `CHANGELOG.md` (new section above `## 0.5.0`)
 
-- [ ] **Step 1: Bump the version**
+- [x] **Step 1: Bump the version**
 
 In `pyproject.toml`, set `version = "0.6.0"`.
 
-- [ ] **Step 2: Add the CHANGELOG section**
+- [x] **Step 2: Add the CHANGELOG section**
 
 Insert above `## 0.5.0 — Session HTML`:
 
@@ -302,12 +302,12 @@ coaching folder can hold one subfolder per athlete: `cd ~/coaching/marie && clau
   (`cache/` can stay — the shared exercises-media cache location is unchanged).
 ```
 
-- [ ] **Step 3: Run the packaging tests (they often assert the version)**
+- [x] **Step 3: Run the packaging tests (they often assert the version)**
 
 Run: `uv run pytest tests/packaging -q`
 Expected: pass. If a test pins `0.5.0`, update it to `0.6.0`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add pyproject.toml CHANGELOG.md tests/packaging
@@ -320,12 +320,12 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ### Task 5: Final verification
 
-- [ ] **Step 1: Full suite, lint, format, types**
+- [x] **Step 1: Full suite, lint, format, types**
 
 Run: `uv run pytest -q && uv run ruff check src tests && uv run ruff format --check src tests && uv run ty check`
 Expected: all clean.
 
-- [ ] **Step 2: End-to-end smoke of the new resolution**
+- [x] **Step 2: End-to-end smoke of the new resolution**
 
 Run:
 ```bash
@@ -340,4 +340,4 @@ cd ~ && env -u PERFORMANCE_AGENT_HOME uv run --project /Users/clementrieux/proje
 ```
 Expected: `ValueError` with the "dedicated athlete folder" message.
 
-- [ ] **Step 3: Mark plan checkboxes done and commit any stragglers**
+- [x] **Step 3: Mark plan checkboxes done and commit any stragglers**
