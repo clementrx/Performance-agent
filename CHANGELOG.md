@@ -2,6 +2,36 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## 0.8.0 — Living Evidence & Weekly Follow-up
+
+### Added
+
+- **Athlete document drop folder** — every athlete directory gets a
+  `documentation/` folder (created at onboarding); drop studies, physio reports,
+  lab results or past programs there and the coach picks them up at the next
+  conversation. Verified studies (DOI/PMID/ISBN) join the evidence corpus;
+  everything else informs coaching as context, never presented as science.
+  New tools: `list_athlete_documents`, `mark_document_processed`.
+- **Weekly loads review** — exercise blocks now carry a structured `progression`
+  rule (double progression, linear load, RIR target, %1RM, none) and the new
+  `suggest_next_week_loads` tool computes next week's exact working weights from
+  the logged week — deterministic engine math with flags instead of guesses
+  (`no_rule`, `failed_sets`, `clamped`, `no_matched_week`, …). New skill:
+  `next-week-loads`. The review never modifies the program.
+- **Program watch** — a biweekly per-exercise audit (keep / watch / substitution
+  candidate) written as an immutable versioned report under `watch/` via
+  `save_watch_report`; substitutions route through program-adaptation, never
+  silently. New skill: `program-watch`. `list_due_actions` now surfaces an
+  overdue loads review and an unaudited program.
+- **Science on the gym page** — programs can carry cited `advice` and
+  `rationale` lines; the markdown and offline HTML open with them and close
+  with a starred bibliography (`[n]` markers on citing blocks, DOI links).
+  `save_program` refuses any citation id not in the evidence corpus.
+- **Research that stays alive** — deep-research gains document intake (step 0),
+  targeted mini-waves on plateaus/injuries/athlete questions, and an
+  incremental literature watch (`year_from` delta queries) at every mesocycle
+  boundary, all folded into the versioned dossier.
+
 ## 0.7.0 — Dated Program Filenames
 
 ### Changed
