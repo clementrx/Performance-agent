@@ -1,7 +1,8 @@
 import pytest
 
+from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.exercises.dataset import ExerciseMediaIndex
-from performance_agent.memory.schemas import ExerciseBlock, SessionPlan, WeekPlan
+from performance_agent.memory.schemas import ExerciseBlock, Guidance, SessionPlan, WeekPlan
 from performance_agent.programs.render_html import render_program_html
 from tests.exercises.test_dataset import write_fixture_dataset
 from tests.program_plans import a_fallbacks, minimal_plan
@@ -109,3 +110,53 @@ def test_html_escapes_user_text():
     page = render_program_html(minimal_plan(note="<script>alert(1)</script>"))
     assert "<script>alert(1)</script>" not in page
     assert "&lt;script&gt;" in page
+
+
+_CITATIONS = {
+    "id-a": ResolvedCitation(
+        citation="Kreider et al. (2017). ISSN position stand. DOI: 10.1186/s12970-017-0173-z.",
+        stars="★★★★★",
+        doi="10.1186/s12970-017-0173-z",
+        pmid=None,
+    )
+}
+
+
+def _guidance_plan():
+    session = SessionPlan(
+        id="w01-s1-lower-heavy",
+        weekday=0,
+        qualities=["strength_heavy"],
+        est_minutes=75,
+        purpose="Build the squat base",
+        blocks=[squat_block(cite="id-a")],
+        fallbacks=a_fallbacks(),
+    )
+    week = WeekPlan(week_index=1, volume_factor=1.0, intensity_factor=0.9, sessions=[session])
+    return minimal_plan(
+        mesocycles=[{"index": 1, "phase": "accumulation", "weeks": [week.model_dump()]}],
+        advice=[Guidance(text="Creatine 5 g/day.", cite="id-a")],
+        rationale=[Guidance(text="12-16 hard sets per muscle per week.")],
+    )
+
+
+def _bare_plan():
+    return minimal_plan()
+
+
+def test_html_renders_banner_markers_and_bibliography():
+    page = render_program_html(_guidance_plan(), locale="en", citations=_CITATIONS)
+    assert "Advice" in page and "Creatine 5 g/day." in page
+    assert "[1]" in page  # marker on the advice line and the citing block
+    assert "Sources" in page and "★★★★★" in page
+    assert "https://doi.org/10.1186/s12970-017-0173-z" in page
+
+
+def test_html_without_guidance_or_citations_is_unchanged_shape():
+    page = render_program_html(_bare_plan(), locale="en")
+    assert "Sources" not in page and "Advice" not in page
+
+
+def test_html_localizes_banner_titles_in_french():
+    page = render_program_html(_guidance_plan(), locale="fr", citations=_CITATIONS)
+    assert "Conseils" in page and "Pourquoi ce programme" in page

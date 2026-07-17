@@ -3,9 +3,11 @@
 from datetime import date
 from pathlib import Path
 
+from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.memory.schemas import (
     ExerciseBlock,
     Fallbacks,
+    Guidance,
     Mesocycle,
     ProgramPlan,
     SessionPlan,
@@ -13,6 +15,7 @@ from performance_agent.memory.schemas import (
     WeekPlan,
 )
 from performance_agent.programs.render import render_program
+from tests.program_plans import minimal_plan
 
 GOLDEN = Path(__file__).parent / "golden_program.md"
 
@@ -195,3 +198,31 @@ def test_pct_based_primary_gets_generic_warmup_note():
     rendered = render_program(plan)
     # Front Squat is pct_1rm-based (no absolute load) → generic labeled ramp.
     assert "progressively heavier ramp sets" in rendered
+
+
+def _md_guidance_plan():
+    return minimal_plan(
+        advice=[Guidance(text="Creatine 5 g/day.", cite="id-a")],
+        rationale=[Guidance(text="12-16 hard sets per muscle per week.")],
+    )
+
+
+def test_markdown_renders_guidance_and_sources():
+    citations = {
+        "id-a": ResolvedCitation(
+            citation="Kreider et al. (2017). ISSN position stand. DOI: 10.1186/s12970-017-0173-z.",
+            stars="★★★★★",
+            doi="10.1186/s12970-017-0173-z",
+            pmid=None,
+        )
+    }
+    text = render_program(_md_guidance_plan(), citations=citations)
+    assert "## Advice" in text
+    assert "Creatine 5 g/day. [id-a]" in text
+    assert "## Sources" in text
+    assert "DOI: 10.1186/s12970-017-0173-z" in text
+
+
+def test_markdown_without_citations_matches_legacy_output():
+    text = render_program(minimal_plan())
+    assert "## Sources" not in text and "## Advice" not in text
