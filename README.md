@@ -69,15 +69,25 @@ fetches the right Python version by itself, nothing else to install.
 **Step 1 — plug in the coach.** Run this once, from any terminal:
 
 ```bash
-claude mcp add performance-agent -s user \
-  --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
+claude mcp add performance-agent -s user -- uvx performance-agent
 ```
 
 This registers the coach's "brain" (the engine, the science library, your future
 athlete profile) as a tool Claude Code can call. `-s user` makes it available in any
-folder you later open `claude` from. `~/athlete-data` is just a suggested path — pick
-any folder, it doesn't need to exist yet: the coach creates it the first time it saves
-something. That's where all your data lives as plain files; nothing is sent anywhere.
+folder you later open `claude` from.
+
+**The folder you launch `claude` from is the athlete's data folder.** Make one
+folder per athlete and start the session from inside it:
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+All of that athlete's data lives there as plain files; nothing is sent anywhere.
+Coaching several athletes is just several folders — `cd` into the right one.
+(If your MCP host doesn't let you pick the launch folder — Claude Desktop, for
+example — set `PERFORMANCE_AGENT_HOME` to the athlete folder in the server config
+instead.)
 
 **Step 2 — teach it how to coach.** Step 1 gave Claude the *tools* (the math, the
 data). This step gives it the *coaching protocols* — when to ask what, when to be
@@ -109,7 +119,7 @@ You should see 93 tools. If so, you're done — just talk to it.
    level, history, schedule, equipment) and saves your profile.
 4. **Get an honest verdict.** The feasibility engine scores your goal; if it's out of
    reach, you get the real probability and a counter-proposal.
-5. **Say yes** — the program is written to `athlete/programs/program-v1.md`, periodized
+5. **Say yes** — the program is written to `programs/program-v1.md`, periodized
    into cycles with deloads and taper, every prescription carrying its purpose,
    evidence grade (★★★★★ → ★☆☆☆☆), and verified citations. Next to it,
    `program-v1.html` is a standalone session page for the gym: every strength
@@ -151,7 +161,7 @@ three conversations ends with a full program — browse them in
 
 > Yes.
 
-📄 Program written to athlete/programs/program-v1.md
+📄 Program written to programs/program-v1.md
    21 weeks, 3 runs/week: one interval session, one tempo, one long
    run — periodized with deloads and a 10-day taper.
 ```
@@ -178,7 +188,7 @@ three conversations ends with a full program — browse them in
 
 > Yes.
 
-📄 Program written to athlete/programs/program-v1.md
+📄 Program written to programs/program-v1.md
 ```
 
 ### 3. Visible abs and bigger arms in 3 months
@@ -210,7 +220,7 @@ three conversations ends with a full program — browse them in
 
 > Yes.
 
-📄 Program written to athlete/programs/program-v1.md
+📄 Program written to programs/program-v1.md
 ```
 
 ## Which AI tool can I use this with?

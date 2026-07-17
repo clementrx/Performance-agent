@@ -182,19 +182,29 @@ ritual.
 
 The coach stores your profile, goals, programs, and logs in a plain-file directory:
 
-1. `PERFORMANCE_AGENT_HOME` env var, if set — **recommended**;
-2. else `./athlete/` relative to the server's working directory — with the `uvx`
-   commands above that directory depends on where your agent CLI spawns the server,
-   so prefer the env var;
-3. else `~/.performance-agent/`.
+1. `PERFORMANCE_AGENT_HOME` env var, if set — for MCP hosts that don't let you
+   pick the working directory (Claude Desktop), and for pinning one athlete;
+2. else **the directory the server is launched from** — which, for CLI agents,
+   is the folder you run `claude` (or `gemini`, `codex`) from.
 
-Set the env var in the server config, e.g. for Claude Code:
+One folder per athlete: `mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude`.
+The folder is treated as the athlete's data directory as-is — an empty folder is a
+brand-new athlete, and files are created on first write. Launching from your home
+directory or a filesystem root is refused with an error, so a stray session can't
+scatter files there.
 
-    claude mcp add performance-agent -s user --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
+Set the env var in the server config when you need it (`.mcp.json`, Gemini
+`settings.json` and Codex `config.toml` all accept an `env` map on the server
+entry), e.g. for Claude Desktop:
 
-(`.mcp.json`, Gemini `settings.json` and Codex `config.toml` all accept an `env` map on
-the server entry.) The directory is created automatically on first write — no need to
-`mkdir` it yourself, and it doesn't need to match the directory you run `claude` from.
+```json
+"env": { "PERFORMANCE_AGENT_HOME": "/Users/you/coaching/marie" }
+```
+
+**Migrating from ≤0.5.x:** data previously defaulted to `~/.performance-agent/`.
+Move it into a per-athlete folder: `mkdir -p ~/coaching/me && mv ~/.performance-agent/* ~/coaching/me/`
+(the `cache/` subfolder can stay — it's the shared exercises-media cache, not
+athlete data).
 
 ## Verify
 
