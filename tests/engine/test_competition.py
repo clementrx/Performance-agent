@@ -2,7 +2,7 @@
 
 import pytest
 
-from performance_agent.engine.competition import carb_loading_targets
+from performance_agent.engine.competition import carb_loading_targets, select_attempts
 
 
 def test_long_event_loads_8_to_12_g_per_kg_over_48h():
@@ -39,3 +39,31 @@ def test_carb_guards_reject_out_of_range_inputs():
         carb_loading_targets(70.0, 2.0)
     with pytest.raises(ValueError, match="event_duration_min"):
         carb_loading_targets(70.0, 2000.0)
+
+
+def test_attempts_goal_within_range_becomes_third():
+    result = select_attempts(200.0, 205.0)
+    assert result.opener_kg == 182.5  # 0.91 * 200 = 182 -> 182.5
+    assert result.second_kg == 192.5  # 0.96 * 200 = 192 -> 192.5
+    assert result.third_kg == 205.0
+    assert result.flags == ()
+
+
+def test_attempts_goal_beyond_e1rm_is_flagged_and_capped():
+    result = select_attempts(200.0, 215.0)  # > 105% of e1RM
+    assert result.third_kg == 202.5  # 1.01 * 200 = 202 -> 202.5
+    assert "goal_beyond_e1rm" in result.flags
+
+
+def test_attempts_stay_strictly_increasing_after_rounding():
+    result = select_attempts(52.0, 50.0)
+    assert result.opener_kg < result.second_kg < result.third_kg
+
+
+def test_attempts_guards():
+    with pytest.raises(ValueError, match="e1rm_kg"):
+        select_attempts(10.0, 50.0)
+    with pytest.raises(ValueError, match="goal_kg"):
+        select_attempts(200.0, 0.0)
+    with pytest.raises(ValueError, match="rounding_kg"):
+        select_attempts(200.0, 205.0, rounding_kg=0.0)
