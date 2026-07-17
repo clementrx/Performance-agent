@@ -5,8 +5,8 @@ choose the more conservative option. The save gate resolves every citation id
 against the corpus — an unknown id aborts before anything is written.
 """
 
-from dataclasses import asdict
-from typing import Any, TypedDict
+import os
+from typing import Any, Literal, TypedDict
 
 from mcp.server.fastmcp import FastMCP
 
@@ -19,6 +19,19 @@ from performance_agent.programs.render_protocol import protocol_citation_ids
 from performance_agent.programs.render_protocol_html import render_protocol_html
 
 
+class CarbTargetsView(TypedDict):
+    """Evidence-based carbohydrate targets for the final window and the race."""
+
+    loading_required: bool
+    carb_g_per_kg_low: float | None
+    carb_g_per_kg_high: float | None
+    carb_g_per_day_low: float | None
+    carb_g_per_day_high: float | None
+    window_hours: int | None
+    race_carb_g_per_h_low: float | None
+    race_carb_g_per_h_high: float | None
+
+
 class AttemptView(TypedDict):
     """Meet-day attempts for one lift, engine-computed."""
 
@@ -28,6 +41,15 @@ class AttemptView(TypedDict):
     second_kg: float
     third_kg: float
     flags: list[str]
+
+
+class PacingSplitView(TypedDict):
+    """One race segment: its target pace and the cumulative time at its end."""
+
+    label: str
+    distance_m: float
+    target_pace_s_per_km: float
+    cumulative_time_s: float
 
 
 class ProtocolSaved(TypedDict):
@@ -50,7 +72,7 @@ class ProtocolView(TypedDict):
     protocol: dict[str, Any]
 
 
-def carb_loading_targets(body_mass_kg: float, event_duration_min: float) -> dict[str, Any]:
+def carb_loading_targets(body_mass_kg: float, event_duration_min: float) -> CarbTargetsView:
     """Carb-loading and in-race fueling ranges for an event (evidence-based).
 
     Events >= 90 min: 8-12 g/kg/day over the final 48 h; 60-90 min: 6-8 g/kg/day
@@ -58,7 +80,17 @@ def carb_loading_targets(body_mass_kg: float, event_duration_min: float) -> dict
     In-race: none under 60 min, 30-60 g/h up to ~2.5 h, 60-90 g/h beyond. Quote
     the ranges as ranges — food choices and timing are coaching conversation.
     """
-    return asdict(competition_engine.carb_loading_targets(body_mass_kg, event_duration_min))
+    targets = competition_engine.carb_loading_targets(body_mass_kg, event_duration_min)
+    return CarbTargetsView(
+        loading_required=targets.loading_required,
+        carb_g_per_kg_low=targets.carb_g_per_kg_low,
+        carb_g_per_kg_high=targets.carb_g_per_kg_high,
+        carb_g_per_day_low=targets.carb_g_per_day_low,
+        carb_g_per_day_high=targets.carb_g_per_day_high,
+        window_hours=targets.window_hours,
+        race_carb_g_per_h_low=targets.race_carb_g_per_h_low,
+        race_carb_g_per_h_high=targets.race_carb_g_per_h_high,
+    )
 
 
 def select_attempts(
@@ -87,8 +119,8 @@ def pacing_plan(
     distance_m: float,
     target_time_s: float,
     segment_m: float = 1000.0,
-    strategy: str = "even",
-) -> list[dict[str, Any]]:
+    strategy: Literal["even", "negative"] = "even",
+) -> list[PacingSplitView]:
     """Per-segment target paces and cumulative splits for a race plan.
 
     target_time_s comes from the athlete's goal or predict_race_time — this
@@ -96,7 +128,12 @@ def pacing_plan(
     second half balanced so the total lands on target).
     """
     return [
-        asdict(split)
+        PacingSplitView(
+            label=split.label,
+            distance_m=split.distance_m,
+            target_pace_s_per_km=split.target_pace_s_per_km,
+            cumulative_time_s=split.cumulative_time_s,
+        )
         for split in competition_engine.pacing_plan(distance_m, target_time_s, segment_m, strategy)
     ]
 
@@ -123,9 +160,20 @@ def save_competition_protocol(
         msg = f"protocol v{version} vanished after save"
         raise ValueError(msg)
     locale = store.read_profile(base).locale
-    page = render_protocol_html(stored.protocol, locale=locale, citations=citations)
     html_path = path.with_suffix(".html")
-    html_path.write_text(page, encoding="utf-8")
+    tmp_path = html_path.with_suffix(".html.tmp")
+    try:
+        page = render_protocol_html(stored.protocol, locale=locale, citations=citations)
+        tmp_path.write_text(page, encoding="utf-8")
+        os.replace(tmp_path, html_path)
+    except OSError as exc:
+        tmp_path.unlink(missing_ok=True)
+        msg = (
+            f"protocol v{version} was saved, but writing the phone page failed at "
+            f"{html_path}: {exc}; fix the filesystem issue and re-save as v{version + 1} "
+            "with a reason"
+        )
+        raise ValueError(msg) from exc
     return ProtocolSaved(path=str(path), version=version, html_path=str(html_path))
 
 
