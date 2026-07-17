@@ -886,7 +886,7 @@ def latest_competition_protocol_version(base_dir: Path, event_id: str) -> int | 
     return _latest_doc_version(base_dir, COMPETITION_DIR, _protocol_prefix(event_id))
 
 
-def _validated_calendar_event(base_dir: Path, protocol: CompetitionProtocol, current: date) -> None:
+def _validate_calendar_event(base_dir: Path, protocol: CompetitionProtocol, current: date) -> None:
     event = next((e for e in read_calendar(base_dir).events if e.id == protocol.event_id), None)
     if event is None:
         msg = f"event {protocol.event_id!r} is not in the calendar; add it first"
@@ -918,7 +918,7 @@ def save_competition_protocol(
     rendering (the server resolves them; None keeps a citation-less render).
     """
     current = today or date.today()
-    _validated_calendar_event(base_dir, protocol, current)
+    _validate_calendar_event(base_dir, protocol, current)
     prefix = _protocol_prefix(protocol.event_id)
     latest = latest_competition_protocol_version(base_dir, protocol.event_id)
     version = 1 if latest is None else latest + 1
@@ -956,6 +956,31 @@ def save_competition_protocol(
     return md_path, version
 
 
+def _validate_stored_protocol(
+    md_path: Path,
+    frontmatter: Mapping[str, object],
+    protocol: CompetitionProtocol,
+    event_id: str,
+    target: int,
+) -> None:
+    yaml_path = md_path.with_suffix(".yaml")
+    if frontmatter.get("version") != target:
+        msg = (
+            f"{md_path} frontmatter declares version {frontmatter.get('version')} "
+            f"but the filename says {target}"
+        )
+        raise ValueError(msg)
+    if protocol.event_id != event_id:
+        msg = (
+            f"{yaml_path} declares event_id {protocol.event_id!r} "
+            f"but was read for event_id {event_id!r}"
+        )
+        raise ValueError(msg)
+    if protocol.version != target:
+        msg = f"{yaml_path} declares version {protocol.version} but the filename says {target}"
+        raise ValueError(msg)
+
+
 def read_competition_protocol(
     base_dir: Path, event_id: str, version: int | None = None
 ) -> ProtocolRead | None:
@@ -976,6 +1001,7 @@ def read_competition_protocol(
         yaml_path,
         lambda: CompetitionProtocol.model_validate(_load_yaml(yaml_path) or {}),
     )
+    _validate_stored_protocol(md_path, frontmatter, protocol, event_id, target)
     return ProtocolRead(
         version=target,
         event_id=event_id,

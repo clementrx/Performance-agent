@@ -71,12 +71,50 @@ def test_page_is_selfcontained_and_scriptless():
 
 def test_event_day_open_warnings_and_sources_rendered():
     page = render_protocol_html(_protocol(), citations=CITATIONS)
-    assert "<details" in page and "open" in page
+    assert '<details class="day" open>' in page
     assert "⚠" in page
     assert "Dehydration risk" in page
     assert "★★★★★" in page
     assert "https://doi.org/10.1080/02640414.2011.585473" in page
     assert "[1]" in page
+
+
+def test_unresolved_citation_id_is_skipped_from_numbering():
+    protocol = _protocol().model_copy(
+        update={
+            "days": [
+                ProtocolDay(
+                    day_offset=0,
+                    title="Race day",
+                    lines=[
+                        ProtocolLine(text="Missing source.", cite="missing-id"),
+                        ProtocolLine(text="Known source.", cite="carb-2017"),
+                    ],
+                )
+            ]
+        }
+    )
+    page = render_protocol_html(protocol, citations=CITATIONS)
+    assert "Missing source.</li>" in page  # no <sup class="cite"> marker attached
+    assert 'Known source.<sup class="cite">[1]</sup>' in page
+    assert page.count('<li><span class="stars">') == 1
+
+
+def test_line_text_is_escaped():
+    protocol = _protocol().model_copy(
+        update={
+            "days": [
+                ProtocolDay(
+                    day_offset=0,
+                    title="Race day",
+                    lines=[ProtocolLine(text="<b>&bold</b>")],
+                )
+            ]
+        }
+    )
+    page = render_protocol_html(protocol)
+    assert "<b>&bold</b>" not in page
+    assert "&lt;b&gt;&amp;bold&lt;/b&gt;" in page
 
 
 def test_french_labels():

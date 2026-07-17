@@ -10,9 +10,7 @@ from collections.abc import Mapping
 
 from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.memory.schemas import CompetitionProtocol, FuelingPlan, ProtocolLine
-from performance_agent.programs.render import num_label, pace_label
-
-_SECONDS_PER_HOUR = 3600
+from performance_agent.programs.render import clock_label, num_label, pace_label
 
 
 def protocol_citation_ids(protocol: CompetitionProtocol) -> list[str]:
@@ -39,16 +37,6 @@ def protocol_citation_ids(protocol: CompetitionProtocol) -> list[str]:
 
 def _day_label(offset: int) -> str:
     return "J0" if offset == 0 else f"J{offset}"
-
-
-def _cumulative_label(seconds: float) -> str:
-    total = round(seconds)
-    if total >= _SECONDS_PER_HOUR:
-        hours, remainder = divmod(total, _SECONDS_PER_HOUR)
-        minutes, secs = divmod(remainder, 60)
-        return f"{hours}:{minutes:02d}:{secs:02d}"
-    minutes, secs = divmod(total, 60)
-    return f"{minutes}:{secs:02d}"
 
 
 def _line_text(line: ProtocolLine) -> str:
@@ -92,7 +80,7 @@ def _pacing_lines(protocol: CompetitionProtocol) -> list[str]:
         lines.append(
             f"| {seg.label} | {num_label(seg.distance_m)} m "
             f"| {pace_label(seg.target_pace_s_per_km)} "
-            f"| {_cumulative_label(seg.cumulative_time_s)} |"
+            f"| {clock_label(seg.cumulative_time_s)} |"
         )
     return lines
 

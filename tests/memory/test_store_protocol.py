@@ -89,3 +89,19 @@ def test_save_rejects_past_event(tmp_path):
 def test_latest_version_none_when_empty(tmp_path):
     assert store.latest_competition_protocol_version(tmp_path, "nationals") is None
     assert store.read_competition_protocol(tmp_path, "nationals") is None
+
+
+def test_read_rejects_unknown_version(tmp_path):
+    _seed_event(tmp_path)
+    store.save_competition_protocol(tmp_path, _protocol(), today=TODAY)
+    with pytest.raises(ValueError, match="does not exist"):
+        store.read_competition_protocol(tmp_path, "nationals", version=3)
+
+
+def test_read_rejects_frontmatter_version_mismatch(tmp_path):
+    _seed_event(tmp_path)
+    md_path, _ = store.save_competition_protocol(tmp_path, _protocol(), today=TODAY)
+    tampered = md_path.read_text(encoding="utf-8").replace("version: 1", "version: 2", 1)
+    md_path.write_text(tampered, encoding="utf-8")
+    with pytest.raises(ValueError, match="frontmatter declares version"):
+        store.read_competition_protocol(tmp_path, "nationals")

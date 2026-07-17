@@ -11,10 +11,8 @@ from collections.abc import Mapping
 
 from performance_agent.evidence.citations import ResolvedCitation
 from performance_agent.memory.schemas import CompetitionProtocol, ProtocolDay
-from performance_agent.programs.render import pace_label
+from performance_agent.programs.render import clock_label, pace_label
 from performance_agent.programs.render_protocol import protocol_citation_ids
-
-_SECONDS_PER_HOUR = 3600
 
 _LABELS = {
     "en": {
@@ -126,16 +124,6 @@ def _marker(numbers: dict[str, int], cite: str | None) -> str:
     return f'<sup class="cite">[{numbers[cite]}]</sup>'
 
 
-def _clock(value: float) -> str:
-    total = round(value)
-    if total >= _SECONDS_PER_HOUR:
-        hours, remainder = divmod(total, _SECONDS_PER_HOUR)
-        minutes, seconds = divmod(remainder, 60)
-        return f"{hours}:{minutes:02d}:{seconds:02d}"
-    minutes, seconds = divmod(total, 60)
-    return f"{minutes}:{seconds:02d}"
-
-
 def _day_html(day: ProtocolDay, numbers: dict[str, int], locale: str) -> str:
     title = (
         _t(locale, "event_day") if day.day_offset == 0 else f"{_t(locale, 'day')} J{day.day_offset}"
@@ -160,7 +148,8 @@ def _pacing_html(protocol: CompetitionProtocol, locale: str) -> str:
         return ""
     rows = "".join(
         f"<tr><td>{html.escape(seg.label)}</td><td>{seg.distance_m:g} m</td>"
-        f"<td>{pace_label(seg.target_pace_s_per_km)}</td><td>{_clock(seg.cumulative_time_s)}</td></tr>"
+        f"<td>{pace_label(seg.target_pace_s_per_km)}</td>"
+        f"<td>{clock_label(seg.cumulative_time_s)}</td></tr>"
         for seg in protocol.pacing
     )
     return (
@@ -242,11 +231,8 @@ def render_protocol_html(
     citations: Mapping[str, ResolvedCitation] | None = None,
 ) -> str:
     """Render the protocol to a standalone, offline-ready phone page."""
-    numbers = (
-        {cid: i for i, cid in enumerate(protocol_citation_ids(protocol), start=1)}
-        if citations
-        else {}
-    )
+    ids = [cid for cid in protocol_citation_ids(protocol) if cid in citations] if citations else []
+    numbers = {cid: i for i, cid in enumerate(ids, start=1)}
     advice = ""
     if protocol.advice:
         rows = "".join(
