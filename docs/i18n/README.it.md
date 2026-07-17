@@ -66,16 +66,25 @@ scarica da solo la versione giusta di Python, nient'altro da installare.
 **Passo 1 — collegare il coach.** Esegui questo una sola volta, da qualsiasi terminale:
 
 ```bash
-claude mcp add performance-agent -s user \
-  --env PERFORMANCE_AGENT_HOME=~/athlete-data -- uvx performance-agent
+claude mcp add performance-agent -s user -- uvx performance-agent
 ```
 
 Questo registra il «cervello» del coach (il motore, la biblioteca scientifica, il tuo
 futuro profilo atleta) come strumento che Claude Code può richiamare. `-s user` lo
-rende disponibile in qualsiasi cartella da cui aprirai `claude`. `~/athlete-data` è
-solo un suggerimento — scegli la cartella che vuoi, non serve che esista: il coach la
-crea al primo salvataggio. Lì vivono tutti i tuoi dati come semplici file; nulla viene
-inviato altrove.
+rende disponibile in qualsiasi cartella da cui aprirai `claude`.
+
+**La cartella da cui avvii `claude` è la cartella dati dell'atleta.** Crea una
+cartella per atleta e avvia la sessione da lì:
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+Tutti i dati di quell'atleta vivono lì come semplici file; nulla viene inviato
+altrove. Allenare più atleti significa solo più cartelle — fai `cd` in quella giusta.
+(Se il tuo host MCP non ti lascia scegliere la cartella di avvio — Claude Desktop,
+per esempio — imposta `PERFORMANCE_AGENT_HOME` sulla cartella dell'atleta nella
+configurazione del server.)
 
 **Passo 2 — insegnargli ad allenare.** Il passo 1 ha dato a Claude gli *strumenti* (la
 matematica, i dati). Questo passo gli dà i *protocolli di coaching* — cosa chiedere e
@@ -108,7 +117,7 @@ Dovresti vedere 93 strumenti. Se sì, hai finito — parlagli e basta.
    iniziale (livello attuale, storico, orari, attrezzatura) e salva il tuo profilo.
 4. **Ricevi un verdetto onesto.** Il motore di fattibilità valuta il tuo obiettivo; se
    è fuori portata, ottieni la probabilità reale e una controproposta.
-5. **Di' di sì** — il programma viene scritto in `athlete/programs/program-v1.md`,
+5. **Di' di sì** — il programma viene scritto in `programs/program-v1.md`,
    periodizzato in cicli con scarichi e tapering, e ogni prescrizione porta il suo
    scopo, il grado di evidenza (★★★★★ → ★☆☆☆☆) e citazioni verificate. Accanto,
    `program-v1.html` è una pagina di seduta autonoma per la palestra: ogni
@@ -152,7 +161,7 @@ queste tre conversazioni termina con un programma completo — sfogliali in
 
 > Sì.
 
-📄 Programma scritto in athlete/programs/program-v1.md
+📄 Programma scritto in programs/program-v1.md
    21 settimane, 3 corse/settimana: una seduta di ripetute, un tempo
    run, un lungo — periodizzato con scarichi e tapering di 10 giorni.
 ```
@@ -181,7 +190,7 @@ queste tre conversazioni termina con un programma completo — sfogliali in
 
 > Sì.
 
-📄 Programma scritto in athlete/programs/program-v1.md
+📄 Programma scritto in programs/program-v1.md
 ```
 
 ### 3. Addominali scolpiti e braccia grosse in 3 mesi
@@ -216,7 +225,7 @@ queste tre conversazioni termina con un programma completo — sfogliali in
 
 > Sì.
 
-📄 Programma scritto in athlete/programs/program-v1.md
+📄 Programma scritto in programs/program-v1.md
 ```
 
 ## Con quale strumento IA posso usarlo?
