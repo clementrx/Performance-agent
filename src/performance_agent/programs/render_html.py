@@ -2,16 +2,17 @@
 
 Like the markdown renderer, the HTML is generated from the structured plan at
 save time so it can never drift. The page is fully self-contained (inline CSS,
-no external requests): exercise animation GIFs from the exercises-dataset
-clone are embedded once each as base64 data URIs and shared through a small
-inline script, so the file stays a few megabytes and works offline on a phone
-at the gym. Media enrichment is best-effort: a block that resolves to no
-dataset record renders its prescription without media rather than with the
-wrong GIF.
+no external requests) and uses NO JavaScript: phone viewers such as iOS Quick
+Look and in-app file previews don't run scripts. Exercise animation GIFs from
+the exercises-dataset clone are embedded once each as base64 data URIs in CSS
+background-image rules shared by class, so the file stays a few megabytes and
+works offline on a phone at the gym. Media enrichment is best-effort: a block
+that resolves to no dataset record renders its prescription without media
+rather than with the wrong GIF.
 """
 
 import html
-import json
+import re
 
 from performance_agent.engine import warmup_scheme
 from performance_agent.exercises.dataset import DatasetExercise, ExerciseMediaIndex
@@ -140,8 +141,8 @@ article.session h3 { margin: 0; font-size: 1.05rem; }
   font-size: 0.85rem; white-space: nowrap; }
 .chip.strong { background: var(--accent); color: #fff; font-weight: 600; }
 .block { display: flex; gap: 0.85rem; padding: 0.85rem 0; border-top: 1px dashed var(--line); }
-.block img { width: 96px; height: 96px; border-radius: 10px; object-fit: cover;
-  background: var(--chip); flex-shrink: 0; }
+.block .media { width: 96px; height: 96px; border-radius: 10px; flex-shrink: 0;
+  background-color: var(--chip); background-size: cover; background-position: center; }
 .block h4 { margin: 0 0 0.3rem; font-size: 1rem; }
 .block .prio { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
 .grow { min-width: 0; flex: 1; }
@@ -168,6 +169,11 @@ def _t(locale: str, key: str) -> str:
     return _LABELS.get(locale, _LABELS["en"])[key]
 
 
+def _css_key(dataset_id: str) -> str:
+    """Turn a dataset id into a token safe for a CSS class name."""
+    return re.sub(r"[^A-Za-z0-9_-]", "-", dataset_id)
+
+
 class _MediaCatalog:
     """Resolves blocks against the dataset and embeds each GIF only once."""
 
@@ -176,18 +182,18 @@ class _MediaCatalog:
         self.uris: dict[str, str] = {}
 
     def resolve(self, block: ExerciseBlock) -> tuple[DatasetExercise | None, str | None]:
-        """Return the dataset record and the MEDIA key of its embedded GIF."""
+        """Return the dataset record and the CSS class key of its embedded GIF."""
         if self._index is None:
             return None, None
         record = self._index.resolve(block.exercise, block.exercise_id)
         if record is None:
             return None, None
-        if record.dataset_id not in self.uris:
+        key = _css_key(record.dataset_id)
+        if key not in self.uris:
             uri = record.gif_data_uri()
             if uri is not None:
-                self.uris[record.dataset_id] = uri
-        key = record.dataset_id if record.dataset_id in self.uris else None
-        return record, key
+                self.uris[key] = uri
+        return record, key if key in self.uris else None
 
 
 def _chips(block: ExerciseBlock, locale: str) -> str:
@@ -240,7 +246,7 @@ def _block_html(
     session: SessionPlan, block: ExerciseBlock, catalog: _MediaCatalog, locale: str
 ) -> str:
     record, media_key = catalog.resolve(block)
-    img = f'<img data-media="{media_key}" alt="" loading="lazy">' if media_key else ""
+    img = f'<div class="media m-{media_key}"></div>' if media_key else ""
     name = html.escape(block.exercise)
     parts = [
         f'<div class="block">{img}<div class="grow">',
@@ -331,14 +337,10 @@ def _header_html(plan: ProgramPlan, locale: str) -> str:
     return f'<header class="top">{"".join(lines)}</header>'
 
 
-def _media_script(catalog: _MediaCatalog) -> str:
-    if not catalog.uris:
-        return ""
-    payload = json.dumps(catalog.uris)
-    return (
-        f"<script>const MEDIA={payload};"
-        'document.querySelectorAll("img[data-media]").forEach('
-        "img=>{img.src=MEDIA[img.dataset.media];});</script>"
+def _media_css(catalog: _MediaCatalog) -> str:
+    """One background-image rule per GIF: dedup without any JavaScript."""
+    return "".join(
+        f'.m-{key}{{background-image:url("{uri}")}}' for key, uri in catalog.uris.items()
     )
 
 
@@ -374,7 +376,7 @@ def render_program_html(
     return (
         f'<!doctype html><html lang="{locale}"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        f"<title>{title}</title><style>{_CSS}</style></head><body><main>"
+        f"<title>{title}</title><style>{_CSS}{_media_css(catalog)}</style></head><body><main>"
         f"{_header_html(plan, locale)}{''.join(sections)}{credit}</main>"
-        f"{_media_script(catalog)}</body></html>"
+        "</body></html>"
     )

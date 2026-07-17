@@ -17,6 +17,14 @@ coaching folder can hold one subfolder per athlete: `cd ~/coaching/marie && clau
   error. **Migration:** `mkdir -p ~/coaching/me && mv ~/.performance-agent/* ~/coaching/me/`
   (`cache/` can stay — the shared exercises-media cache location is unchanged).
 
+### Fixed
+
+- **Session HTML GIFs on phones** — the page previously injected each GIF's
+  data URI via an inline script, so viewers that don't run JavaScript (iOS
+  Quick Look from the Files app, in-app file previews) showed no media. GIFs
+  are now embedded as shared CSS `background-image` rules — same
+  one-copy-per-GIF dedup, zero JavaScript on the page.
+
 ## 0.5.0 — Session HTML
 
 The program the athlete actually opens at the gym. 1243 → 1270 tests; 93 MCP
