@@ -48,6 +48,7 @@ def linked_plan(**overrides):
 def test_prescription_without_media_index():
     page = render_program_html(minimal_plan())
     assert page.startswith("<!doctype html>")
+    assert "Program v1 — 20260712 — squat-160" in page
     assert "Back Squat" in page
     assert "4x5" in page and "120 kg" in page and "180s" in page
     assert "double_progression(5-5, +2.5kg)" in page

@@ -148,7 +148,7 @@ def _week_lines(week: WeekPlan) -> list[str]:
 
 def _header_lines(plan: ProgramPlan) -> list[str]:
     lines = [
-        f"# Program v{plan.version} — {plan.goal_id}",
+        f"# Program v{plan.version} — {plan.created_on:%Y%m%d} — {plan.goal_id}",
         "",
         f"- Check-in cadence: every {plan.checkin_cadence_days} days",
     ]
