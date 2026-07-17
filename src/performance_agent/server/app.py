@@ -5,6 +5,7 @@ from mcp.server.fastmcp import FastMCP
 from performance_agent.exercises.dataset import start_background_sync
 from performance_agent.server import (
     autoregulation_tools,
+    competition_tools,
     document_tools,
     engine_tools,
     evidence_tools,
@@ -33,6 +34,7 @@ taper_tools.register(mcp)
 macro_tools.register(mcp)
 document_tools.register(mcp)
 followup_tools.register(mcp)
+competition_tools.register(mcp)
 
 
 def main() -> None:
