@@ -9,6 +9,7 @@ from performance_agent.server import (
     engine_tools,
     evidence_tools,
     exercise_tools,
+    followup_tools,
     import_tools,
     macro_tools,
     memory_tools,
@@ -31,6 +32,7 @@ exercise_tools.register(mcp)
 taper_tools.register(mcp)
 macro_tools.register(mcp)
 document_tools.register(mcp)
+followup_tools.register(mcp)
 
 
 def main() -> None:
