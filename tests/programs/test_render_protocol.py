@@ -98,6 +98,20 @@ def test_markdown_renders_all_sections():
     assert "★★★★★" in text
 
 
+def test_cumulative_time_over_an_hour_renders_as_hms():
+    protocol = _full_protocol()
+    protocol.pacing.append(
+        PacingSegment(
+            label="Marathon finish",
+            distance_m=42195,
+            target_pace_s_per_km=250,
+            cumulative_time_s=10500,
+        )
+    )
+    text = render_protocol(protocol)
+    assert "2:55:00" in text
+
+
 def test_markdown_without_optional_sections_is_lean():
     protocol = CompetitionProtocol(
         version=1,

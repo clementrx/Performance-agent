@@ -114,3 +114,29 @@ def test_attempts_must_strictly_increase():
 def test_fueling_low_cannot_exceed_high():
     with pytest.raises(ValidationError, match="carb_g_per_kg"):
         FuelingPlan(carb_g_per_kg_low=10, carb_g_per_kg_high=8, window_hours=48)
+
+
+def test_fueling_race_range_cannot_be_half_specified():
+    with pytest.raises(ValidationError, match="race_carb_g_per_h"):
+        FuelingPlan(
+            carb_g_per_kg_low=8,
+            carb_g_per_kg_high=12,
+            window_hours=48,
+            race_carb_g_per_h_low=60,
+        )
+
+
+def test_fueling_race_low_cannot_exceed_high():
+    with pytest.raises(ValidationError, match="race_carb_g_per_h"):
+        FuelingPlan(
+            carb_g_per_kg_low=8,
+            carb_g_per_kg_high=12,
+            window_hours=48,
+            race_carb_g_per_h_low=90,
+            race_carb_g_per_h_high=60,
+        )
+
+
+def test_checklist_item_cannot_be_empty():
+    with pytest.raises(ValidationError):
+        _protocol(checklist=["Pin race bib", ""])

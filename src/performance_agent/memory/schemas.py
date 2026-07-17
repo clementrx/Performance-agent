@@ -611,6 +611,20 @@ class FuelingPlan(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def _race_range_is_well_formed(self) -> Self:
+        low, high = self.race_carb_g_per_h_low, self.race_carb_g_per_h_high
+        if (low is None) != (high is None):
+            msg = (
+                "race_carb_g_per_h_low and race_carb_g_per_h_high must both be set "
+                f"or both be None, got low={low}, high={high}"
+            )
+            raise ValueError(msg)
+        if low is not None and high is not None and low > high:
+            msg = f"race_carb_g_per_h low must not exceed high, got {low} > {high}"
+            raise ValueError(msg)
+        return self
+
 
 class DocumentedPractice(BaseModel):
     """A risky-but-documented practice: described with its grade, never dosed.
@@ -645,7 +659,7 @@ class CompetitionProtocol(BaseModel):
     attempts: list[AttemptPlan] = Field(default_factory=list)
     fueling: FuelingPlan | None = None
     practices: list[DocumentedPractice] = Field(default_factory=list)
-    checklist: list[str] = Field(default_factory=list)
+    checklist: list[Annotated[str, StringConstraints(min_length=1)]] = Field(default_factory=list)
     advice: list[Guidance] = Field(default_factory=list)
 
     @model_validator(mode="after")

@@ -9,7 +9,10 @@ HTML page via protocol_citation_ids.
 from collections.abc import Mapping
 
 from performance_agent.evidence.citations import ResolvedCitation
-from performance_agent.memory.schemas import CompetitionProtocol, FuelingPlan
+from performance_agent.memory.schemas import CompetitionProtocol, FuelingPlan, ProtocolLine
+from performance_agent.programs.render import num_label, pace_label
+
+_SECONDS_PER_HOUR = 3600
 
 
 def protocol_citation_ids(protocol: CompetitionProtocol) -> list[str]:
@@ -38,19 +41,25 @@ def _day_label(offset: int) -> str:
     return "J0" if offset == 0 else f"J{offset}"
 
 
-def _num(value: float) -> str:
-    return f"{value:g}"
+def _cumulative_label(seconds: float) -> str:
+    total = round(seconds)
+    if total >= _SECONDS_PER_HOUR:
+        hours, remainder = divmod(total, _SECONDS_PER_HOUR)
+        minutes, secs = divmod(remainder, 60)
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    minutes, secs = divmod(total, 60)
+    return f"{minutes}:{secs:02d}"
 
 
-def _line_text(text: str, time_hint: str | None, cite: str | None, warning: bool) -> str:
+def _line_text(line: ProtocolLine) -> str:
     parts = []
-    if time_hint:
-        parts.append(f"[{time_hint}]")
-    parts.append(text)
-    if warning:
+    if line.time_hint:
+        parts.append(f"[{line.time_hint}]")
+    parts.append(line.text)
+    if line.warning:
         parts.append("⚠")
-    if cite:
-        parts.append(f"[{cite}]")
+    if line.cite:
+        parts.append(f"[{line.cite}]")
     return "- " + " ".join(parts)
 
 
@@ -67,7 +76,7 @@ def _days_lines(protocol: CompetitionProtocol) -> list[str]:
     for day in protocol.days:
         lines += ["", f"## {_day_label(day.day_offset)} — {day.title}"]
         for line in day.lines:
-            lines.append(_line_text(line.text, line.time_hint, line.cite, line.warning))
+            lines.append(_line_text(line))
     return lines
 
 
@@ -80,11 +89,10 @@ def _pacing_lines(protocol: CompetitionProtocol) -> list[str]:
         "|---|---|---|---|",
     ]
     for seg in protocol.pacing:
-        minutes, seconds = divmod(round(seg.target_pace_s_per_km), 60)
-        total_min, total_s = divmod(round(seg.cumulative_time_s), 60)
         lines.append(
-            f"| {seg.label} | {_num(seg.distance_m)} m | {minutes}:{seconds:02d}/km "
-            f"| {total_min}:{total_s:02d} |"
+            f"| {seg.label} | {num_label(seg.distance_m)} m "
+            f"| {pace_label(seg.target_pace_s_per_km)} "
+            f"| {_cumulative_label(seg.cumulative_time_s)} |"
         )
     return lines
 
@@ -94,8 +102,8 @@ def _attempts_lines(protocol: CompetitionProtocol) -> list[str]:
     for attempt in protocol.attempts:
         flags = f" ({', '.join(attempt.flags)})" if attempt.flags else ""
         lines.append(
-            f"- {attempt.lift}: {_num(attempt.opener_kg)} / {_num(attempt.second_kg)} "
-            f"/ {_num(attempt.third_kg)} kg — e1RM {_num(attempt.e1rm_kg)} kg, "
+            f"- {attempt.lift}: {num_label(attempt.opener_kg)} / {num_label(attempt.second_kg)} "
+            f"/ {num_label(attempt.third_kg)} kg — e1RM {num_label(attempt.e1rm_kg)} kg, "
             f"{attempt.basis}{flags}"
         )
     return lines
@@ -105,16 +113,16 @@ def _fueling_lines(fueling: FuelingPlan) -> list[str]:
     lines: list[str] = ["", "## Fueling"]
     cite = f" [{fueling.cite}]" if fueling.cite else ""
     lines.append(
-        f"- {_num(fueling.carb_g_per_kg_low)}-{_num(fueling.carb_g_per_kg_high)} g/kg/day "
-        f"carbs over the final {fueling.window_hours} h{cite}"
+        f"- {num_label(fueling.carb_g_per_kg_low)}-{num_label(fueling.carb_g_per_kg_high)} "
+        f"g/kg/day carbs over the final {fueling.window_hours} h{cite}"
     )
     has_race_range = (
         fueling.race_carb_g_per_h_low is not None and fueling.race_carb_g_per_h_high is not None
     )
     if has_race_range:
         lines.append(
-            f"- In race: {_num(fueling.race_carb_g_per_h_low)}-"
-            f"{_num(fueling.race_carb_g_per_h_high)} g/h"
+            f"- In race: {num_label(fueling.race_carb_g_per_h_low)}-"
+            f"{num_label(fueling.race_carb_g_per_h_high)} g/h"
         )
     return lines
 
