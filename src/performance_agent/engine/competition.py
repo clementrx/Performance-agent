@@ -80,6 +80,8 @@ _MAX_E1RM_KG = 600.0
 # Attempt-selection convention (powerlifting coaching literature): opener ~91%
 # of e1RM (a weight you can triple), second ~96%, third at the goal when the
 # data supports it — 93-105% of e1RM — else a conservative ~101% PR attempt.
+# A goal outside that band is flagged by direction so the skill can say
+# whether the athlete is sandbagging or overreaching.
 _OPENER_PCT = 0.91
 _SECOND_PCT = 0.96
 _THIRD_FALLBACK_PCT = 1.01
@@ -101,8 +103,8 @@ def select_attempts(e1rm_kg: float, goal_kg: float, rounding_kg: float = 2.5) ->
     """Three meet-day attempts from the estimated 1RM and the athlete's goal.
 
     The honesty gate lives here: a goal outside 93-105% of e1RM is never
-    silently endorsed — the third falls back to ~101% and the goal_beyond_e1rm
-    flag tells the skill to name the gap.
+    silently endorsed — the third falls back to ~101% and a directional flag
+    (goal_beyond_e1rm or goal_below_e1rm_range) tells the skill to name the gap.
     """
     if not _MIN_E1RM_KG <= e1rm_kg <= _MAX_E1RM_KG:
         msg = f"e1rm_kg must be within [{_MIN_E1RM_KG}, {_MAX_E1RM_KG}], got {e1rm_kg!r}"
@@ -120,7 +122,10 @@ def select_attempts(e1rm_kg: float, goal_kg: float, rounding_kg: float = 2.5) ->
         third = round_to_increment(goal_kg, rounding_kg)
     else:
         third = round_to_increment(_THIRD_FALLBACK_PCT * e1rm_kg, rounding_kg)
-        flags = ("goal_beyond_e1rm",)
+        if goal_kg > _GOAL_MAX_PCT * e1rm_kg:
+            flags = ("goal_beyond_e1rm",)
+        else:
+            flags = ("goal_below_e1rm_range",)
     if second <= opener:
         second = opener + rounding_kg
     if third <= second:
@@ -136,6 +141,8 @@ _NEGATIVE_SPLIT_PCT = 0.01
 # C events are never auto-surfaced.
 _WINDOW_A_MIN, _WINDOW_A_MAX = 7, 21
 _WINDOW_B_MIN, _WINDOW_B_MAX = 3, 10
+# sub-metre remainders are float noise, not a real segment
+_MIN_REMAINDER_M = 1.0
 
 
 @dataclass(frozen=True)
@@ -152,11 +159,34 @@ def _segment_distances(distance_m: float, segment_m: float) -> list[float]:
     full = int(distance_m // segment_m)
     segments = [segment_m] * full
     remainder = distance_m - full * segment_m
-    if remainder > 1.0:
+    if remainder > _MIN_REMAINDER_M:
         segments.append(remainder)
     elif not segments:
         segments = [distance_m]
     return segments
+
+
+def _negative_split_paces(
+    distances: list[float], target_time_s: float, mean_pace: float, halfway: float
+) -> list[float]:
+    """Per-segment paces for the negative-split strategy.
+
+    Falls back to even pacing whenever the second half is degenerate (too
+    short, or too fast a first half would force a negative pace on it) — a
+    negative pace is physically meaningless and must never reach the athlete.
+    """
+    start = 0.0
+    first_half = []
+    for dist in distances:
+        first_half.append(start + dist / 2.0 < halfway)
+        start += dist
+    d1_km = sum(d for d, f in zip(distances, first_half, strict=True) if f) / 1000.0
+    d2_km = sum(d for d, f in zip(distances, first_half, strict=True) if not f) / 1000.0
+    pace_1 = mean_pace * (1 + _NEGATIVE_SPLIT_PCT)
+    pace_2 = (target_time_s - pace_1 * d1_km) / d2_km if d2_km else mean_pace
+    if d2_km <= 0 or pace_2 <= 0:
+        return [mean_pace] * len(distances)
+    return [pace_1 if f else pace_2 for f in first_half]
 
 
 def pacing_plan(
@@ -190,16 +220,7 @@ def pacing_plan(
     if strategy == "even" or len(distances) == 1:
         paces = [mean_pace] * len(distances)
     else:
-        start = 0.0
-        first_half = []
-        for dist in distances:
-            first_half.append(start + dist / 2.0 < halfway)
-            start += dist
-        d1_km = sum(d for d, f in zip(distances, first_half, strict=True) if f) / 1000.0
-        d2_km = sum(d for d, f in zip(distances, first_half, strict=True) if not f) / 1000.0
-        pace_1 = mean_pace * (1 + _NEGATIVE_SPLIT_PCT)
-        pace_2 = (target_time_s - pace_1 * d1_km) / d2_km if d2_km else mean_pace
-        paces = [pace_1 if f else pace_2 for f in first_half]
+        paces = _negative_split_paces(distances, target_time_s, mean_pace, halfway)
     splits: list[PacingSplit] = []
     cumulative = 0.0
     position = 0.0
