@@ -112,7 +112,13 @@ Du solltest 93 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit i
    Gegenvorschlag.
 5. **Sag ja** — das Programm wird nach `athlete/programs/program-v1.md` geschrieben,
    periodisiert in Zyklen mit Deloads und Taper; jede Vorgabe trägt ihren Zweck, ihre
-   Evidenzstufe (★★★★★ → ★☆☆☆☆) und verifizierte Zitate.
+   Evidenzstufe (★★★★★ → ★☆☆☆☆) und verifizierte Zitate. Daneben ist
+   `program-v1.html` eine eigenständige Trainingsseite fürs Studio: jede
+   Kraftübung mit Animations-GIF, Schritt-für-Schritt-Technik,
+   Sätze, Wiederholungen, Last und Pause — komplett offline, aufs Handy schicken.
+   (Medien aus
+   [exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset),
+   beim Serverstart automatisch im Hintergrund geklont.)
 6. **Protokolliere jedes Training in einer Zeile** — *„Geloggt: 8 km locker, RPE 4“*.
 7. **Sag alle zwei Wochen „Check-in“** — der Coach vergleicht Plan und Realität,
    nennt deine Trainingslast und meldet Abweichungen.

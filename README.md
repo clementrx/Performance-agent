@@ -111,7 +111,12 @@ You should see 93 tools. If so, you're done — just talk to it.
    reach, you get the real probability and a counter-proposal.
 5. **Say yes** — the program is written to `athlete/programs/program-v1.md`, periodized
    into cycles with deloads and taper, every prescription carrying its purpose,
-   evidence grade (★★★★★ → ★☆☆☆☆), and verified citations.
+   evidence grade (★★★★★ → ★☆☆☆☆), and verified citations. Next to it,
+   `program-v1.html` is a standalone session page for the gym: every strength
+   exercise with its animation GIF, step-by-step technique in your language,
+   sets, reps, load, and rest — fully offline, send it to your phone. (Media
+   from [exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset),
+   cloned automatically in the background at server start.)
 6. **After each workout, log it in one line** — *"Logged: 8 km easy, RPE 4"*.
 7. **Every couple of weeks, say "Check-in"** — the coach compares plan vs. reality,
    quotes your training load, and flags drift.

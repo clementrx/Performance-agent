@@ -110,7 +110,13 @@ Dovresti vedere 93 strumenti. Se sì, hai finito — parlagli e basta.
    è fuori portata, ottieni la probabilità reale e una controproposta.
 5. **Di' di sì** — il programma viene scritto in `athlete/programs/program-v1.md`,
    periodizzato in cicli con scarichi e tapering, e ogni prescrizione porta il suo
-   scopo, il grado di evidenza (★★★★★ → ★☆☆☆☆) e citazioni verificate.
+   scopo, il grado di evidenza (★★★★★ → ★☆☆☆☆) e citazioni verificate. Accanto,
+   `program-v1.html` è una pagina di seduta autonoma per la palestra: ogni
+   esercizio di forza con la sua GIF animata, la tecnica passo per passo,
+   serie, ripetizioni, carico e recupero — completamente offline, inviala
+   al telefono. (Media da
+   [exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset),
+   clonato automaticamente in background all'avvio del server.)
 6. **Dopo ogni allenamento, registralo in una riga** — *«Registrato: 8 km facili, RPE 4»*.
 7. **Ogni due settimane circa, di' «Check-in»** — il coach confronta il piano con la
    realtà, cita il tuo carico di allenamento e segnala le derive.

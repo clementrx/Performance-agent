@@ -27,46 +27,49 @@ _WEEKDAYS = (
 )
 
 
-def _num(value: float) -> str:
+def num_label(value: float) -> str:
     """Format a number without trailing zeros (48.0 -> '48', 47.5 -> '47.5')."""
     return f"{value:g}"
 
 
-def _pace(seconds_per_km: float) -> str:
+def pace_label(seconds_per_km: float) -> str:
+    """Format a running pace as m:ss/km."""
     minutes, secs = divmod(round(seconds_per_km), 60)
     return f"{minutes}:{secs:02d}/km"
 
 
-def _volume(block: ExerciseBlock) -> str:
+def volume_label(block: ExerciseBlock) -> str:
+    """Format a block's volume prescription (sets x reps / minutes / distance)."""
     if block.reps is not None:
         return f"{block.sets}x{block.reps}"
     if block.duration_min is not None:
-        return f"{block.sets}x{_num(block.duration_min)} min"
+        return f"{block.sets}x{num_label(block.duration_min)} min"
     distance = block.distance_m or 0.0
     if distance >= _METERS_PER_KM:
-        label = f"{_num(distance / _METERS_PER_KM)} km"
+        label = f"{num_label(distance / _METERS_PER_KM)} km"
     else:
-        label = f"{_num(distance)} m"
+        label = f"{num_label(distance)} m"
     return f"{block.sets}x{label}"
 
 
-def _intensity_str(block: ExerciseBlock) -> str:
+def intensity_label(block: ExerciseBlock) -> str:
+    """Format a block's single-channel intensity prescription."""
     if block.load_kg is not None:
-        return f"{_num(block.load_kg)} kg"
+        return f"{num_label(block.load_kg)} kg"
     if block.pct_1rm is not None:
         return f"{block.pct_1rm * 100:.0f}% 1RM"
     if block.rir is not None:
-        return f"RIR {_num(block.rir)}"
+        return f"RIR {num_label(block.rir)}"
     if block.rpe is not None:
-        return f"RPE {_num(block.rpe)}"
+        return f"RPE {num_label(block.rpe)}"
     if block.pace_s_per_km is not None:
-        return _pace(block.pace_s_per_km)
+        return pace_label(block.pace_s_per_km)
     return ""
 
 
 def _block_line(block: ExerciseBlock) -> str:
-    parts = [f"- {block.exercise} [{block.priority}]: {_volume(block)}"]
-    intensity = _intensity_str(block)
+    parts = [f"- {block.exercise} [{block.priority}]: {volume_label(block)}"]
+    intensity = intensity_label(block)
     if intensity:
         parts.append(f" @ {intensity}")
     if block.rest_s is not None:
@@ -93,7 +96,7 @@ def _warmup_line(session: SessionPlan, block: ExerciseBlock) -> str | None:
     if not ramp:
         return None
     steps = ", ".join(
-        f"{fraction * 100:.0f}% (~{_num(block.load_kg * fraction)} kg) x{reps}"
+        f"{fraction * 100:.0f}% (~{num_label(block.load_kg * fraction)} kg) x{reps}"
         for fraction, reps in ramp
     )
     return f"  - Warm-up (auto): {steps}"
@@ -130,7 +133,7 @@ def _week_lines(week: WeekPlan) -> list[str]:
         heading += f" ({', '.join(flags)})"
     lines = [
         heading,
-        f"Volume x{_num(week.volume_factor)}, intensity x{_num(week.intensity_factor)}",
+        f"Volume x{num_label(week.volume_factor)}, intensity x{num_label(week.intensity_factor)}",
     ]
     if week.notes:
         lines.append(week.notes)

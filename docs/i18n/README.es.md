@@ -110,7 +110,13 @@ Deberías ver 93 herramientas. Si es así, ya está — simplemente háblale.
    fuera de alcance, obtienes la probabilidad real y una contrapropuesta.
 5. **Di que sí** — el programa se escribe en `athlete/programs/program-v1.md`,
    periodizado en ciclos con descargas y tapering, y cada prescripción lleva su
-   propósito, su grado de evidencia (★★★★★ → ★☆☆☆☆) y citas verificadas.
+   propósito, su grado de evidencia (★★★★★ → ★☆☆☆☆) y citas verificadas. Al lado,
+   `program-v1.html` es una página de sesión autónoma para el gimnasio: cada
+   ejercicio de fuerza con su GIF animado, la técnica paso a paso en tu idioma,
+   series, repeticiones, carga y descanso — totalmente offline, envíala a tu
+   móvil. (Medios de
+   [exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset),
+   clonado automáticamente en segundo plano al arrancar el servidor.)
 6. **Después de cada sesión, regístrala en una línea** — *«Sesión: 8 km suaves, RPE 4»*.
 7. **Cada dos semanas, di «Revisión»** — el coach compara el plan con la realidad,
    cita tu carga de entrenamiento y señala las desviaciones.

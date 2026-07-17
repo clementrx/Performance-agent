@@ -1,13 +1,18 @@
 """In-process tests for the memory MCP tools (isolated athlete dir per test)."""
 
+from pathlib import Path
+
 import pytest
 
+from tests.exercises.test_dataset import write_fixture_dataset
 from tests.program_plans import plan_dict
 
 
 @pytest.fixture(autouse=True)
 def athlete_home(monkeypatch, tmp_path):
     monkeypatch.setenv("PERFORMANCE_AGENT_HOME", str(tmp_path))
+    # Keep tests hermetic: never pick up a real exercises-dataset clone.
+    monkeypatch.setenv("PERFORMANCE_AGENT_EXERCISES_DATASET", str(tmp_path / "no-dataset"))
     return tmp_path
 
 
@@ -161,6 +166,32 @@ async def test_program_versioning_through_tools(client):
     first_version = await client.call_tool("read_program", {"version": 1})
     assert "# Program v1 — sub-45-10k" in first_version.structuredContent["markdown"]
     assert first_version.structuredContent["plan"]["goal_id"] == "sub-45-10k"
+
+
+@pytest.mark.anyio
+async def test_save_program_writes_session_html_without_dataset(client):
+    saved = await client.call_tool("save_program", {"plan": plan_dict(goal_id="sub-45-10k")})
+    html_path = saved.structuredContent["html_path"]
+    assert html_path is not None
+    page = Path(html_path).read_text(encoding="utf-8")
+    assert html_path.endswith("program-v1.html")
+    assert "Back Squat" in page and "4x5" in page
+    assert "data:image/gif" not in page  # no dataset clone -> prescription only
+
+
+@pytest.mark.anyio
+async def test_save_program_html_embeds_media_in_profile_locale(client, monkeypatch, tmp_path):
+    dataset_dir = write_fixture_dataset(tmp_path / "dataset")
+    monkeypatch.setenv("PERFORMANCE_AGENT_EXERCISES_DATASET", str(dataset_dir))
+    await client.call_tool("write_profile", {"profile": {"locale": "fr"}})
+    plan = plan_dict(goal_id="squat-160")
+    plan["mesocycles"][0]["weeks"][0]["sessions"][0]["blocks"][0]["exercise_id"] = "back-squat"
+
+    saved = await client.call_tool("save_program", {"plan": plan})
+    page = Path(saved.structuredContent["html_path"]).read_text(encoding="utf-8")
+    assert page.count("data:image/gif;base64,") == 1
+    assert "Barre sur le dos." in page
+    assert "Semaine 1" in page
 
 
 @pytest.mark.anyio

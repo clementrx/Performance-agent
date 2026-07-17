@@ -178,4 +178,6 @@ Never shame — diagnose the cause in the athlete's own words and re-scope:
   shifted block back one week and cut week-4 volume"). If the review returned the
   proposal before approving, record it in the reason. The store refuses v2+
   without a reason — that is by design, not friction.
-- Quote the new version number back, and state what the next check-in will watch.
+- Quote the new version number back — with the fresh `html_path` (the offline
+  session page regenerates with every version; the athlete should replace the
+  old file on their phone) — and state what the next check-in will watch.

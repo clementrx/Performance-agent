@@ -223,7 +223,10 @@ fourth time.
   the authoritative version and renders the markdown. v1 needs no reason; if the
   review returned the draft before approving, the reason records it — e.g.
   "approved after 2 RETURNED rounds: volume objection". Quote the saved version
-  and path back. Check `read_athlete`'s program_version first: PROGRAM versioning
+  and path back — including `html_path`, the standalone session page (exercise
+  GIFs + technique steps in the athlete's locale, works offline on a phone):
+  tell the athlete THAT file is the one to open at the gym.
+  Check `read_athlete`'s program_version first: PROGRAM versioning
   is global across goals (analyses and dossiers count separately), so if ANY
   program already exists this save is v2+ and REQUIRES a reason (e.g. "first
   program for new goal sub-45-10k"). Only a truly first-ever program is v1.
