@@ -119,10 +119,10 @@ Vous devez voir 93 outils. Si oui, c'est terminé — parlez-lui, tout simplemen
    enregistre votre profil.
 4. **Recevez un verdict honnête.** Le moteur de faisabilité note votre objectif ; s'il
    est hors de portée, vous obtenez la vraie probabilité et une contre-proposition.
-5. **Dites oui** — le programme est écrit dans `programs/program-v1.md`,
+5. **Dites oui** — le programme est écrit dans `programs/program-20260712.md`,
    périodisé en cycles avec décharges et affûtage, chaque prescription portant son
    but, son grade de preuve (★★★★★ → ★☆☆☆☆) et des citations vérifiées. À côté,
-   `program-v1.html` est une page de séance autonome pour la salle : chaque
+   `program-20260712.html` est une page de séance autonome pour la salle : chaque
    exercice de musculation avec son GIF animé, la technique pas à pas dans votre
    langue, séries, répétitions, charge et repos — entièrement hors-ligne,
    envoyez-la sur votre téléphone. (Médias issus
@@ -133,7 +133,7 @@ Vous devez voir 93 outils. Si oui, c'est terminé — parlez-lui, tout simplemen
    la réalité, cite votre charge d'entraînement et signale les dérives.
 8. **Quand la vie s'en mêle** — *« Je me suis tordu la cheville »*, *« Je ne peux
    m'entraîner que deux fois la semaine prochaine »* — le programme est adapté et
-   versionné (`program-v2.md`), la raison consignée dans le journal d'audit.
+   versionné (nouveau fichier daté), la raison consignée dans le journal d'audit.
 
 ## Trois exemples concrets
 
@@ -162,7 +162,7 @@ dans [`examples/`](../../examples/), dans les cinq langues.
 
 > Oui.
 
-📄 Programme écrit dans programs/program-v1.md
+📄 Programme écrit dans programs/program-20260712.md
    21 semaines, 3 sorties/semaine : une séance d'intervalles, un tempo,
    une sortie longue — périodisé avec décharges et affûtage de 10 jours.
 ```
@@ -192,7 +192,7 @@ dans [`examples/`](../../examples/), dans les cinq langues.
 
 > Oui.
 
-📄 Programme écrit dans programs/program-v1.md
+📄 Programme écrit dans programs/program-20260712.md
 ```
 
 ### 3. Des abdos dessinés et des gros bras en 3 mois
@@ -227,7 +227,7 @@ dans [`examples/`](../../examples/), dans les cinq langues.
 
 > Oui.
 
-📄 Programme écrit dans programs/program-v1.md
+📄 Programme écrit dans programs/program-20260712.md
 ```
 
 ## Avec quel outil IA puis-je l'utiliser ?

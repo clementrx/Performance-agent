@@ -354,6 +354,18 @@ def _save_versioned_doc(  # noqa: PLR0913 -- shared by 3 doc families, all keywo
     return path, version
 
 
+def _split_frontmatter(path: Path, text: str) -> tuple[dict[str, object], str]:
+    if text.count(_FRONTMATTER_DELIMITER) < _FRONTMATTER_DELIMITER_COUNT:
+        msg = f"{path} is missing YAML frontmatter delimited by '---' lines"
+        raise ValueError(msg)
+    _, frontmatter_text, body = text.split(_FRONTMATTER_DELIMITER, 2)
+    raw = _parse_yaml(frontmatter_text, path)
+    if not isinstance(raw, dict):
+        msg = f"{path} frontmatter must be a YAML mapping"
+        raise ValueError(msg)
+    return {str(key): value for key, value in raw.items()}, body.strip()
+
+
 def _read_versioned_doc(
     base_dir: Path,
     *,
@@ -369,28 +381,47 @@ def _read_versioned_doc(
     if not path.exists():
         msg = f"{label} version {target} does not exist"
         raise ValueError(msg)
-    text = path.read_text(encoding="utf-8")
-    if text.count(_FRONTMATTER_DELIMITER) < _FRONTMATTER_DELIMITER_COUNT:
-        msg = f"{path} is missing YAML frontmatter delimited by '---' lines"
-        raise ValueError(msg)
-    _, frontmatter_text, body = text.split(_FRONTMATTER_DELIMITER, 2)
-    raw = _parse_yaml(frontmatter_text, path)
-    if not isinstance(raw, dict):
-        msg = f"{path} frontmatter must be a YAML mapping"
-        raise ValueError(msg)
-    frontmatter: dict[str, object] = {str(key): value for key, value in raw.items()}
+    frontmatter, body = _split_frontmatter(path, path.read_text(encoding="utf-8"))
     if frontmatter.get("version") != target:
         msg = (
             f"{path} frontmatter declares version {frontmatter.get('version')} "
             f"but the filename says {target}"
         )
         raise ValueError(msg)
-    return frontmatter, body.strip()
+    return frontmatter, body
+
+
+def _program_md_index(base_dir: Path) -> dict[int, Path]:
+    """Map each stored program version to its markdown file.
+
+    The version lives in the frontmatter, not the filename: programs are named
+    program-YYYYMMDD[-K].md (K disambiguates same-day versions) since 0.7.0,
+    and program-vN.md before — both stay readable through this index.
+    """
+    doc_dir = base_dir / PROGRAMS_DIR
+    if not doc_dir.is_dir():
+        return {}
+    index: dict[int, Path] = {}
+    for path in sorted(doc_dir.glob("program-*.md")):
+        frontmatter, _ = _split_frontmatter(path, path.read_text(encoding="utf-8"))
+        version = frontmatter.get("version")
+        if not isinstance(version, int):
+            msg = f"{path} frontmatter must declare an integer version"
+            raise ValueError(msg)
+        if version in index:
+            msg = (
+                f"program version {version} is declared by both "
+                f"{index[version].name} and {path.name}"
+            )
+            raise ValueError(msg)
+        index[version] = path
+    return index
 
 
 def latest_program_version(base_dir: Path) -> int | None:
     """Return the highest existing program version, or None."""
-    return _latest_doc_version(base_dir, PROGRAMS_DIR, "program")
+    index = _program_md_index(base_dir)
+    return max(index) if index else None
 
 
 def latest_analysis_version(base_dir: Path) -> int | None:
@@ -424,8 +455,23 @@ class ProgramRead:
     plan: ProgramPlan | None
 
 
-def _plan_yaml_path(base_dir: Path, version: int) -> Path:
-    return base_dir / PROGRAMS_DIR / f"program-v{version}.plan.yaml"
+def _plan_yaml_path(md_path: Path) -> Path:
+    return md_path.with_name(md_path.name.removesuffix(".md") + ".plan.yaml")
+
+
+def _program_paths(base_dir: Path, created: date) -> tuple[Path, Path]:
+    """Return fresh (md, plan.yaml) paths named after the creation date.
+
+    program-YYYYMMDD; a second version the same day gets -2, then -3, etc.
+    """
+    programs = base_dir / PROGRAMS_DIR
+    base = f"program-{created:%Y%m%d}"
+    name = base
+    counter = 2
+    while (programs / f"{name}.md").exists() or (programs / f"{name}.plan.yaml").exists():
+        name = f"{base}-{counter}"
+        counter += 1
+    return programs / f"{name}.md", programs / f"{name}.plan.yaml"
 
 
 def save_program(
@@ -436,25 +482,22 @@ def save_program(
 ) -> tuple[Path, int]:
     """Validate, render, and atomically write a program as a yaml+md pair.
 
-    The structured plan is the source of truth (program-v{N}.plan.yaml); the
-    markdown (program-v{N}.md) is rendered from it so the two can never drift.
-    Versions are immutable and never overwritten; adapting an existing program
-    (v2+) requires a reason (the coaching-decision audit trail). The store owns
-    version numbering — the plan's version/created_on/reason are stamped here.
+    Files are named after the creation date (program-YYYYMMDD.md, -2/-3 on
+    same-day versions); the version number lives in the frontmatter and the
+    plan yaml, which stays the source of truth so the markdown can never
+    drift. Versions are immutable and never overwritten; adapting an existing
+    program (v2+) requires a reason (the coaching-decision audit trail). The
+    store owns version numbering — the plan's version/created_on/reason are
+    stamped here.
     """
-    current = _latest_doc_version(base_dir, PROGRAMS_DIR, "program")
+    current = latest_program_version(base_dir)
     version = 1 if current is None else current + 1
     if version > 1 and not reason:
         msg = f"adapting program v{current} to v{version} requires a reason (audit trail)"
         raise ValueError(msg)
     created = today or date.today()
     stamped = plan.model_copy(update={"version": version, "reason": reason, "created_on": created})
-    md_path = _doc_path(base_dir, PROGRAMS_DIR, "program", version)
-    yaml_path = _plan_yaml_path(base_dir, version)
-    for path in (md_path, yaml_path):
-        if path.exists():
-            msg = f"{path} already exists; program versions are immutable"
-            raise ValueError(msg)
+    md_path, yaml_path = _program_paths(base_dir, created)
     frontmatter = {
         "version": version,
         "goal_id": stamped.goal_id,
@@ -477,14 +520,17 @@ def read_program(base_dir: Path, version: int | None = None) -> ProgramRead | No
     The structured plan is included when present; it is None for legacy
     prose-only versions.
     """
-    doc = _read_versioned_doc(
-        base_dir, subdir=PROGRAMS_DIR, prefix="program", label="program", version=version
-    )
-    if doc is None:
+    index = _program_md_index(base_dir)
+    target = version if version is not None else (max(index) if index else None)
+    if target is None:
         return None
-    frontmatter, body = doc
+    if target not in index:
+        msg = f"program version {target} does not exist"
+        raise ValueError(msg)
+    md_path = index[target]
+    frontmatter, body = _split_frontmatter(md_path, md_path.read_text(encoding="utf-8"))
     resolved = int(str(frontmatter["version"]))
-    yaml_path = _plan_yaml_path(base_dir, resolved)
+    yaml_path = _plan_yaml_path(md_path)
     plan: ProgramPlan | None = None
     if yaml_path.exists():
         raw = _load_yaml(yaml_path)

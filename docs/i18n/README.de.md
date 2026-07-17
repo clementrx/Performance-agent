@@ -119,10 +119,10 @@ Du solltest 93 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit i
 4. **Erhalte ein ehrliches Urteil.** Die Machbarkeits-Engine bewertet dein Ziel; ist
    es außer Reichweite, bekommst du die echte Wahrscheinlichkeit und einen
    Gegenvorschlag.
-5. **Sag ja** — das Programm wird nach `programs/program-v1.md` geschrieben,
+5. **Sag ja** — das Programm wird nach `programs/program-20260712.md` geschrieben,
    periodisiert in Zyklen mit Deloads und Taper; jede Vorgabe trägt ihren Zweck, ihre
    Evidenzstufe (★★★★★ → ★☆☆☆☆) und verifizierte Zitate. Daneben ist
-   `program-v1.html` eine eigenständige Trainingsseite fürs Studio: jede
+   `program-20260712.html` eine eigenständige Trainingsseite fürs Studio: jede
    Kraftübung mit Animations-GIF, Schritt-für-Schritt-Technik,
    Sätze, Wiederholungen, Last und Pause — komplett offline, aufs Handy schicken.
    (Medien aus
@@ -133,7 +133,7 @@ Du solltest 93 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit i
    nennt deine Trainingslast und meldet Abweichungen.
 8. **Wenn das Leben dazwischenkommt** — *„Ich habe mir den Knöchel verdreht“*,
    *„Nächste Woche kann ich nur zweimal trainieren“* — wird das Programm angepasst
-   und versioniert (`program-v2.md`), mit dem Grund im Audit-Protokoll.
+   und versioniert (nouveau fichier daté), mit dem Grund im Audit-Protokoll.
 
 ## Drei echte Beispiele
 
@@ -163,7 +163,7 @@ in [`examples/`](../../examples/), in allen fünf Sprachen.
 
 > Ja.
 
-📄 Programm geschrieben nach programs/program-v1.md
+📄 Programm geschrieben nach programs/program-20260712.md
    21 Wochen, 3 Läufe/Woche: eine Intervalleinheit, ein Tempolauf,
    ein langer Lauf — periodisiert mit Deloads und 10-Tage-Taper.
 ```
@@ -193,7 +193,7 @@ in [`examples/`](../../examples/), in allen fünf Sprachen.
 
 > Ja.
 
-📄 Programm geschrieben nach programs/program-v1.md
+📄 Programm geschrieben nach programs/program-20260712.md
 ```
 
 ### 3. Sichtbare Bauchmuskeln und dickere Arme in 3 Monaten
@@ -228,7 +228,7 @@ in [`examples/`](../../examples/), in allen fünf Sprachen.
 
 > Ja.
 
-📄 Programm geschrieben nach programs/program-v1.md
+📄 Programm geschrieben nach programs/program-20260712.md
 ```
 
 ## Mit welchem KI-Tool kann ich das benutzen?

@@ -272,7 +272,7 @@ def _doc_view(result: tuple[dict[str, object], str] | None, missing_msg: str) ->
 
 
 def _write_program_html(base: Path, md_path: Path, version: int) -> str | None:
-    """Render and write program-vN.html next to the markdown (best-effort).
+    """Render and write the dated program .html next to the markdown (best-effort).
 
     The page always carries the full prescription; exercise GIFs and technique
     steps are embedded only when the exercises-dataset clone is available (it
@@ -301,7 +301,8 @@ def save_program(plan: ProgramPlan, reason: str | None = None) -> ProgramSaved:
     reason — the plan's own version/created_on/reason are placeholders. Version
     1 needs no reason; every adaptation (v2+) requires a reason stating the
     coaching decision. Existing versions are never overwritten. goal_id lives
-    on the plan. Alongside the markdown, a standalone program-vN.html session
+    on the plan. Files are named after the save date (program-YYYYMMDD.md, -2
+    on a same-day version). Alongside the markdown, a standalone .html session
     page is written (exercise GIFs + technique steps in the athlete's locale,
     usable offline at the gym) — hand that file to the athlete.
     """

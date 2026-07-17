@@ -117,10 +117,10 @@ Dovresti vedere 93 strumenti. Se sì, hai finito — parlagli e basta.
    iniziale (livello attuale, storico, orari, attrezzatura) e salva il tuo profilo.
 4. **Ricevi un verdetto onesto.** Il motore di fattibilità valuta il tuo obiettivo; se
    è fuori portata, ottieni la probabilità reale e una controproposta.
-5. **Di' di sì** — il programma viene scritto in `programs/program-v1.md`,
+5. **Di' di sì** — il programma viene scritto in `programs/program-20260712.md`,
    periodizzato in cicli con scarichi e tapering, e ogni prescrizione porta il suo
    scopo, il grado di evidenza (★★★★★ → ★☆☆☆☆) e citazioni verificate. Accanto,
-   `program-v1.html` è una pagina di seduta autonoma per la palestra: ogni
+   `program-20260712.html` è una pagina di seduta autonoma per la palestra: ogni
    esercizio di forza con la sua GIF animata, la tecnica passo per passo,
    serie, ripetizioni, carico e recupero — completamente offline, inviala
    al telefono. (Media da
@@ -131,7 +131,7 @@ Dovresti vedere 93 strumenti. Se sì, hai finito — parlagli e basta.
    realtà, cita il tuo carico di allenamento e segnala le derive.
 8. **Quando la vita si mette di mezzo** — *«Mi sono storto la caviglia»*, *«La
    prossima settimana posso allenarmi solo due volte»* — il programma viene adattato e
-   versionato (`program-v2.md`), con il motivo registrato nel registro di audit.
+   versionato (nouveau fichier daté), con il motivo registrato nel registro di audit.
 
 ## Tre esempi reali
 
@@ -161,7 +161,7 @@ queste tre conversazioni termina con un programma completo — sfogliali in
 
 > Sì.
 
-📄 Programma scritto in programs/program-v1.md
+📄 Programma scritto in programs/program-20260712.md
    21 settimane, 3 corse/settimana: una seduta di ripetute, un tempo
    run, un lungo — periodizzato con scarichi e tapering di 10 giorni.
 ```
@@ -190,7 +190,7 @@ queste tre conversazioni termina con un programma completo — sfogliali in
 
 > Sì.
 
-📄 Programma scritto in programs/program-v1.md
+📄 Programma scritto in programs/program-20260712.md
 ```
 
 ### 3. Addominali scolpiti e braccia grosse in 3 mesi
@@ -225,7 +225,7 @@ queste tre conversazioni termina con un programma completo — sfogliali in
 
 > Sì.
 
-📄 Programma scritto in programs/program-v1.md
+📄 Programma scritto in programs/program-20260712.md
 ```
 
 ## Con quale strumento IA posso usarlo?
