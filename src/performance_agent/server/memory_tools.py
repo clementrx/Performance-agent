@@ -5,12 +5,14 @@ start, quotes get_time_context instead of computing dates, and records every
 adaptation through the versioned program store.
 """
 
+from pathlib import Path
 from typing import Annotated, TypedDict
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from performance_agent.engine import SeasonModality
+from performance_agent.exercises.dataset import ExerciseMediaIndex
 from performance_agent.memory import diligence, monitoring, sequencing, store
 from performance_agent.memory import season as season_planner
 from performance_agent.memory.diligence import DueActionView
@@ -30,6 +32,7 @@ from performance_agent.memory.schemas import (
 )
 from performance_agent.memory.season import SeasonPlanView
 from performance_agent.memory.time_context import TimeContext, build_time_context
+from performance_agent.programs.render_html import render_program_html
 
 
 class AthleteSnapshot(TypedDict):
@@ -103,6 +106,19 @@ class VersionedDocSaved(TypedDict):
 
     path: str
     version: int
+
+
+class ProgramSaved(TypedDict):
+    """Result of writing a new program version: markdown plus the session HTML.
+
+    html_path is the standalone in-gym page (media embedded when the exercise
+    dataset clone is available); it is null only when the HTML could not be
+    rendered.
+    """
+
+    path: str
+    version: int
+    html_path: str | None
 
 
 class VersionedDocView(TypedDict):
@@ -255,7 +271,28 @@ def _doc_view(result: tuple[dict[str, object], str] | None, missing_msg: str) ->
     )
 
 
-def save_program(plan: ProgramPlan, reason: str | None = None) -> VersionedDocSaved:
+def _write_program_html(base: Path, md_path: Path, version: int) -> str | None:
+    """Render and write program-vN.html next to the markdown (best-effort).
+
+    The page always carries the full prescription; exercise GIFs and technique
+    steps are embedded only when the exercises-dataset clone is available (it
+    syncs in the background at server start).
+    """
+    program = store.read_program(base, version)
+    if program is None or program.plan is None:
+        return None
+    try:
+        index = ExerciseMediaIndex.load()
+    except (FileNotFoundError, NotADirectoryError):
+        index = None
+    locale = store.read_profile(base).locale
+    page = render_program_html(program.plan, locale=locale, index=index)
+    html_path = md_path.with_suffix(".html")
+    html_path.write_text(page, encoding="utf-8")
+    return str(html_path)
+
+
+def save_program(plan: ProgramPlan, reason: str | None = None) -> ProgramSaved:
     """Write the NEXT program version from a structured plan (immutable audit trail).
 
     Hand a full ProgramPlan (mesocycles → weeks → sessions → blocks, with a
@@ -264,10 +301,14 @@ def save_program(plan: ProgramPlan, reason: str | None = None) -> VersionedDocSa
     reason — the plan's own version/created_on/reason are placeholders. Version
     1 needs no reason; every adaptation (v2+) requires a reason stating the
     coaching decision. Existing versions are never overwritten. goal_id lives
-    on the plan.
+    on the plan. Alongside the markdown, a standalone program-vN.html session
+    page is written (exercise GIFs + technique steps in the athlete's locale,
+    usable offline at the gym) — hand that file to the athlete.
     """
-    path, version = store.save_program(resolve_athlete_dir(), plan, reason)
-    return VersionedDocSaved(path=str(path), version=version)
+    base = resolve_athlete_dir()
+    path, version = store.save_program(base, plan, reason)
+    html_path = _write_program_html(base, path, version)
+    return ProgramSaved(path=str(path), version=version, html_path=html_path)
 
 
 def read_program(version: int | None = None) -> ProgramView:

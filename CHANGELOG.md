@@ -2,6 +2,24 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## Unreleased
+
+### Added
+
+- **Standalone session HTML** — `save_program` now writes `program-vN.html` next
+  to the markdown: a self-contained, offline-ready page for the gym with each
+  strength exercise's animation GIF (embedded base64, deduplicated), step-by-step
+  technique in the athlete's locale (en/fr/es), sets, reps, load, rest, warm-up
+  ramps, progression rules and per-session fallbacks. Media and instructions come
+  from [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset)
+  (1,324 exercises), cloned to `~/.performance-agent/cache/exercises-dataset` by a
+  background sync at server start (`PERFORMANCE_AGENT_EXERCISES_DATASET` overrides
+  the location; `PERFORMANCE_AGENT_NO_DATASET_SYNC=1` disables the sync). Blocks
+  resolve through a curated seed→dataset mapping (~80 exercises) with a
+  high-cutoff name fallback — an unresolved exercise renders without media rather
+  than with the wrong GIF; without the clone the page still carries the full
+  prescription.
+
 ## 0.4.0 — Beyond-Olympic Prep
 
 Upgrades planning, programming and exercise selection past a discipline-specific

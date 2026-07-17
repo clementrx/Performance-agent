@@ -112,7 +112,13 @@ Vous devez voir 93 outils. Si oui, c'est terminé — parlez-lui, tout simplemen
    est hors de portée, vous obtenez la vraie probabilité et une contre-proposition.
 5. **Dites oui** — le programme est écrit dans `athlete/programs/program-v1.md`,
    périodisé en cycles avec décharges et affûtage, chaque prescription portant son
-   but, son grade de preuve (★★★★★ → ★☆☆☆☆) et des citations vérifiées.
+   but, son grade de preuve (★★★★★ → ★☆☆☆☆) et des citations vérifiées. À côté,
+   `program-v1.html` est une page de séance autonome pour la salle : chaque
+   exercice de musculation avec son GIF animé, la technique pas à pas dans votre
+   langue, séries, répétitions, charge et repos — entièrement hors-ligne,
+   envoyez-la sur votre téléphone. (Médias issus
+   d'[exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset),
+   cloné automatiquement en arrière-plan au démarrage du serveur.)
 6. **Après chaque séance, une ligne suffit** — *« Séance : 8 km facile, RPE 4 »*.
 7. **Toutes les deux semaines environ, dites « Bilan »** — le coach compare le plan à
    la réalité, cite votre charge d'entraînement et signale les dérives.

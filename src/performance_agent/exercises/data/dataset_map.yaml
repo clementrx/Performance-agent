@@ -1,0 +1,82 @@
+# Curated mapping: seed exercise id -> exercises-dataset record id.
+# The dataset name is repeated as a comment for review; lookups use the id.
+# Seeds absent here have no visually faithful match in the dataset (box/safety-bar
+# variants, sprint drills, most jumps, sled work) and render without media.
+back-squat: "0043"  # barbell full squat
+front-squat: "0042"  # barbell front squat
+pause-squat: "0043"  # barbell full squat
+goblet-squat: "1760"  # dumbbell goblet squat
+hack-squat: "0743"  # sled hack squat
+leg-press: "0739"  # sled 45в° leg press
+overhead-squat: "0069"  # barbell overhead squat
+conventional-deadlift: "0032"  # barbell deadlift
+sumo-deadlift: "0117"  # barbell sumo deadlift
+romanian-deadlift: "0085"  # barbell romanian deadlift
+trap-bar-deadlift: "0811"  # trap bar deadlift
+deficit-deadlift: "0032"  # barbell deadlift
+rack-pull: "0074"  # barbell rack pull
+good-morning: "0044"  # barbell good morning
+kettlebell-swing: "0549"  # kettlebell swing
+hip-thrust: "3562"  # barbell glute bridge two legs on bench (male)
+glute-ham-raise: "3193"  # glute-ham raise
+back-extension: "0488"  # hyperextension (on bench)
+single-leg-rdl: "1757"  # dumbbell single leg deadlift
+nordic-hamstring-curl: "0496"  # inverse leg curl (bench support)
+barbell-bench-press: "0025"  # barbell bench press
+incline-bench-press: "0047"  # barbell incline bench press
+close-grip-bench: "0030"  # barbell close-grip bench press
+dumbbell-bench-press: "0289"  # dumbbell bench press
+machine-chest-press: "0576"  # lever chest press
+cable-fly: "0188"  # cable middle fly
+push-up: "0662"  # push-up
+dip: "0251"  # chest dip
+overhead-press: "1456"  # barbell standing close grip military press
+push-press: "1700"  # dumbbell push press
+dumbbell-shoulder-press: "0405"  # dumbbell seated shoulder press
+machine-shoulder-press: "0603"  # lever shoulder press
+handstand-push-up: "0471"  # handstand push-up
+barbell-row: "0027"  # barbell bent over row
+pendlay-row: "3017"  # barbell pendlay row
+dumbbell-row: "0292"  # dumbbell one arm bent-over row
+seated-cable-row: "0861"  # cable seated row
+machine-row: "1350"  # lever seated row
+inverted-row: "0499"  # inverted row
+chest-supported-row: "0327"  # dumbbell incline row
+face-pull: "0203"  # cable rear delt row (with rope)
+pull-up: "0652"  # pull-up
+chin-up: "1326"  # chin-up
+lat-pulldown: "0197"  # cable pulldown (pro lat bar)
+machine-pulldown: "0579"  # lever front pulldown
+band-pulldown: "0974"  # band close-grip pulldown
+barbell-lunge: "0054"  # barbell lunge
+walking-lunge: "0336"  # dumbbell lunge
+reverse-lunge: "0381"  # dumbbell rear lunge
+bulgarian-split-squat: "0410"  # dumbbell single leg split squat
+step-up: "0431"  # dumbbell step-up
+split-squat: "2368"  # split squats
+lateral-lunge: "1410"  # barbell lateral lunge
+cossack-squat: "3643"  # weighted cossack squats (male)
+farmer-carry: "2133"  # farmers walk
+overhead-carry: "3548"  # dumbbell single arm overhead carry
+plank: "2135"  # weighted front plank
+dead-bug: "0276"  # dead bug
+pallof-press: "0979"  # band horizontal pallof press
+hanging-leg-raise: "0472"  # hanging leg raise
+ab-wheel-rollout: "0857"  # wheel rollerout
+cable-woodchop: "0243"  # cable twist
+russian-twist: "0687"  # russian twist
+countermovement-jump: "0514"  # jump squat
+med-ball-chest-pass: "1302"  # medicine ball chest pass
+med-ball-slam: "1354"  # medicine ball overhead slam
+med-ball-overhead-throw: "1353"  # medicine ball catch and overhead throw
+power-clean: "0648"  # power clean
+snatch-pull: "0776"  # snatch pull
+leg-extension: "0585"  # lever leg extension
+leg-curl: "0586"  # lever lying leg curl
+calf-raise: "0605"  # lever standing calf raise
+biceps-curl: "0294"  # dumbbell biceps curl
+triceps-pushdown: "0201"  # cable pushdown
+lateral-raise: "0334"  # dumbbell lateral raise
+easy-run: "0685"  # run
+tempo-run: "0685"  # run
+interval-run: "0685"  # run

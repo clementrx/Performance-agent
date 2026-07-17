@@ -2,6 +2,7 @@
 
 from mcp.server.fastmcp import FastMCP
 
+from performance_agent.exercises.dataset import start_background_sync
 from performance_agent.server import (
     autoregulation_tools,
     engine_tools,
@@ -31,5 +32,10 @@ macro_tools.register(mcp)
 
 
 def main() -> None:
-    """Run the performance-agent MCP server over stdio."""
+    """Run the performance-agent MCP server over stdio.
+
+    The exercises-dataset clone (media + instructions for the session HTML)
+    syncs in a daemon thread so startup never blocks on the network.
+    """
+    start_background_sync()
     mcp.run()

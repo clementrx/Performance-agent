@@ -5,14 +5,20 @@ from pathlib import Path
 import anyio
 import pytest
 from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp.client.stdio import get_default_environment, stdio_client
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.anyio
-async def test_stdio_server_exposes_engine_tools():
-    params = StdioServerParameters(command="uv", args=["run", "performance-agent"], cwd=REPO_ROOT)
+async def test_stdio_server_exposes_engine_tools(tmp_path):
+    env = get_default_environment() | {
+        "PERFORMANCE_AGENT_HOME": str(tmp_path),
+        "PERFORMANCE_AGENT_NO_DATASET_SYNC": "1",  # tests must not clone ~125 MB
+    }
+    params = StdioServerParameters(
+        command="uv", args=["run", "performance-agent"], cwd=REPO_ROOT, env=env
+    )
     with anyio.fail_after(30):
         async with (
             stdio_client(params) as (read, write),
