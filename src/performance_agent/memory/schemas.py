@@ -491,6 +491,19 @@ class TestMilestone(BaseModel):
     targets: list[str] = Field(min_length=1)
 
 
+class Guidance(BaseModel):
+    """One header guidance line: advice or program rationale, optionally cited.
+
+    cite is a corpus id (same semantics as ExerciseBlock.cite). Without one the
+    line must read as coaching judgment — never a fake citation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=300)
+    cite: str | None = None
+
+
 class ProgramPlan(BaseModel):
     """Structured program: the source of truth the markdown is rendered from."""
 
@@ -504,6 +517,8 @@ class ProgramPlan(BaseModel):
     checkin_cadence_days: int = Field(default=7, ge=1, le=90)
     season_ref: str | None = None
     test_milestones: list[TestMilestone] = Field(default_factory=list)
+    advice: list[Guidance] = Field(default_factory=list)
+    rationale: list[Guidance] = Field(default_factory=list)
     mesocycles: list[Mesocycle] = Field(min_length=1)
 
     @model_validator(mode="after")
