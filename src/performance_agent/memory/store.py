@@ -19,6 +19,7 @@ from performance_agent.memory.schemas import (
     Calendar,
     CalendarEvent,
     CheckinEntry,
+    CompetitionProtocol,
     ExerciseLibrary,
     Goal,
     KpiResult,
@@ -34,6 +35,7 @@ from performance_agent.memory.schemas import (
     SessionPlan,
 )
 from performance_agent.programs.render import render_program
+from performance_agent.programs.render_protocol import render_protocol
 
 PROFILE_FILE = "profile.yaml"
 GOALS_FILE = "goals.yaml"
@@ -56,6 +58,7 @@ MACRO_PLAN_PREFIX = "macro-plan"
 EXERCISES_DIR = "exercises"
 EXERCISE_LIBRARY_FILE = "library.yaml"
 WATCH_DIR = "watch"
+COMPETITION_DIR = "competition"
 _FRONTMATTER_DELIMITER = "---\n"
 _FRONTMATTER_DELIMITER_COUNT = 2
 
@@ -858,4 +861,127 @@ def read_watch_report(
         prefix="report",
         label="watch report",
         version=version,
+    )
+
+
+@dataclass(frozen=True)
+class ProtocolRead:
+    """A stored competition-protocol version: structured plan plus its markdown."""
+
+    version: int
+    event_id: str
+    goal_id: str
+    created_on: str
+    reason: str | None
+    markdown: str
+    protocol: CompetitionProtocol
+
+
+def _protocol_prefix(event_id: str) -> str:
+    return f"protocol-{event_id}"
+
+
+def latest_competition_protocol_version(base_dir: Path, event_id: str) -> int | None:
+    """Highest stored protocol version for this event, or None."""
+    return _latest_doc_version(base_dir, COMPETITION_DIR, _protocol_prefix(event_id))
+
+
+def _validated_calendar_event(base_dir: Path, protocol: CompetitionProtocol, current: date) -> None:
+    event = next((e for e in read_calendar(base_dir).events if e.id == protocol.event_id), None)
+    if event is None:
+        msg = f"event {protocol.event_id!r} is not in the calendar; add it first"
+        raise ValueError(msg)
+    if event.date != protocol.event_date:
+        msg = (
+            f"protocol event_date {protocol.event_date} does not match the calendar "
+            f"date {event.date} for {protocol.event_id!r}"
+        )
+        raise ValueError(msg)
+    if event.date < current:
+        msg = f"event {protocol.event_id!r} ({event.date}) is in the past"
+        raise ValueError(msg)
+
+
+def save_competition_protocol(
+    base_dir: Path,
+    protocol: CompetitionProtocol,
+    reason: str | None = None,
+    today: date | None = None,
+    citations: Mapping[str, ResolvedCitation] | None = None,
+) -> tuple[Path, int]:
+    """Validate against the calendar and write the next protocol version.
+
+    The event must exist in calendar.yaml with the same date (a rescheduled
+    event needs a v2 with a reason, never a silent drift) and must not be in
+    the past. yaml is the source of truth, markdown the rendered view; both
+    are immutable once written. citations maps corpus ids to their resolved
+    rendering (the server resolves them; None keeps a citation-less render).
+    """
+    current = today or date.today()
+    _validated_calendar_event(base_dir, protocol, current)
+    prefix = _protocol_prefix(protocol.event_id)
+    latest = latest_competition_protocol_version(base_dir, protocol.event_id)
+    version = 1 if latest is None else latest + 1
+    if version > 1 and not reason:
+        msg = (
+            f"adapting protocol v{latest} to v{version} for {protocol.event_id!r} "
+            "requires a reason (audit trail)"
+        )
+        raise ValueError(msg)
+    stamped = protocol.model_copy(
+        update={"version": version, "reason": reason, "created_on": current}
+    )
+    frontmatter = {
+        "version": version,
+        "event_id": stamped.event_id,
+        "goal_id": stamped.goal_id,
+        "created_on": current.isoformat(),
+        "reason": reason,
+    }
+    md_path = base_dir / COMPETITION_DIR / f"{prefix}-v{version}.md"
+    yaml_path = md_path.with_suffix(".yaml")
+    content = (
+        "---\n"
+        + _to_yaml(frontmatter)
+        + "---\n\n"
+        + render_protocol(stamped, citations=citations).strip()
+        + "\n"
+    )
+    _atomic_write(yaml_path, _to_yaml(stamped.model_dump(mode="json")))
+    try:
+        _atomic_write(md_path, content)
+    except OSError:
+        yaml_path.unlink(missing_ok=True)
+        raise
+    return md_path, version
+
+
+def read_competition_protocol(
+    base_dir: Path, event_id: str, version: int | None = None
+) -> ProtocolRead | None:
+    """Return the given or latest protocol for an event; None when none exists."""
+    target = (
+        version if version is not None else latest_competition_protocol_version(base_dir, event_id)
+    )
+    if target is None:
+        return None
+    prefix = _protocol_prefix(event_id)
+    md_path = base_dir / COMPETITION_DIR / f"{prefix}-v{target}.md"
+    yaml_path = md_path.with_suffix(".yaml")
+    if not md_path.exists() or not yaml_path.exists():
+        msg = f"protocol v{target} for {event_id!r} does not exist"
+        raise ValueError(msg)
+    frontmatter, markdown = _split_frontmatter(md_path, md_path.read_text(encoding="utf-8"))
+    protocol = _validated(
+        yaml_path,
+        lambda: CompetitionProtocol.model_validate(_load_yaml(yaml_path) or {}),
+    )
+    return ProtocolRead(
+        version=target,
+        event_id=event_id,
+        goal_id=str(frontmatter["goal_id"]),
+        created_on=str(frontmatter["created_on"]),
+        reason=str(frontmatter["reason"]) if frontmatter.get("reason") is not None else None,
+        markdown=markdown,
+        protocol=protocol,
     )
