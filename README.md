@@ -50,6 +50,22 @@ tell you what you want to hear. PerformanceAgent is architected so neither is po
   is *fitted*: your own fitness-fatigue time constants, taper response and per-quality
   rates — with honesty gates that refuse a number when the data is too thin — planned
   across a 1-4 year macrocycle.
+- **Athlete document drop folder** — drop studies, physio reports or past
+  programs into `documentation/`; verified studies join the evidence corpus
+  (full text read), everything else informs coaching as context, never faked
+  as science.
+- **Research that stays alive** — targeted mini-waves on plateaus, injuries and
+  athlete questions; an incremental literature watch at every mesocycle
+  boundary (`year_from` delta queries), all folded into the versioned dossier.
+- **Weekly loads review** — structured per-block progression rules computed by
+  the engine (`suggest_next_week_loads`): next week's exact weights from this
+  week's logs, flags instead of guesses.
+- **Program watch** — a biweekly per-exercise audit (keep / watch / substitute
+  candidate) written as a versioned report; substitutions go through
+  program-adaptation, never silently.
+- **Science on the gym page** — the offline program HTML opens with sourced
+  advice and "why this program" lines, `[n]` markers on blocks, and a starred
+  bibliography.
 
 ## Install (5 minutes, 3 steps)
 
@@ -108,7 +124,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 93 tools. If so, you're done — just talk to it.
+You should see 97 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -315,8 +331,8 @@ typed backward from the major event with per-year quality-emphasis budgets deriv
 from the gap priorities, feeding the season) and a training-residuals guard (warns
 where a maintained quality would decay past its Issurin retention window without a
 refresh);
-1270 tests
-incl. property-based) · 93 MCP
+1339 tests
+incl. property-based) · 97 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response
@@ -326,7 +342,7 @@ activity-file import (.fit/.tcx/.gpx/CSV, incl. power/cadence/splits and VBT
 exports) that proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
-behind a double verification gate · twelve coaching skills incl. a mandatory delivery
+behind a double verification gate · fourteen coaching skills incl. a mandatory delivery
 gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard
 citation gate.
 
