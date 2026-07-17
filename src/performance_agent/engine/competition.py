@@ -126,3 +126,107 @@ def select_attempts(e1rm_kg: float, goal_kg: float, rounding_kg: float = 2.5) ->
     if third <= second:
         third = second + rounding_kg
     return AttemptSelection(opener, second, third, flags)
+
+
+# Negative-split prior: first half ~1% slower than mean pace, second half
+# balanced exactly so the cumulative time lands on the target.
+_NEGATIVE_SPLIT_PCT = 0.01
+# Protocol windows per priority (spec §4): A events open with the taper but
+# never closer than a week nor further than three; B events get a short window;
+# C events are never auto-surfaced.
+_WINDOW_A_MIN, _WINDOW_A_MAX = 7, 21
+_WINDOW_B_MIN, _WINDOW_B_MAX = 3, 10
+
+
+@dataclass(frozen=True)
+class PacingSplit:
+    """One race segment: its target pace and the cumulative time at its end."""
+
+    label: str
+    distance_m: float
+    target_pace_s_per_km: float
+    cumulative_time_s: float
+
+
+def _segment_distances(distance_m: float, segment_m: float) -> list[float]:
+    full = int(distance_m // segment_m)
+    segments = [segment_m] * full
+    remainder = distance_m - full * segment_m
+    if remainder > 1.0:
+        segments.append(remainder)
+    elif not segments:
+        segments = [distance_m]
+    return segments
+
+
+def pacing_plan(
+    distance_m: float,
+    target_time_s: float,
+    segment_m: float = 1000.0,
+    strategy: str = "even",
+) -> list[PacingSplit]:
+    """Distribute a target time over segments (even or negative split).
+
+    The target comes from the athlete's goal or predict_race_time upstream —
+    this function only distributes it; cumulative time always lands on the
+    target within a second.
+    """
+    if distance_m <= 0:
+        msg = f"distance_m must be positive, got {distance_m!r}"
+        raise ValueError(msg)
+    if target_time_s <= 0:
+        msg = f"target_time_s must be positive, got {target_time_s!r}"
+        raise ValueError(msg)
+    if segment_m <= 0:
+        msg = f"segment_m must be positive, got {segment_m!r}"
+        raise ValueError(msg)
+    if strategy not in ("even", "negative"):
+        msg = f"strategy must be 'even' or 'negative', got {strategy!r}"
+        raise ValueError(msg)
+    distances = _segment_distances(distance_m, segment_m)
+    mean_pace = target_time_s / (distance_m / 1000.0)
+    halfway = distance_m / 2.0
+    paces: list[float]
+    if strategy == "even" or len(distances) == 1:
+        paces = [mean_pace] * len(distances)
+    else:
+        start = 0.0
+        first_half = []
+        for dist in distances:
+            first_half.append(start + dist / 2.0 < halfway)
+            start += dist
+        d1_km = sum(d for d, f in zip(distances, first_half, strict=True) if f) / 1000.0
+        d2_km = sum(d for d, f in zip(distances, first_half, strict=True) if not f) / 1000.0
+        pace_1 = mean_pace * (1 + _NEGATIVE_SPLIT_PCT)
+        pace_2 = (target_time_s - pace_1 * d1_km) / d2_km if d2_km else mean_pace
+        paces = [pace_1 if f else pace_2 for f in first_half]
+    splits: list[PacingSplit] = []
+    cumulative = 0.0
+    position = 0.0
+    for dist, pace in zip(distances, paces, strict=True):
+        cumulative += pace * dist / 1000.0
+        position += dist
+        splits.append(
+            PacingSplit(
+                label=f"{position / 1000.0:g} km",
+                distance_m=dist,
+                target_pace_s_per_km=round(pace, 1),
+                cumulative_time_s=round(cumulative, 1),
+            )
+        )
+    return splits
+
+
+def protocol_window_days(taper_days: int, priority: str) -> int:
+    """The adaptive due-action window: taper-driven, clamped per priority."""
+    if taper_days < 0:
+        msg = f"taper_days must be non-negative, got {taper_days!r}"
+        raise ValueError(msg)
+    if priority not in ("A", "B", "C"):
+        msg = f"priority must be A, B or C, got {priority!r}"
+        raise ValueError(msg)
+    if priority == "A":
+        return min(max(taper_days, _WINDOW_A_MIN), _WINDOW_A_MAX)
+    if priority == "B":
+        return min(max(taper_days, _WINDOW_B_MIN), _WINDOW_B_MAX)
+    return 0
