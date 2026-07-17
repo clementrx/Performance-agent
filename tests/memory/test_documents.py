@@ -4,6 +4,7 @@ from datetime import date
 
 import pytest
 
+from performance_agent.memory import store
 from performance_agent.memory.documents import (
     DOCUMENTATION_DIR,
     README_FILE,
@@ -13,6 +14,7 @@ from performance_agent.memory.documents import (
     mark_processed,
     scan_documents,
 )
+from performance_agent.memory.schemas import Profile
 
 TODAY = date(2026, 7, 17)
 
@@ -156,3 +158,8 @@ def test_corrupt_registry_is_rebuilt_empty(tmp_path):
     (tmp_path / DOCUMENTATION_DIR / REGISTRY_FILE).write_text("not: [valid", encoding="utf-8")
     result = scan_documents(tmp_path)
     assert [item["filename"] for item in result["new"]] == ["study.pdf"]
+
+
+def test_write_profile_bootstraps_documentation_folder(tmp_path):
+    store.write_profile(tmp_path, Profile())
+    assert (tmp_path / DOCUMENTATION_DIR / README_FILE).exists()

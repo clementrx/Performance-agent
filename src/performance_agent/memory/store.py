@@ -13,6 +13,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
+from performance_agent.memory.documents import ensure_documentation_dir
 from performance_agent.memory.schemas import (
     Calendar,
     CalendarEvent,
@@ -101,9 +102,13 @@ def read_profile(base_dir: Path) -> Profile:
 
 
 def write_profile(base_dir: Path, profile: Profile) -> Path:
-    """Persist the profile as readable YAML; returns the file path."""
+    """Persist the profile as readable YAML; returns the file path.
+
+    Also bootstraps the documentation/ drop folder so onboarding creates it.
+    """
     path = base_dir / PROFILE_FILE
     _atomic_write(path, _to_yaml(profile.model_dump(mode="json")))
+    ensure_documentation_dir(base_dir)
     return path
 
 
