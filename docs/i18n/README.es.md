@@ -274,7 +274,7 @@ del atleta (ritmo de progresión medido honesto sobre n, cumplimiento prescrito-
 tolerancia al volumen, perfil de respuesta versionado) que recalcula la viabilidad,
 recomendaciones de descarga basadas en datos y rampa progresiva de retorno a la carga
 tras una pausa, seguimiento proactivo que hace aflorar lo que toca, y una simulación
-determinista de extremo a extremo (sin LLM); 1243 tests, incl. basados en propiedades)
+determinista de extremo a extremo (sin LLM); 1270 tests, incl. basados en propiedades)
 · 93 herramientas MCP · memoria del atleta en archivos con calendario de temporada,
 registros de readiness, programas versionados legibles por máquina, registro de ajustes
 del día, perfil de respuesta versionado e historial de auditoría de adaptaciones ·
