@@ -227,6 +227,7 @@ def test_research_skill_protocol(skills):
         "list_athlete_documents",
         "mini-wave",
         "year_from",
+        "pre-competition wave",
     ):
         assert needle in body, f"deep-research skill lost: {needle}"
 
@@ -254,7 +255,7 @@ def test_review_skill_protocol(skills):
         "verbatim",
         "program-planning",
         "program-optimization",
-        "protocol",
+        "competition protocol",
         "warning",
     ):
         assert needle in body, f"program-review skill lost: {needle}"
@@ -294,6 +295,7 @@ def test_session_day_skill_protocol(skills):
         "program-adaptation",
         "never",
         "hooper",
+        "read_competition_protocol",
     ):
         assert needle in body, f"session-day skill lost: {needle}"
 

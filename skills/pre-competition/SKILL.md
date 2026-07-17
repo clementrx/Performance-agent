@@ -7,7 +7,8 @@ tools: [read_athlete, get_time_context, read_calendar, read_program,
   read_research_dossier, recommend_taper, predict_race_time, estimate_1rm,
   carb_loading_targets, select_attempts, pacing_plan, get_citation,
   save_competition_protocol, read_competition_protocol, log_kpi_result,
-  fit_taper_response]
+  fit_taper_response, read_sessions, search_evidence, search_evidence_live,
+  save_evidence, verify_reference, save_research_dossier]
 ---
 
 # Pre-competition
@@ -28,14 +29,17 @@ NEVER edits the program — taper structure changes route to program-adaptation.
    days carry forward rather than being reauthored.
 3. First protocol for this event → run the dedicated mini-wave (deep-research
    rules): ONE question — "the final days before [this event] for [this
-   athlete]" — verified studies join the corpus, the dossier gets a v+1.
-   `read_research_dossier` for what is already known.
+   athlete]" — 2-3 `search_evidence_live` queries, each verified candidate
+   through `verify_reference` before `save_evidence`, folded into the dossier
+   via `save_research_dossier` as v+1. `read_research_dossier` for what is
+   already known.
 4. Build the day-by-day plan from J-window to J0, engine first:
    - Endurance: target from the goal or `predict_race_time`; `pacing_plan` for
      the splits; `carb_loading_targets` for fueling (quote ranges as ranges).
-   - Strength: e1RM via `estimate_1rm` (recent best sets); `select_attempts`
-     per lift. `goal_beyond_e1rm` flag → name the gap honestly; the athlete may
-     call lighter, never heavier than the engine's numbers.
+   - Strength: e1RM via `estimate_1rm` on the recent best sets from
+     `read_sessions`; `select_attempts` per lift. `goal_beyond_e1rm` flag →
+     name the gap honestly; the athlete may call lighter, never heavier than
+     the engine's numbers.
    - Everything else (meal timing, warm-up, logistics, checklist) is advice:
      cited (`get_citation`) or plainly labeled coaching judgment.
 5. Documented practices (peak-week water/sodium, weight-cut tactics): describe
@@ -46,5 +50,6 @@ NEVER edits the program — taper structure changes route to program-adaptation.
    protocol gate. Only an APPROVED verdict saves: `save_competition_protocol`
    (v2+ reason = the trigger). Hand the athlete the html_path — that page is
    their event-day companion.
-7. Day J-0 to J+2: route the debrief to training-checkin and log the result
-   with `log_kpi_result` — the outcome feeds fit_taper_response for next time.
+7. From the evening of J0 to J+2: route the debrief to training-checkin and
+   log the result with `log_kpi_result` — the outcome feeds fit_taper_response
+   for next time.

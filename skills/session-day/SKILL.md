@@ -26,7 +26,8 @@ performance-coach ritual routes here.
 If today is an event day (J0) and a saved protocol exists
 (read_competition_protocol for the calendar event), open FROM the protocol page
 instead of improvising: quote its timeline, paces or attempts as written.
-Adjustments follow the protocol's fallbacks, never a rewrite an hour before.
+Adjustments follow any fallback the protocol's advice names — never a rewrite
+an hour before.
 
 1. **Locate today's session.** From the session-start ritual you already ran
    `read_athlete` and `get_time_context`. Call `read_program` and pick today's
