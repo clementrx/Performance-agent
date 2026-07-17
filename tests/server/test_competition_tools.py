@@ -2,6 +2,7 @@
 
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -79,3 +80,21 @@ def test_save_rejects_unknown_citation(athlete_dir):  # noqa: ARG001 - fixture s
 def test_read_without_protocol_raises(athlete_dir):  # noqa: ARG001 - fixture side effect
     with pytest.raises(ValueError, match="no protocol"):
         competition_tools.read_competition_protocol("nationals")
+
+
+def test_save_survives_when_html_write_fails(athlete_dir, monkeypatch):
+    def raiser(*_args, **_kwargs):
+        raise OSError("disk full")
+
+    # store.save_competition_protocol also calls os.replace internally (its own
+    # atomic write of the md/yaml) via the SAME os module object, so patching
+    # os.replace globally would fail the store write instead of the html write
+    # this test targets. Rebinding the `os` name inside competition_tools'
+    # namespace scopes the failure to this module's own os.replace call.
+    monkeypatch.setattr(competition_tools, "os", SimpleNamespace(replace=raiser))
+    with pytest.raises(ValueError, match=r"protocol v1 was saved"):
+        competition_tools.save_competition_protocol(_protocol())
+    protocol_dir = athlete_dir / "competition"
+    assert (protocol_dir / "protocol-nationals-v1.md").exists()
+    assert (protocol_dir / "protocol-nationals-v1.yaml").exists()
+    assert not (protocol_dir / "protocol-nationals-v1.html").exists()
