@@ -178,7 +178,7 @@ async def test_save_program_writes_session_html_without_dataset(client):
     html_path = saved.structuredContent["html_path"]
     assert html_path is not None
     page = Path(html_path).read_text(encoding="utf-8")
-    assert html_path.endswith("program-v1.html")
+    assert html_path.endswith(f"program-{date.today():%Y%m%d}.html")
     assert "Back Squat" in page and "4x5" in page
     assert "data:image/gif" not in page  # no dataset clone -> prescription only
 

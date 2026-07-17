@@ -119,10 +119,10 @@ You should see 93 tools. If so, you're done — just talk to it.
    level, history, schedule, equipment) and saves your profile.
 4. **Get an honest verdict.** The feasibility engine scores your goal; if it's out of
    reach, you get the real probability and a counter-proposal.
-5. **Say yes** — the program is written to `programs/program-v1.md`, periodized
+5. **Say yes** — the program is written to `programs/program-20260712.md`, periodized
    into cycles with deloads and taper, every prescription carrying its purpose,
    evidence grade (★★★★★ → ★☆☆☆☆), and verified citations. Next to it,
-   `program-v1.html` is a standalone session page for the gym: every strength
+   `program-20260712.html` is a standalone session page for the gym: every strength
    exercise with its animation GIF, step-by-step technique in your language,
    sets, reps, load, and rest — fully offline, send it to your phone. (Media
    from [exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset),
@@ -131,7 +131,7 @@ You should see 93 tools. If so, you're done — just talk to it.
 7. **Every couple of weeks, say "Check-in"** — the coach compares plan vs. reality,
    quotes your training load, and flags drift.
 8. **When life happens** — *"I tweaked my ankle"*, *"I can only train twice next
-   week"* — the program is adapted and versioned (`program-v2.md`) with the reason
+   week"* — the program is adapted and versioned (nouveau fichier daté) with the reason
    recorded in the audit trail.
 
 ## Three real examples
@@ -161,7 +161,7 @@ three conversations ends with a full program — browse them in
 
 > Yes.
 
-📄 Program written to programs/program-v1.md
+📄 Program written to programs/program-20260712.md
    21 weeks, 3 runs/week: one interval session, one tempo, one long
    run — periodized with deloads and a 10-day taper.
 ```
@@ -188,7 +188,7 @@ three conversations ends with a full program — browse them in
 
 > Yes.
 
-📄 Program written to programs/program-v1.md
+📄 Program written to programs/program-20260712.md
 ```
 
 ### 3. Visible abs and bigger arms in 3 months
@@ -220,7 +220,7 @@ three conversations ends with a full program — browse them in
 
 > Yes.
 
-📄 Program written to programs/program-v1.md
+📄 Program written to programs/program-20260712.md
 ```
 
 ## Which AI tool can I use this with?

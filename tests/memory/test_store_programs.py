@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 
 from performance_agent.memory.store import (
@@ -24,8 +26,8 @@ def test_no_programs_yet(tmp_path):
 def test_first_program_writes_yaml_and_md_pair(tmp_path):
     md_path, version = save_program(tmp_path, minimal_plan(), today=TODAY)
     assert version == 1
-    assert md_path == tmp_path / "programs" / "program-v1.md"
-    assert (tmp_path / "programs" / "program-v1.plan.yaml").exists()
+    assert md_path == tmp_path / "programs" / "program-20260712.md"
+    assert (tmp_path / "programs" / "program-20260712.plan.yaml").exists()
     program = _read(tmp_path)
     assert program.version == 1
     assert program.goal_id == "squat-160"
@@ -60,6 +62,26 @@ def test_adaptation_with_reason_creates_next_version(tmp_path):
     assert version == 2
     assert latest_program_version(tmp_path) == 2
     assert _read(tmp_path).reason == "missed week 3 with a cold"
+
+
+def test_same_day_versions_get_a_numeric_suffix(tmp_path):
+    first, _ = save_program(tmp_path, minimal_plan(), today=TODAY)
+    second, _ = save_program(tmp_path, minimal_plan(), reason="tweak after session", today=TODAY)
+    third, _ = save_program(tmp_path, minimal_plan(), reason="second tweak", today=TODAY)
+    assert first.name == "program-20260712.md"
+    assert second.name == "program-20260712-2.md"
+    assert third.name == "program-20260712-3.md"
+    assert latest_program_version(tmp_path) == 3
+    assert _read(tmp_path, version=2).version == 2
+
+
+def test_different_days_get_clean_dated_names(tmp_path):
+    save_program(tmp_path, minimal_plan(), today=TODAY)
+    later, version = save_program(
+        tmp_path, minimal_plan(), reason="new week", today=date(2026, 7, 18)
+    )
+    assert later.name == "program-20260718.md"
+    assert version == 2
 
 
 def test_old_versions_stay_readable(tmp_path):

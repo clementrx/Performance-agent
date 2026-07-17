@@ -2,6 +2,17 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## 0.7.0 — Dated Program Filenames
+
+### Changed
+
+- **Program files are named after their save date** — `programs/program-20260718.md`
+  (+ `.html`, `.plan.yaml`); a second version the same day gets `-2`, then `-3`.
+  The version number now lives only in the frontmatter and plan yaml — the
+  store indexes versions by reading frontmatter, so pre-0.7 `program-vN.*`
+  files stay readable and adaptable in place, no migration needed. Report PDFs
+  keep their `program-vN-<mode>-<locale>.pdf` names.
+
 ## 0.6.1 — Dated Program Titles
 
 ### Changed

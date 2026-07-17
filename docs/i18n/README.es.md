@@ -117,10 +117,10 @@ Deberías ver 93 herramientas. Si es así, ya está — simplemente háblale.
    inicial (nivel actual, historial, horarios, equipamiento) y guarda tu perfil.
 4. **Recibe un veredicto honesto.** El motor de viabilidad puntúa tu objetivo; si está
    fuera de alcance, obtienes la probabilidad real y una contrapropuesta.
-5. **Di que sí** — el programa se escribe en `programs/program-v1.md`,
+5. **Di que sí** — el programa se escribe en `programs/program-20260712.md`,
    periodizado en ciclos con descargas y tapering, y cada prescripción lleva su
    propósito, su grado de evidencia (★★★★★ → ★☆☆☆☆) y citas verificadas. Al lado,
-   `program-v1.html` es una página de sesión autónoma para el gimnasio: cada
+   `program-20260712.html` es una página de sesión autónoma para el gimnasio: cada
    ejercicio de fuerza con su GIF animado, la técnica paso a paso en tu idioma,
    series, repeticiones, carga y descanso — totalmente offline, envíala a tu
    móvil. (Medios de
@@ -131,7 +131,7 @@ Deberías ver 93 herramientas. Si es así, ya está — simplemente háblale.
    cita tu carga de entrenamiento y señala las desviaciones.
 8. **Cuando la vida se interpone** — *«Me torcí el tobillo»*, *«La semana que viene
    solo puedo entrenar dos veces»* — el programa se adapta y se versiona
-   (`program-v2.md`), con el motivo registrado en el historial de auditoría.
+   (nouveau fichier daté), con el motivo registrado en el historial de auditoría.
 
 ## Tres ejemplos reales
 
@@ -161,7 +161,7 @@ conversaciones termina con un programa completo — explóralos en
 
 > Sí.
 
-📄 Programa escrito en programs/program-v1.md
+📄 Programa escrito en programs/program-20260712.md
    21 semanas, 3 carreras/semana: una sesión de intervalos, un tempo
    y una tirada larga — periodizado con descargas y tapering de 10 días.
 ```
@@ -190,7 +190,7 @@ conversaciones termina con un programa completo — explóralos en
 
 > Sí.
 
-📄 Programa escrito en programs/program-v1.md
+📄 Programa escrito en programs/program-20260712.md
 ```
 
 ### 3. Abdominales marcados y brazos grandes en 3 meses
@@ -225,7 +225,7 @@ conversaciones termina con un programa completo — explóralos en
 
 > Sí.
 
-📄 Programa escrito en programs/program-v1.md
+📄 Programa escrito en programs/program-20260712.md
 ```
 
 ## ¿Con qué herramienta de IA puedo usarlo?
