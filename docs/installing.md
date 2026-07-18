@@ -193,22 +193,43 @@ Two things to set up:
    existing athlete, just say "I have a Garmin watch" and the coach records it
    in the profile.
 2. **Add the service's MCP server to your client**, next to the
-   performance-agent entry. Any Garmin Connect or Strava MCP server works — the
-   coach looks for tools that list or download activities, whatever their exact
-   names. Search the [MCP server registry](https://github.com/modelcontextprotocol/servers)
-   or PyPI/npm for `garmin mcp` / `strava mcp`, check the project is maintained
-   and you're comfortable with how it handles your credentials (Garmin servers
-   typically need your Garmin Connect login; Strava ones an OAuth app token),
-   then add it e.g. in `.mcp.json`:
+   performance-agent entry.
 
-```json
-{
-  "mcpServers": {
-    "performance-agent": { "command": "uvx", "args": ["performance-agent"] },
-    "garmin": { "command": "uvx", "args": ["<the-garmin-mcp-package>"] }
-  }
-}
-```
+   **Garmin** — the recommended server is
+   [taxuspt/garmin_mcp](https://github.com/Taxuspt/garmin_mcp) (MIT, actively
+   maintained, 110+ tools: activities, sleep, HRV, stress, resting HR, body
+   composition, training status). One-time interactive login (handles MFA) that
+   persists OAuth tokens to `~/.garminconnect` — your password is never stored
+   in a config file:
+
+   ```bash
+   # 1. authenticate once (interactive; asks email/password + MFA code)
+   uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp-auth
+   # 2. register the server (Claude Code; -s user = available everywhere)
+   claude mcp add garmin -s user -- \
+     uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp
+   ```
+
+   Or in `.mcp.json` (any client):
+
+   ```json
+   {
+     "mcpServers": {
+       "performance-agent": { "command": "uvx", "args": ["performance-agent"] },
+       "garmin": {
+         "command": "uvx",
+         "args": ["--python", "3.12", "--from",
+                  "git+https://github.com/Taxuspt/garmin_mcp", "garmin-mcp"]
+       }
+     }
+   }
+   ```
+
+   **Strava** — no single blessed server yet; search the
+   [MCP server registry](https://github.com/modelcontextprotocol/servers) or
+   PyPI/npm for `strava mcp`, check the project is maintained and that it uses
+   Strava's official OAuth API (you create an API app on strava.com once to get
+   the tokens), then add it the same way.
 
 Everything downstream is unchanged: fetched activities go through the same
 propose → confirm → `log_session` flow as file imports, and nothing is ever

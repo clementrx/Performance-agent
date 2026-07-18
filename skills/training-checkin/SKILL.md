@@ -81,6 +81,13 @@ not the athlete names the problem.
      every proposal (especially the RPE) before `log_session`. Service data is
      facts about what happened, never training numbers — those still come only
      from engine tools.
+   - When the server also exposes wellness data (sleep, overnight HRV, stress,
+     resting HR — the recommended Garmin server does), quote it to OPEN the
+     readiness conversation ("Garmin shows 5h40 of sleep and HRV below your
+     recent values — how do you feel?"), then collect the four Hooper items as
+     usual: device wellness informs the conversation, it never replaces the
+     athlete's own ratings in `log_readiness`, and any HRV value logged there
+     is the device's number, never one you derived.
    - Service listed but no matching MCP tools in the session → §3c file import
      as usual, and mention at most once per conversation that connecting the
      service's MCP server (docs/installing.md) removes the export step.
