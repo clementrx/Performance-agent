@@ -108,7 +108,7 @@ relancez `claude`.
 > Liste les outils performance-agent.
 ```
 
-Vous devez voir 102 outils. Si oui, c'est terminé — créez un dossier et commencez à
+Vous devez voir 103 outils. Si oui, c'est terminé — créez un dossier et commencez à
 coacher.
 
 > **Sur un hôte qui ne peut pas choisir le dossier de lancement ?** Claude Desktop et
@@ -338,18 +338,21 @@ progression par qualité indexés sur les KPI du modèle, plus une planification
 macrocycle pluriannuelle (un plan de 1 à 4 ans typé à rebours depuis l'événement majeur
 avec des budgets d'emphase par qualité et par an dérivés des priorités d'écart, alimentant
 la saison) et un garde-fou de résidus d'entraînement (avertit là où une qualité maintenue
-déclinerait au-delà de sa fenêtre de rétention d'Issurin sans rappel) ; 1397 tests dont
-des tests par propriétés) · 102 outils MCP · mémoire athlète en fichiers avec calendrier
+déclinerait au-delà de sa fenêtre de rétention d'Issurin sans rappel) ; 1425 tests dont
+des tests par propriétés) · 103 outils MCP · mémoire athlète en fichiers avec calendrier
 de saison, journaux de readiness avant séance, programmes versionnés lisibles par machine
 (plan structuré + markdown rendu), journal d'ajustements du jour avec signaux
 d'escalade, profil de réponse individuel versionné, modèles de performance versionnés,
 journal de résultats de KPI daté et journal d'audit des adaptations · import de fichiers
 d'activité (.fit/.tcx/.gpx/CSV, incl. puissance/cadence/splits et exports VBT) qui
 propose une séance à confirmer par l'athlète avant journalisation — ou
-récupérées directement depuis Garmin/Strava quand leur serveur MCP est connecté · corpus de preuves
+récupérées directement depuis Garmin/Strava quand leur serveur MCP est connecté ·
+tendances de récupération lues de façon déterministe (ln-rMSSD glissant vs
+baseline 28 j ± le plus petit changement significatif, FC de repos et dette de
+sommeil, avec garde-fous d'honnêteté) par une compétence dédiée recovery-analyst · corpus de preuves
 vérifiées par DOI/PMID/ISBN avec contrôle anti-fabrication des citations · recherche
 bibliographique en direct (PubMed, OpenAlex, Crossref, Semantic Scholar) derrière une
-double vérification · quinze compétences de coaching dont un portail de livraison
+double vérification · seize compétences de coaching dont un portail de livraison
 obligatoire avec contre-expertise adversariale · rapports PDF Typst (en/fr/es) derrière
 un verrou strict de citations.
 

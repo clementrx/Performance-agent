@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 import pytest
 
 
@@ -615,3 +617,43 @@ async def test_flag_implausible_session_tool(client):
     )
     assert not result.isError
     assert [f["code"] for f in result.structuredContent["flags"]] == ["e1rm_jump"]
+
+
+def _wellness_days(start_day, count, value):
+    origin = date(2026, 6, 1)
+    return [
+        {"on": (origin + timedelta(days=start_day + i)).isoformat(), "value": value}
+        for i in range(count)
+    ]
+
+
+@pytest.mark.anyio
+async def test_analyze_wellness_trend_full_series(client):
+    result = await client.call_tool(
+        "analyze_wellness_trend",
+        {
+            "hrv_rmssd_ms": _wellness_days(0, 28, 60.0) + _wellness_days(28, 7, 45.0),
+            "resting_hr_bpm": _wellness_days(0, 28, 50.0) + _wellness_days(28, 7, 56.0),
+            "sleep_hours": _wellness_days(28, 7, 6.5),
+        },
+    )
+    assert not result.isError
+    trend = result.structuredContent
+    assert trend["hrv"]["usable"] and trend["hrv"]["band"] == "below"
+    assert trend["hrv"]["delta_pct"] == pytest.approx(-25.0)
+    assert trend["resting_hr"]["band"] == "elevated"
+    assert trend["sleep"]["band"] == "short"
+    assert trend["sleep"]["weekly_debt_h"] == pytest.approx(10.5)
+
+
+@pytest.mark.anyio
+async def test_analyze_wellness_trend_thin_data_is_unusable_not_error(client):
+    result = await client.call_tool(
+        "analyze_wellness_trend", {"hrv_rmssd_ms": _wellness_days(0, 5, 60.0)}
+    )
+    assert not result.isError
+    trend = result.structuredContent
+    assert trend["hrv"]["usable"] is False
+    assert "baseline" in trend["hrv"]["reason"]
+    assert trend["resting_hr"] is None
+    assert trend["sleep"] is None

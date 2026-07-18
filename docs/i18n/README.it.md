@@ -107,7 +107,7 @@ esegui di nuovo `claude`.
 > Elenca gli strumenti di performance-agent.
 ```
 
-Dovresti vedere 102 strumenti. Se sì, hai finito — crea una cartella e comincia ad
+Dovresti vedere 103 strumenti. Se sì, hai finito — crea una cartella e comincia ad
 allenare.
 
 > **Su un host che non può scegliere la cartella di avvio?** Claude Desktop e qualche
@@ -337,7 +337,7 @@ macrociclo pluriennale (un piano da 1 a 4 anni tipizzato a ritroso dall'evento
 principale con budget di enfasi per qualità e per anno derivati dalle priorità delle
 lacune, che alimentano la stagione) e una guardia sui residui di allenamento (avverte
 dove una qualità mantenuta decadrebbe oltre la sua finestra di ritenzione di Issurin
-senza un richiamo); 1397 test incl. property-based) · 102 strumenti MCP · memoria
+senza un richiamo); 1425 test incl. property-based) · 103 strumenti MCP · memoria
 atleta su file con calendario di stagione, log di readiness pre-seduta, programmi
 versionati leggibili dalla macchina (piano strutturato + markdown renderizzato),
 registro degli aggiustamenti in giornata con segnali di escalation, profilo di risposta
@@ -345,10 +345,13 @@ individuale versionato, modelli di prestazione versionati, log dei risultati KPI
 date e registro di audit degli adattamenti · import di file di attività
 (.fit/.tcx/.gpx/CSV, incl. potenza/cadenza/parziali ed export VBT) che propone una
 seduta da confermare dall'atleta prima di registrarla — o recuperate
-direttamente da Garmin/Strava quando il loro server MCP è connesso · corpus di evidenze verificate
+direttamente da Garmin/Strava quando il loro server MCP è connesso ·
+tendenze di recupero lette in modo deterministico (ln-rMSSD mobile vs
+baseline di 28 giorni ± il minimo cambiamento rilevante, FC a riposo e debito
+di sonno, con guardrail di onestà) da una skill dedicata recovery-analyst · corpus di evidenze verificate
 via DOI/PMID/ISBN con controllo anti-fabbricazione delle citazioni · ricerca di
 evidenze in tempo reale (PubMed, OpenAlex, Crossref, Semantic Scholar) dietro doppia
-verifica · quindici skill di coaching incl. un gate di consegna obbligatorio con
+verifica · sedici skill di coaching incl. un gate di consegna obbligatorio con
 seconda opinione avversariale · report PDF Typst (en/fr/es) dietro un blocco rigido
 delle citazioni.
 

@@ -16,6 +16,7 @@ EXPECTED_SKILLS = {
     "next-week-loads",
     "program-watch",
     "pre-competition",
+    "recovery-analyst",
 }
 
 
@@ -351,3 +352,19 @@ def test_pre_competition_skill_protocol(skills):
         "coaching judgment",
     ):
         assert needle in body, f"pre-competition skill lost: {needle}"
+
+
+def test_recovery_analyst_skill_protocol(skills):
+    analyst = next(s for s in skills if s.frontmatter["name"] == "recovery-analyst")
+    body = analyst.body.casefold()
+    for needle in (
+        "analyze_wellness_trend",
+        "usable",
+        "baseline",
+        "never a diagnosis",  # descriptive-only ceiling
+        "delta_pct",  # feeds compute_readiness's hrv modifier
+        "session-day",
+        "program-adaptation",
+        "both directions",  # above-baseline HRV is also a departure
+    ):
+        assert needle in body, f"recovery-analyst lost: {needle}"

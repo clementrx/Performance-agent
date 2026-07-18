@@ -189,6 +189,14 @@ from performance_agent.engine.vbt import (
     velocity_load_adjustment,
     velocity_loss_threshold,
 )
+from performance_agent.engine.wellness import (
+    HrvTrend,
+    RestingHrTrend,
+    SleepTrend,
+    WellnessSample,
+    WellnessTrend,
+    wellness_trend,
+)
 
 __all__ = [
     "AcwrMethod",
@@ -212,6 +220,7 @@ __all__ = [
     "EscalationSignals",
     "FeasibilityResult",
     "GapReport",
+    "HrvTrend",
     "ImplausibilityFlag",
     "InseasonWeek",
     "KpiGap",
@@ -236,6 +245,7 @@ __all__ = [
     "ReadinessAssessment",
     "ResidualWarning",
     "ResponseProfileData",
+    "RestingHrTrend",
     "ScheduledTest",
     "ScoreBreakdown",
     "ScoredExercise",
@@ -246,6 +256,7 @@ __all__ = [
     "SessionCompliance",
     "SessionSets",
     "Severity",
+    "SleepTrend",
     "SpecificityWarning",
     "Substitute",
     "TaperEvent",
@@ -264,6 +275,8 @@ __all__ = [
     "WeekLoad",
     "WeeklySetTargets",
     "WeeklyVolume",
+    "WellnessSample",
+    "WellnessTrend",
     "acute_chronic_ratio",
     "adherence_stats",
     "adjust_session_for_readiness",
@@ -336,4 +349,5 @@ __all__ = [
     "weekly_set_targets",
     "weekly_set_targets_adjusted",
     "weekly_strain",
+    "wellness_trend",
 ]

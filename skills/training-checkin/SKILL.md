@@ -87,7 +87,10 @@ not the athlete names the problem.
      recent values — how do you feel?"), then collect the four Hooper items as
      usual: device wellness informs the conversation, it never replaces the
      athlete's own ratings in `log_readiness`, and any HRV value logged there
-     is the device's number, never one you derived.
+     is the device's number, never one you derived. When the athlete wants
+     more than one line — "how is my recovery trending?" — route to
+     recovery-analyst: it reads the rolling baselines through the engine;
+     never eyeball rolling averages yourself.
    - Service listed but no matching MCP tools in the session → §3c file import
      as usual, and at most once per conversation offer the guided setup:
      "open a terminal (not this chat), run `uvx performance-agent connect
@@ -229,7 +232,9 @@ so the next version is sized to the measured response.
 When this check-in crosses into a new mesocycle (compare today against the
 program's week boundaries): (1) route to deep-research's incremental watch —
 replay the dossier facets with year_from = the dossier's year, thin facets
-first; (2) route to program-watch for the per-exercise audit. The
+first; (2) route to program-watch for the per-exercise audit; (3) when device
+wellness data exists (connected service or HRV imports), route to
+recovery-analyst for the recovery-trend audit of the closing block. The
 loads_review and program_watch due actions surface both when overdue — treat
 them like any other due action: open with them.
 

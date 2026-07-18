@@ -107,7 +107,7 @@ y ejecuta `claude` de nuevo.
 > Lista las herramientas de performance-agent.
 ```
 
-Deberías ver 102 herramientas. Si es así, ya está — crea una carpeta y empieza a
+Deberías ver 103 herramientas. Si es así, ya está — crea una carpeta y empieza a
 entrenar.
 
 > **¿En un host que no puede elegir la carpeta de lanzamiento?** Claude Desktop y algún
@@ -337,7 +337,7 @@ planificación de macrociclo plurianual (un plan de 1 a 4 años tipado hacia atr
 el evento principal con presupuestos de énfasis por cualidad y año derivados de las
 prioridades de brecha, alimentando la temporada) y una salvaguarda de residuos de
 entrenamiento (avisa donde una cualidad mantenida decaería más allá de su ventana de
-retención de Issurin sin un refresco); 1397 tests, incl. basados en propiedades) · 102
+retención de Issurin sin un refresco); 1425 tests, incl. basados en propiedades) · 102
 herramientas MCP · memoria del atleta en archivos con calendario de temporada,
 registros de readiness previos a la sesión, programas versionados legibles por máquina
 (plan estructurado + markdown renderizado), registro de ajustes del día con señales de
@@ -346,9 +346,12 @@ versionados, registro de resultados de KPI con fechas e historial de auditoría 
 adaptaciones · importación de archivos de actividad (.fit/.tcx/.gpx/CSV, incl.
 potencia/cadencia/parciales y exportaciones VBT) que propone una sesión para que el
 atleta la confirme antes de registrarla — o extraídas directamente de
-Garmin/Strava cuando su servidor MCP está conectado · corpus de evidencia verificada por
+Garmin/Strava cuando su servidor MCP está conectado ·
+tendencias de recuperación leídas de forma determinista (ln-rMSSD móvil vs
+línea base de 28 días ± el mínimo cambio relevante, FC en reposo y deuda de
+sueño, con salvaguardas de honestidad) por una habilidad dedicada recovery-analyst · corpus de evidencia verificada por
 DOI/PMID/ISBN con control anti-fabricación de citas · búsqueda de evidencia en vivo
-(PubMed, OpenAlex, Crossref, Semantic Scholar) tras una doble verificación · quince
+(PubMed, OpenAlex, Crossref, Semantic Scholar) tras una doble verificación · dieciséis
 habilidades de coaching, incl. una puerta de entrega obligatoria con segunda opinión
 adversarial · informes PDF Typst (en/fr/es) tras un bloqueo estricto de citas.
 

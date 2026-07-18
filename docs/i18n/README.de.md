@@ -108,7 +108,7 @@ komplett und führe `claude` erneut aus.
 > Liste die performance-agent-Werkzeuge auf.
 ```
 
-Du solltest 102 Werkzeuge sehen. Wenn ja, bist du fertig — leg einen Ordner an und
+Du solltest 103 Werkzeuge sehen. Wenn ja, bist du fertig — leg einen Ordner an und
 fang an zu coachen.
 
 > **Auf einem Host, der den Startordner nicht wählen kann?** Claude Desktop und einige
@@ -341,7 +341,7 @@ Makrozyklus-Planung (ein 1–4-Jahres-Plan rückwärts vom Hauptevent typisiert 
 jährlichen Qualitäts-Schwerpunkt-Budgets, die aus den Lückenprioritäten abgeleitet sind
 und die Saison speisen) und ein Trainingsresiduen-Schutz (warnt, wo eine gehaltene
 Qualität ohne Auffrischung über ihr Issurin-Retentionsfenster hinaus abfallen würde);
-1397 Tests inkl. property-based) · 102 MCP-Werkzeuge · dateibasiertes Athletengedächtnis
+1425 Tests inkl. property-based) · 103 MCP-Werkzeuge · dateibasiertes Athletengedächtnis
 mit Saisonkalender, Readiness-Logs vor der Sitzung, versionierten maschinenlesbaren
 Programmen (strukturierter Plan + gerendertes Markdown), Tages-Anpassungsprotokoll mit
 Eskalationssignalen, versioniertem individuellem Antwortprofil, versionierten
@@ -349,9 +349,12 @@ Performance-Modellen, datiertem KPI-Ergebnis-Log und Anpassungs-Audit-Protokoll 
 Import von Aktivitätsdateien (.fit/.tcx/.gpx/CSV, inkl. Leistung/Kadenz/Splits und
 VBT-Exporte), der eine Sitzung vorschlägt, die der Athlet vor dem Loggen bestätigt —
 oder direkt aus Garmin/Strava gezogen, wenn deren MCP-Server verbunden ist ·
+deterministisch gelesene Erholungstrends (gleitendes ln-rMSSD vs. 28-Tage-
+Baseline ± smallest worthwhile change, Ruhepuls- und Schlafschuld-Trends,
+mit Ehrlichkeits-Gates) durch einen dedizierten recovery-analyst-Skill ·
 DOI/PMID/ISBN-verifizierter Evidenzkorpus mit Anti-Fabrikations-Zitatprüfung ·
 Live-Evidenzsuche (PubMed, OpenAlex, Crossref, Semantic Scholar) hinter doppelter
-Verifikation · fünfzehn Coaching-Skills inkl. verpflichtendem Liefer-Gate mit
+Verifikation · sechzehn Coaching-Skills inkl. verpflichtendem Liefer-Gate mit
 adversarialer Zweitmeinung · Typst-PDF-Berichte (en/fr/es) hinter einer harten
 Zitatsperre.
 

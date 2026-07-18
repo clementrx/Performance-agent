@@ -5,10 +5,11 @@ itself. Docstrings become the tool descriptions the agent reads, so they
 state units, valid ranges, and honesty requirements.
 """
 
+from datetime import date
 from typing import Annotated, Literal, TypedDict
 
 from mcp.server.fastmcp import FastMCP
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from performance_agent.engine import (
     AcwrMethod,
@@ -66,6 +67,8 @@ from performance_agent.engine import budget_weekly_load as engine_budget_weekly_
 from performance_agent.engine import build_return_progression as engine_build_return_progression
 from performance_agent.engine import estimate_srpe_from_hr as engine_estimate_srpe_from_hr
 from performance_agent.engine import flag_implausible_session as engine_flag_implausible_session
+from performance_agent.engine import wellness_trend as engine_wellness_trend
+from performance_agent.engine.wellness import WellnessSample
 
 _ONE_RM_FORMULAS = {
     "brzycki": one_rm_brzycki,
@@ -774,6 +777,129 @@ def compute_readiness(
     return ReadinessResult(score_0_100=result.score_0_100, band=result.band, drivers=result.drivers)
 
 
+class WellnessSampleIn(BaseModel):
+    """One dated wellness measurement straight off the device (a fact, not an estimate)."""
+
+    on: date
+    value: float
+
+
+class HrvTrendView(TypedDict):
+    """Rolling ln(rMSSD) vs baseline +/- SWC; read usable FIRST."""
+
+    usable: bool
+    reason: str | None
+    rolling_ln_mean: float
+    baseline_ln_mean: float
+    baseline_ln_sd: float
+    swc_ln: float
+    delta_pct: float
+    band: Literal["below", "normal", "above"]
+
+
+class RestingHrTrendView(TypedDict):
+    """Rolling resting-HR mean vs baseline; +/-5 bpm names a departure."""
+
+    usable: bool
+    reason: str | None
+    rolling_mean_bpm: float
+    baseline_mean_bpm: float
+    delta_bpm: float
+    band: Literal["lowered", "normal", "elevated"]
+
+
+class SleepTrendView(TypedDict):
+    """Last week's mean sleep and debt vs the nightly target (sampled nights only)."""
+
+    usable: bool
+    reason: str | None
+    rolling_mean_h: float
+    nightly_target_h: float
+    weekly_debt_h: float
+    band: Literal["short", "ok"]
+
+
+class WellnessTrendResult(TypedDict):
+    """Per-signal wellness trends; a signal is null when no samples were given."""
+
+    hrv: HrvTrendView | None
+    resting_hr: RestingHrTrendView | None
+    sleep: SleepTrendView | None
+
+
+def _wellness_samples(entries: list[WellnessSampleIn] | None) -> list[WellnessSample] | None:
+    if not entries:
+        return None
+    origin = min(entry.on for entry in entries)
+    return [WellnessSample(day_index=(e.on - origin).days, value=e.value) for e in entries]
+
+
+def analyze_wellness_trend(
+    hrv_rmssd_ms: list[WellnessSampleIn] | None = None,
+    resting_hr_bpm: list[WellnessSampleIn] | None = None,
+    sleep_hours: list[WellnessSampleIn] | None = None,
+    nightly_sleep_target_h: Annotated[float, Field(ge=4, le=12)] = 8.0,
+) -> WellnessTrendResult:
+    """Analyze device recovery trends: overnight HRV (rMSSD), resting HR, sleep.
+
+    Pass dated series straight off the device (Garmin/Strava sync, HRV import,
+    or values the athlete reads out) — ideally ~5 weeks, since HRV and resting
+    HR compare the last 7 days' rolling mean against the preceding 28-day
+    baseline. HRV works in ln(rMSSD) with the smallest worthwhile change
+    (0.5 x baseline SD): band "below" AND "above" are both departures worth
+    narrating. delta_pct is the rolling-vs-baseline HRV change in percent —
+    pass it to compute_readiness as hrv_delta_pct when scoring today. Resting
+    HR flags a +/-5 bpm departure; sleep reports the last week's mean and the
+    summed debt over the SAMPLED nights against nightly_sleep_target_h.
+    Read each signal's `usable` FIRST — an unusable signal carries the reason
+    (thin data) and must be reported as "not enough data yet", never acted on.
+    Everything is a DESCRIPTIVE trend, never a diagnosis.
+    """
+    trend = engine_wellness_trend(
+        hrv=_wellness_samples(hrv_rmssd_ms),
+        resting_hr=_wellness_samples(resting_hr_bpm),
+        sleep=_wellness_samples(sleep_hours),
+        nightly_sleep_target_h=nightly_sleep_target_h,
+    )
+    hrv = trend.hrv
+    rhr = trend.resting_hr
+    sleep = trend.sleep
+    return WellnessTrendResult(
+        hrv=HrvTrendView(
+            usable=hrv.usable,
+            reason=hrv.reason,
+            rolling_ln_mean=hrv.rolling_ln_mean,
+            baseline_ln_mean=hrv.baseline_ln_mean,
+            baseline_ln_sd=hrv.baseline_ln_sd,
+            swc_ln=hrv.swc_ln,
+            delta_pct=hrv.delta_pct,
+            band=hrv.band,
+        )
+        if hrv is not None
+        else None,
+        resting_hr=RestingHrTrendView(
+            usable=rhr.usable,
+            reason=rhr.reason,
+            rolling_mean_bpm=rhr.rolling_mean_bpm,
+            baseline_mean_bpm=rhr.baseline_mean_bpm,
+            delta_bpm=rhr.delta_bpm,
+            band=rhr.band,
+        )
+        if rhr is not None
+        else None,
+        sleep=SleepTrendView(
+            usable=sleep.usable,
+            reason=sleep.reason,
+            rolling_mean_h=sleep.rolling_mean_h,
+            nightly_target_h=sleep.nightly_target_h,
+            weekly_debt_h=sleep.weekly_debt_h,
+            band=sleep.band,
+        )
+        if sleep is not None
+        else None,
+    )
+
+
 def estimate_srpe_from_hr(avg_hr: float, hr_max: float) -> SrpeEstimate:
     """Estimate a session-RPE (CR-10, 1-10) from average heart rate as %HRmax.
 
@@ -981,6 +1107,7 @@ def register(mcp: FastMCP) -> None:
         compute_monotony_strain,
         compute_fitness_fatigue,
         compute_readiness,
+        analyze_wellness_trend,
         estimate_srpe_from_hr,
         endurance_zones,
         budget_weekly_load,

@@ -123,6 +123,11 @@ After a skill hands back:
   still right?" → **program-watch** (run it as a subagent; bring back verdicts).
 - competition_protocol action fires, or "my competition is in N days" →
   **pre-competition** (authors the final-days protocol and the event-day page).
+- Device recovery data available (connected Garmin/Strava, HRV imports, or
+  values read off the watch) and the athlete asks how their recovery, HRV or
+  sleep is trending → **recovery-analyst** (descriptive trend read against the
+  athlete's own baseline; it routes onward to session-day or
+  program-adaptation when the picture warrants it).
 
 Re-evaluate routing after each skill completes.
 
