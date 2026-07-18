@@ -2,6 +2,43 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## 0.10.0 — Garmin/Strava Connection & Recovery Analyst
+
+### Added
+
+- **One-command wearable connection** — `uvx performance-agent connect garmin`
+  chains the interactive Garmin Connect login (MFA supported; OAuth tokens in
+  `~/.garminconnect`, the password is never stored) with the MCP server
+  registration in Claude Code (other clients get a paste-ready JSON snippet);
+  `connect strava` registers the Strava server the same way, with the
+  authorization running later in the browser from the coaching conversation.
+  Recommended community servers: [taxuspt/garmin_mcp](https://github.com/Taxuspt/garmin_mcp)
+  and [r-huijts/strava-mcp](https://github.com/r-huijts/strava-mcp).
+- **Connected services on the profile** — `connected_services` records the
+  athlete's Garmin/Strava accounts. When the matching MCP server is present in
+  the session, check-ins pull activities directly (the original `.fit`/`.tcx`
+  through `import_activity_file` when the server can download it, summary
+  fields through the same propose → confirm → log flow otherwise) and device
+  wellness (sleep, overnight HRV, stress) opens the readiness conversation —
+  the athlete's own ratings remain the source of truth, and nothing is ever
+  logged without confirmation. When the account exists but no server is
+  connected, the skills walk the athlete through the setup steps in
+  conversation instead of pointing at docs.
+- **Deterministic recovery trends** — `analyze_wellness_trend` (103 tools)
+  reads dated device series: overnight HRV as the last 7 days' rolling
+  ln(rMSSD) mean against the preceding 28-day baseline with the smallest
+  worthwhile change (0.5 × baseline SD, departures reported in BOTH
+  directions), resting-HR bands beyond ±5 bpm, and sleep debt against a
+  nightly target. Thin data returns `usable=false` with the reason, never a
+  fabricated baseline; the HRV `delta_pct` feeds `compute_readiness`'s hrv
+  modifier.
+- **New skill `recovery-analyst`** (16 skills) — the device-data specialist:
+  collects ~5 weeks of HRV/resting-HR/sleep, reads trends only through the
+  engine, narrates them against training load (TSB, ACWR, monotony/strain),
+  and routes convergent fatigue reads to session-day or program-adaptation.
+  Descriptive trends only, never a diagnosis. Routed from performance-coach,
+  training-checkin's sync path, and every mesocycle boundary.
+
 ## 0.9.0 — Pre-Competition Protocol
 
 ### Added
