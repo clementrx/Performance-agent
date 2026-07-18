@@ -47,11 +47,25 @@ unmöglich ist:
   und Check-ins liegen in einem einfachen Verzeichnis aus Markdown/YAML, das du lesen,
   bearbeiten, vergleichen und synchronisieren kannst.
 
-## Installation (5 Minuten, 3 Schritte)
+## Einmal installieren — danach ein Ordner pro Athlet
 
 PerformanceAgent ist keine App, die man öffnet — er wird in einen KI-Agenten für die
-Kommandozeile eingesteckt. Danach sprichst du einfach in natürlicher Sprache mit ihm;
-keine Konfigurationsdateien, keine Befehle zum Auswendiglernen.
+Kommandozeile eingesteckt. Du richtest ihn **einmal** ein (unten), und ab dann sind es
+drei Handgriffe, jemanden zu coachen:
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+**Ordner anlegen, mit `cd` hineinwechseln, `claude` starten — und du coachst.** Dieser
+Ordner *ist* der Athlet: Profil, Programme, Trainingsprotokolle und Check-ins liegen
+alle darin als einfache Dateien, die du lesen, bearbeiten, versionieren und sichern
+kannst. Nichts wird irgendwohin gesendet. Mehrere Athleten zu coachen heißt einfach
+mehrere Ordner — wechsle mit `cd` in den richtigen, und der Coach macht dort weiter, wo
+du aufgehört hast. Danach sprichst du in natürlicher Sprache mit ihm; keine
+Konfigurationsdateien, keine Befehle zum Auswendiglernen.
+
+### Einmalige Einrichtung (5 Minuten, 3 Schritte)
 
 **Noch nie Claude Code benutzt?** Installiere es zuerst:
 
@@ -71,20 +85,8 @@ claude mcp add performance-agent -s user -- uvx performance-agent
 
 Das registriert das „Gehirn“ des Coaches (die Engine, die Wissenschaftsbibliothek,
 dein zukünftiges Athletenprofil) als Werkzeug, das Claude Code aufrufen kann.
-`-s user` macht es in jedem Ordner verfügbar, in dem du später `claude` öffnest.
-
-**Der Ordner, aus dem du `claude` startest, ist der Datenordner des Athleten.**
-Lege pro Athlet einen Ordner an und starte die Sitzung von dort:
-
-```bash
-mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
-```
-
-Dort liegen alle Daten dieses Athleten als einfache Dateien; nichts wird irgendwohin
-gesendet. Mehrere Athleten zu coachen heißt einfach mehrere Ordner — wechsle mit `cd`
-in den richtigen. (Wenn dein MCP-Host den Startordner nicht wählen lässt — z. B.
-Claude Desktop — setze stattdessen `PERFORMANCE_AGENT_HOME` in der Server-Konfiguration
-auf den Athletenordner.)
+`-s user` macht es in jedem Ordner verfügbar, in dem du später `claude` startest — das
+ist es, was ein Ordner pro Athlet funktionieren lässt.
 
 **Schritt 2 — ihm das Coaching beibringen.** Schritt 1 gab Claude die *Werkzeuge* (die
 Mathematik, die Daten). Dieser Schritt gibt ihm die *Coaching-Protokolle* — was wann
@@ -100,17 +102,24 @@ cp -R Performance-agent/skills/* ~/.claude/skills/
 wird nur beim *Start* einer `claude`-Sitzung geladen: Schließe jede offene Sitzung
 komplett und führe `claude` erneut aus.
 
-**Prüfen, ob es funktioniert hat** — frage in der frischen Sitzung:
+**Prüfen, ob es funktioniert hat** — öffne einen Athletenordner und frage:
 
 ```
 > Liste die performance-agent-Werkzeuge auf.
 ```
 
-Du solltest 93 Werkzeuge sehen. Wenn ja, bist du fertig — sprich einfach mit ihm.
+Du solltest 102 Werkzeuge sehen. Wenn ja, bist du fertig — leg einen Ordner an und
+fang an zu coachen.
+
+> **Auf einem Host, der den Startordner nicht wählen kann?** Claude Desktop und einige
+> andere MCP-Hosts starten immer am selben Ort. Setze dort `PERFORMANCE_AGENT_HOME` in
+> der Server-Konfiguration auf den Athletenordner, statt mit `cd` hineinzuwechseln.
 
 ## Schritt für Schritt benutzen
 
-1. **Öffne ein Terminal und starte deinen Agenten** (`claude`).
+1. **Wechsle mit `cd` in den Ordner des Athleten und starte deinen Agenten**
+   (`claude`) — ein leerer Ordner für einen neuen Athleten, ein bestehender, um an
+   seine Historie anzuknüpfen.
 2. **Nenne dein Ziel in natürlicher Sprache** — jede Sprache funktioniert. *„Ich will
    10 km unter 50 Minuten laufen“*.
 3. **Beantworte die Fragen des Coaches.** Beim ersten Mal führt er ein kurzes

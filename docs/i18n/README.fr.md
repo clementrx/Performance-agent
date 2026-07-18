@@ -47,11 +47,24 @@ architecturé pour que ni l'un ni l'autre ne soit possible :
   séances et bilans vivent dans un simple dossier de markdown/YAML que vous pouvez
   lire, éditer, comparer et synchroniser.
 
-## Installation (5 minutes, 3 étapes)
+## Installez une fois — ensuite, un dossier par athlète
 
 PerformanceAgent n'est pas une application à ouvrir — il se branche sur un agent IA en
-ligne de commande. Une fois branché, vous lui parlez simplement en langage naturel ;
-aucun fichier de configuration, aucune commande à mémoriser.
+ligne de commande. Vous l'installez **une seule fois** (ci-dessous) et, à partir de
+là, coacher quelqu'un tient en trois gestes :
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+**Créez un dossier, faites `cd` dedans, lancez `claude` — et vous coachez.** Ce dossier
+*est* l'athlète : profil, programmes, journaux de séances et bilans vivent tous dedans
+en fichiers simples que vous pouvez lire, modifier, versionner et sauvegarder. Rien
+n'est envoyé ailleurs. Coacher plusieurs athlètes, c'est juste plusieurs dossiers —
+faites `cd` dans le bon et le coach reprend là où vous en étiez. Ensuite, vous lui
+parlez en langage naturel ; aucun fichier de configuration, aucune commande à mémoriser.
+
+### Installation unique (5 minutes, 3 étapes)
 
 **Jamais utilisé Claude Code ?** Installez-le d'abord :
 
@@ -72,20 +85,8 @@ claude mcp add performance-agent -s user -- uvx performance-agent
 
 Cela enregistre le « cerveau » du coach (le moteur, la bibliothèque scientifique,
 votre futur profil d'athlète) comme un outil que Claude Code peut appeler. `-s user`
-le rend disponible dans n'importe quel dossier où vous ouvrirez `claude`.
-
-**Le dossier depuis lequel vous lancez `claude` est le dossier de données de
-l'athlète.** Créez un dossier par athlète et démarrez la session depuis celui-ci :
-
-```bash
-mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
-```
-
-Toutes les données de cet athlète vivent là, en fichiers simples ; rien n'est envoyé
-ailleurs. Coacher plusieurs athlètes, c'est juste plusieurs dossiers — faites `cd`
-dans le bon. (Si votre hôte MCP ne vous laisse pas choisir le dossier de lancement —
-Claude Desktop par exemple — définissez `PERFORMANCE_AGENT_HOME` vers le dossier de
-l'athlète dans la config du serveur.)
+le rend disponible depuis n'importe quel dossier où vous lancerez `claude` — c'est ce
+qui fait fonctionner le principe d'un dossier par athlète.
 
 **Étape 2 — lui apprendre à coacher.** L'étape 1 donne à Claude les *outils* (les
 maths, les données). Celle-ci lui donne les *protocoles de coaching* — quoi demander
@@ -101,17 +102,25 @@ cp -R Performance-agent/skills/* ~/.claude/skills/
 chargé qu'au *démarrage* d'une session `claude` : fermez toute session ouverte et
 relancez `claude`.
 
-**Vérifiez que ça marche** — dans la nouvelle session, demandez :
+**Vérifiez que ça marche** — ouvrez un dossier d'athlète et demandez :
 
 ```
 > Liste les outils performance-agent.
 ```
 
-Vous devez voir 93 outils. Si oui, c'est terminé — parlez-lui, tout simplement.
+Vous devez voir 102 outils. Si oui, c'est terminé — créez un dossier et commencez à
+coacher.
+
+> **Sur un hôte qui ne peut pas choisir le dossier de lancement ?** Claude Desktop et
+> quelques autres hôtes MCP démarrent toujours au même endroit. Là, définissez
+> `PERFORMANCE_AGENT_HOME` vers le dossier de l'athlète dans la config du serveur au
+> lieu de faire `cd` dedans.
 
 ## Comment l'utiliser, pas à pas
 
-1. **Ouvrez un terminal et lancez votre agent** (`claude`).
+1. **Placez-vous (`cd`) dans le dossier de l'athlète et lancez votre agent**
+   (`claude`) — un dossier vide pour un nouvel athlète, un dossier existant pour
+   reprendre son historique.
 2. **Énoncez votre objectif en langage naturel** — dans la langue de votre choix.
    *« Je veux courir le 10 km en moins de 50 minutes »*.
 3. **Répondez aux questions du coach.** La première fois, il déroule un court
