@@ -80,8 +80,12 @@ insist more than once. Collect, in this order:
    that service's MCP server is connected to the session, check-ins pull
    activities directly instead of asking for file exports. If the account
    exists but no matching MCP tools are available in this session, still
-   record it and mention ONCE that connecting the service's MCP server (see
-   the project's installing guide) removes the export step — never block on it.
+   record it, then offer to set the connection up right now by WALKING them
+   through it (never block on it): for Garmin — open a real terminal (the
+   login is interactive, it cannot run from this chat), run
+   `uvx performance-agent connect garmin`, follow the login (MFA supported),
+   restart this session, done. Tell them what each step does so it never
+   feels like a black box.
 9. **Injuries & flags** — current or recent injuries, pain, medical constraints.
    Anything active: call `write_profile` immediately with the flag (don't wait for
    the batch), then continue, applying the red-flag rules from performance-coach.

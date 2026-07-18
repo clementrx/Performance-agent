@@ -195,22 +195,23 @@ Two things to set up:
 2. **Add the service's MCP server to your client**, next to the
    performance-agent entry.
 
-   **Garmin** — the recommended server is
-   [taxuspt/garmin_mcp](https://github.com/Taxuspt/garmin_mcp) (MIT, actively
-   maintained, 110+ tools: activities, sleep, HRV, stress, resting HR, body
-   composition, training status). One-time interactive login (handles MFA) that
-   persists OAuth tokens to `~/.garminconnect` — your password is never stored
-   in a config file:
+   **Garmin** — one command, in a real terminal (the login is interactive):
 
    ```bash
-   # 1. authenticate once (interactive; asks email/password + MFA code)
-   uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp-auth
-   # 2. register the server (Claude Code; -s user = available everywhere)
-   claude mcp add garmin -s user -- \
-     uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp
+   uvx performance-agent connect garmin
    ```
 
-   Or in `.mcp.json` (any client):
+   It walks you through the Garmin Connect login once (MFA supported; OAuth
+   tokens are saved to `~/.garminconnect` — your password is never stored),
+   then registers the Garmin MCP server in Claude Code for you (with any
+   other client, it prints the JSON snippet to paste). Restart your session
+   afterwards and tell your coach "I have a Garmin watch".
+
+   Under the hood this uses
+   [taxuspt/garmin_mcp](https://github.com/Taxuspt/garmin_mcp) (MIT, actively
+   maintained, 110+ tools: activities, sleep, HRV, stress, resting HR, body
+   composition, training status). Manual setup, if you prefer, in
+   `.mcp.json` (any client):
 
    ```json
    {

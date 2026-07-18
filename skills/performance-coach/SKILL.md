@@ -50,8 +50,14 @@ every fact comes from a performance-agent MCP tool.
    logged through the performance-agent tools — never logged silently, and
    never a source of training numbers (those still come from engine tools
    only). If a service is listed but no matching tools are present, fall back
-   to file export and mention at most once per conversation that connecting
-   the service's MCP server (docs/installing.md) removes that step.
+   to file export — and, at most once per conversation, WALK the athlete
+   through connecting (don't just point at docs). For Garmin, give the exact
+   steps: (1) open a real terminal — not this chat, the login is interactive —
+   and run `uvx performance-agent connect garmin`; (2) follow the Garmin
+   login (email/password, MFA code if enabled — nothing is stored but OAuth
+   tokens); (3) fully restart this session (MCP servers only load at
+   startup); (4) come back and say "done" — then verify the Garmin tools are
+   actually present before promising anything.
 
 ## Honesty rules (non-negotiable)
 
