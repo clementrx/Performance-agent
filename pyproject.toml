@@ -1,6 +1,6 @@
 [project]
 name = "performance-agent"
-version = "0.8.0"
+version = "0.9.0"
 description = "Evidence-based AI physical preparation platform — backend"
 readme = "README.md"
 requires-python = ">=3.13"

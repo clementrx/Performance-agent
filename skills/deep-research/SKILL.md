@@ -131,7 +131,9 @@ live queries in English + the athlete's locale (+1 language if thin), same
 verification and save rules, folded into the dossier as v+1 whose reason names
 the trigger, with a "what changed vs v{N}" section. Program-adaptation runs
 mini-waves for substantive triggers; run one directly when the athlete drops a
-document or asks a question that touches one facet.
+document or asks a question that touches one facet. The pre-competition wave is
+a mini-wave whose single question is the final days before a named event (taper
+execution, fueling, pacing or attempts, weigh-in).
 
 The **incremental watch** (each mesocycle boundary, routed by training-checkin):
 replay the dossier facets' queries with `year_from` set to the current dossier's

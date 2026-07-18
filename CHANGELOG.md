@@ -2,6 +2,36 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## 0.9.0 — Pre-Competition Protocol
+
+### Added
+
+- **Pre-competition protocol** — the final days before any competition planned
+  day by day, per calendar event, delivered as a versioned document
+  (`competition/protocol-<event>-vN`) plus a standalone offline phone page for
+  the event (no JS, en/fr/es, J0 open by default, starred bibliography).
+- **Engine math for the final days** — `carb_loading_targets` (evidence-based
+  g/kg windows by event duration + in-race fueling ranges), `select_attempts`
+  (meet-day attempts from the estimated 1RM, with honesty flags when the goal
+  is outside what the data supports), `pacing_plan` (even or negative splits
+  landing on the target time), `protocol_window_days` (priority-adaptive
+  trigger window derived from the taper).
+- **Safety by construction** — risky peak-week practices (water/sodium
+  manipulation, weight cuts) can only be stored as documented practices with a
+  schema-required warning and an evidence grade; they are described, never
+  dosed, never engine-quantified. `save_competition_protocol` refuses any
+  citation id not in the evidence corpus.
+- **Proactive trigger** — `list_due_actions` surfaces `competition_protocol`
+  when an A/B event enters its window with no protocol saved (urgent within a
+  week of the event).
+- **New skill `pre-competition`** (15 skills) — the protocol-author ritual:
+  re-reads the existing protocol before a v2, runs a dedicated research
+  mini-wave, builds engine-first, passes program-review's protocol gate before
+  saving, and routes the post-event debrief into the athlete's taper history.
+  Five skills updated (coach routing, check-in debrief, session-day opens J0
+  from the protocol page, deep-research pre-competition wave, program-review
+  made protocol-aware).
+
 ## 0.8.0 — Living Evidence & Weekly Follow-up
 
 ### Added

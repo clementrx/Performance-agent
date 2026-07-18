@@ -36,17 +36,25 @@ _RED_STREAK_HIGH = 3
 # a running program deserves a watch pass every two weeks (team-chosen priors).
 _LOADS_REVIEW_DUE_DAYS = 6
 _WATCH_DUE_DAYS = 14
+# Inside a week of the event, a missing protocol is urgent.
+_PROTOCOL_URGENT_DAYS = 7
 
 _SEVERITY_RANK: dict[Severity, int] = {"high": 0, "medium": 1, "low": 2}
 
 
 @dataclass(frozen=True)
 class UpcomingEvent:
-    """A dated A/B event within the follow-up horizon, in whole days from today."""
+    """A dated A/B event within the follow-up horizon, in whole days from today.
+
+    protocol_window_days is the taper-derived due window for a pre-competition
+    protocol; has_protocol says whether one exists for this event.
+    """
 
     event_id: str
     priority: str  # "A" or "B"
     days_until: int
+    protocol_window_days: int = 0
+    has_protocol: bool = True
 
 
 @dataclass(frozen=True)
@@ -193,6 +201,21 @@ def _watch_action(facts: DiligenceFacts) -> DueAction | None:
     )
 
 
+def _protocol_action(event: UpcomingEvent) -> DueAction | None:
+    if event.has_protocol or event.protocol_window_days <= 0:
+        return None
+    if event.days_until > event.protocol_window_days:
+        return None
+    severity: Severity = "high" if event.days_until <= _PROTOCOL_URGENT_DAYS else "medium"
+    return DueAction(
+        "competition_protocol",
+        severity,
+        "competition_protocol_due",
+        due_in_days=event.days_until,
+        ref=event.event_id,
+    )
+
+
 def _sort_key(action: DueAction) -> tuple[int, int, str, str]:
     # Severity first; then most urgent (soonest upcoming, longest overdue); then a
     # stable tiebreak on kind + ref so the order is fully deterministic.
@@ -223,6 +246,7 @@ def list_due_actions(facts: DiligenceFacts) -> list[DueAction]:
         _watch_action(facts),
     ]
     candidates.extend(_event_action(event) for event in facts.upcoming_events)
+    candidates.extend(_protocol_action(event) for event in facts.upcoming_events)
     actions = [action for action in candidates if action is not None]
     return sorted(actions, key=_sort_key)
 

@@ -18,6 +18,7 @@ from performance_agent.memory.schemas import (
 )
 
 _METERS_PER_KM = 1000
+_SECONDS_PER_HOUR = 3600
 
 _WEEKDAYS = (
     "Monday",
@@ -39,6 +40,17 @@ def pace_label(seconds_per_km: float) -> str:
     """Format a running pace as m:ss/km."""
     minutes, secs = divmod(round(seconds_per_km), 60)
     return f"{minutes}:{secs:02d}/km"
+
+
+def clock_label(seconds: float) -> str:
+    """Format a duration as m:ss, or h:mm:ss once it reaches an hour."""
+    total = round(seconds)
+    if total >= _SECONDS_PER_HOUR:
+        hours, remainder = divmod(total, _SECONDS_PER_HOUR)
+        minutes, secs = divmod(remainder, 60)
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    minutes, secs = divmod(total, 60)
+    return f"{minutes}:{secs:02d}"
 
 
 def volume_label(block: ExerciseBlock) -> str:

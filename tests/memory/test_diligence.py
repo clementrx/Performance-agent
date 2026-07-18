@@ -176,3 +176,19 @@ def test_actions_sorted_by_severity(tmp_path):
     save_response_profile(tmp_path, ResponseProfile(as_of=TODAY), today=TODAY - timedelta(days=60))
     severities = [a["severity"] for a in list_due_actions(tmp_path, today=TODAY)]
     assert severities == sorted(severities, key=["high", "medium", "low"].index)
+
+
+def test_a_event_without_protocol_surfaces_competition_protocol(tmp_path):
+    upsert_calendar_event(
+        tmp_path,
+        CalendarEvent(
+            id="nationals",
+            date=TODAY + timedelta(days=6),
+            kind="competition",
+            priority="A",
+            label="Nationals",
+        ),
+    )
+    action = _action(tmp_path, "competition_protocol")
+    assert action["ref"] == "nationals"
+    assert action["due_in_days"] == 6

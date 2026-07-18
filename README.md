@@ -66,6 +66,10 @@ tell you what you want to hear. PerformanceAgent is architected so neither is po
 - **Science on the gym page** — the offline program HTML opens with sourced
   advice and "why this program" lines, `[n]` markers on blocks, and a starred
   bibliography.
+- **Pre-competition protocol** — the final days before any competition planned
+  day by day (engine-computed attempts, pacing splits and carb loading; risky
+  peak-week practices described only with evidence grade + explicit warning),
+  delivered as a versioned document and an offline phone page for the event.
 
 ## Install (5 minutes, 3 steps)
 
@@ -124,7 +128,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 97 tools. If so, you're done — just talk to it.
+You should see 102 tools. If so, you're done — just talk to it.
 
 ## How to use it, step by step
 
@@ -331,8 +335,8 @@ typed backward from the major event with per-year quality-emphasis budgets deriv
 from the gap priorities, feeding the season) and a training-residuals guard (warns
 where a maintained quality would decay past its Issurin retention window without a
 refresh);
-1339 tests
-incl. property-based) · 97 MCP
+1397 tests
+incl. property-based) · 102 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response
@@ -342,7 +346,7 @@ activity-file import (.fit/.tcx/.gpx/CSV, incl. power/cadence/splits and VBT
 exports) that proposes a session for the athlete to confirm before logging ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
-behind a double verification gate · fourteen coaching skills incl. a mandatory delivery
+behind a double verification gate · fifteen coaching skills incl. a mandatory delivery
 gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard
 citation gate.
 
