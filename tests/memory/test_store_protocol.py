@@ -105,3 +105,11 @@ def test_read_rejects_frontmatter_version_mismatch(tmp_path):
     md_path.write_text(tampered, encoding="utf-8")
     with pytest.raises(ValueError, match="frontmatter declares version"):
         store.read_competition_protocol(tmp_path, "nationals")
+
+
+def test_orphaned_yaml_blocks_the_version_slot(tmp_path):
+    _seed_event(tmp_path)
+    store.save_competition_protocol(tmp_path, _protocol(), today=TODAY)
+    (tmp_path / "competition" / "protocol-nationals-v1.md").unlink()
+    with pytest.raises(ValueError, match="immutable"):
+        store.save_competition_protocol(tmp_path, _protocol(), today=TODAY)

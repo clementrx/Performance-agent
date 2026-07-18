@@ -39,7 +39,9 @@ NEVER edits the program — taper structure changes route to program-adaptation.
    - Strength: e1RM via `estimate_1rm` on the recent best sets from
      `read_sessions`; `select_attempts` per lift. `goal_beyond_e1rm` flag →
      name the gap honestly; the athlete may call lighter, never heavier than
-     the engine's numbers.
+     the engine's numbers. Store each attempt plan with basis `engine` when
+     the numbers are the tool's, or `agreed` when the athlete chose lighter —
+     program-review recomputes `engine` numbers exactly.
    - Everything else (meal timing, warm-up, logistics, checklist) is advice:
      cited (`get_citation`) or plainly labeled coaching judgment.
 5. Documented practices (peak-week water/sodium, weight-cut tactics): describe

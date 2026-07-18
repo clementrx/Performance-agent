@@ -335,7 +335,7 @@ typed backward from the major event with per-year quality-emphasis budgets deriv
 from the gap priorities, feeding the season) and a training-residuals guard (warns
 where a maintained quality would decay past its Issurin retention window without a
 refresh);
-1396 tests
+1397 tests
 incl. property-based) · 102 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),

@@ -940,6 +940,10 @@ def save_competition_protocol(
     }
     md_path = base_dir / COMPETITION_DIR / f"{prefix}-v{version}.md"
     yaml_path = md_path.with_suffix(".yaml")
+    for existing in (md_path, yaml_path):
+        if existing.exists():
+            msg = f"{existing} already exists; protocol versions are immutable"
+            raise ValueError(msg)
     content = (
         "---\n"
         + _to_yaml(frontmatter)
