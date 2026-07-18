@@ -84,8 +84,11 @@ insist more than once. Collect, in this order:
    through it (never block on it): for Garmin — open a real terminal (the
    login is interactive, it cannot run from this chat), run
    `uvx performance-agent connect garmin`, follow the login (MFA supported),
-   restart this session, done. Tell them what each step does so it never
-   feels like a black box.
+   restart this session, done. For Strava — terminal:
+   `uvx performance-agent connect strava`, create the free API app at
+   strava.com/settings/api once (callback domain: `localhost`), restart, then
+   ask the coach to connect the Strava account (browser authorization). Tell
+   them what each step does so it never feels like a black box.
 9. **Injuries & flags** — current or recent injuries, pain, medical constraints.
    Anything active: call `write_profile` immediately with the flag (don't wait for
    the batch), then continue, applying the red-flag rules from performance-coach.

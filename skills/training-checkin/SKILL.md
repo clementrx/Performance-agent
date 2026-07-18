@@ -90,8 +90,8 @@ not the athlete names the problem.
      is the device's number, never one you derived.
    - Service listed but no matching MCP tools in the session → §3c file import
      as usual, and at most once per conversation offer the guided setup:
-     "open a terminal (not this chat — the login is interactive), run
-     `uvx performance-agent connect garmin`, follow the Garmin login, then
+     "open a terminal (not this chat), run `uvx performance-agent connect
+     garmin` (or `connect strava`) and follow the steps it prints, then
      restart this session". After a restart, VERIFY the tools are present
      before announcing the sync works.
 3d. **High-resolution measurements — only when the athlete has the hardware.**

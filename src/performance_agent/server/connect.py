@@ -1,12 +1,13 @@
-"""One-command wearable connection setup (`performance-agent connect garmin`).
+"""One-command wearable connection setup (`performance-agent connect <service>`).
 
-This is a terminal CLI, not an MCP tool: the Garmin login is interactive
-(email, password, MFA code) so it must run where the athlete can type. It
-chains everything that was previously three manual steps: the interactive
-authentication (delegated to the community garmin_mcp server's own auth CLI,
-which persists OAuth tokens to ~/.garminconnect — the password is never
-stored), then registration of that server in Claude Code when the `claude`
-CLI is present, or a ready-to-paste JSON snippet for every other client.
+This is a terminal CLI, not an MCP tool. `connect garmin` chains the
+interactive Garmin login (delegated to the community garmin_mcp server's own
+auth CLI — MFA supported, OAuth tokens persisted to ~/.garminconnect, the
+password is never stored) with the server registration. `connect strava`
+registers the community Strava server (npm); its OAuth happens later in the
+browser, started from the coaching conversation itself. Registration goes
+through `claude mcp add` when the Claude Code CLI is present, and falls back
+to a ready-to-paste JSON snippet for every other client.
 """
 
 import shutil
@@ -18,19 +19,25 @@ Runner = Callable[..., subprocess.CompletedProcess]
 
 GARMIN_MCP_GIT = "git+https://github.com/Taxuspt/garmin_mcp"
 GARMIN_UVX_ARGS = ("uvx", "--python", "3.12", "--from", GARMIN_MCP_GIT)
+STRAVA_NPX_ARGS = ("npx", "-y", "@r-huijts/strava-mcp-server")
 
-_USAGE = """usage: performance-agent connect garmin
+_USAGE = """usage: performance-agent connect {garmin|strava}
 
-Connects your Garmin account to the coach in one step:
-  1. interactive Garmin Connect login (MFA supported; OAuth tokens saved to
-     ~/.garminconnect — your password is never stored),
-  2. registers the Garmin MCP server in Claude Code (or prints the JSON
-     snippet to paste into any other client's MCP config).
+Connects your wearable/app account to the coach in one step.
 
-Strava: no blessed server yet — see docs/installing.md.
+garmin:  interactive Garmin Connect login (MFA supported; OAuth tokens saved
+         to ~/.garminconnect — your password is never stored), then registers
+         the Garmin MCP server in Claude Code (or prints the JSON snippet to
+         paste into any other client's MCP config).
+
+strava:  registers the Strava MCP server the same way. The authorization
+         itself happens later in your browser, started from the coaching
+         conversation ("connect my Strava account"). One-time prerequisite:
+         create a free API app at https://www.strava.com/settings/api with
+         Authorization Callback Domain set to "localhost".
 """
 
-_MANUAL_SNIPPET = """Add this to your client's MCP config (e.g. .mcp.json), then restart it:
+_GARMIN_SNIPPET = """Add this to your client's MCP config (e.g. .mcp.json), then restart it:
 
   "garmin": {
     "command": "uvx",
@@ -39,10 +46,28 @@ _MANUAL_SNIPPET = """Add this to your client's MCP config (e.g. .mcp.json), then
   }
 """
 
-_RESTART_NOTE = (
+_STRAVA_SNIPPET = """Add this to your client's MCP config (e.g. .mcp.json), then restart it:
+
+  "strava": {
+    "command": "npx",
+    "args": ["-y", "@r-huijts/strava-mcp-server"]
+  }
+"""
+
+_GARMIN_DONE = (
     "\nDone. Restart your agent session (MCP servers only load at startup),\n"
     'then tell your coach: "I have a Garmin watch" — it will record the\n'
     "account on your profile and start pulling activities and sleep/HRV data."
+)
+
+_STRAVA_DONE = (
+    "\nDone. Two more steps:\n"
+    "  1. If you haven't yet: create a free API app at\n"
+    '     https://www.strava.com/settings/api ("Authorization Callback\n'
+    '     Domain": localhost) and keep the Client ID/Secret at hand.\n'
+    "  2. Restart your agent session (MCP servers only load at startup),\n"
+    '     then tell your coach: "connect my Strava account" — the browser\n'
+    "     opens for the Strava authorization, and tokens persist locally."
 )
 
 
@@ -51,37 +76,28 @@ def _fail(message: str) -> int:
     return 1
 
 
-def _authenticate(run: Runner | None = None) -> bool:
+def _garmin_login(run: Runner | None = None) -> bool:
     runner = run or subprocess.run
     print("Step 1/2 — Garmin Connect login (interactive; MFA supported)")
     result = runner([*GARMIN_UVX_ARGS, "garmin-mcp-auth"], check=False)
     return result.returncode == 0
 
 
-def _register(run: Runner | None = None) -> None:
+def _register(name: str, command: tuple[str, ...], snippet: str, run: Runner | None = None) -> None:
     runner = run or subprocess.run
-    print("\nStep 2/2 — registering the Garmin MCP server")
+    print(f"Registering the {name} MCP server")
     if shutil.which("claude") is None:
         print("Claude Code CLI not found; manual configuration:")
-        print(_MANUAL_SNIPPET)
+        print(snippet)
         return
-    add = ["claude", "mcp", "add", "garmin", "-s", "user", "--", *GARMIN_UVX_ARGS, "garmin-mcp"]
+    add = ["claude", "mcp", "add", name, "-s", "user", "--", *command]
     result = runner(add, check=False)
     if result.returncode != 0:
         print("`claude mcp add` failed; manual configuration:")
-        print(_MANUAL_SNIPPET)
+        print(snippet)
 
 
-def connect_main(args: list[str], run: Runner | None = None) -> int:
-    """Run `performance-agent connect <service>`; returns the exit code.
-
-    Only `garmin` is supported today. The interactive login needs a real
-    terminal (a TTY): running it from a non-interactive shell fails with a
-    readable message instead of a traceback.
-    """
-    if args != ["garmin"]:
-        print(_USAGE, file=sys.stderr)
-        return 2
+def _connect_garmin(run: Runner | None) -> int:
     if shutil.which("uvx") is None:
         return _fail("uvx not found — install uv first: https://docs.astral.sh/uv/")
     if not sys.stdin.isatty():
@@ -90,8 +106,33 @@ def connect_main(args: list[str], run: Runner | None = None) -> int:
             "terminal. Open your terminal app and run: performance-agent connect garmin\n"
             "(or: uvx performance-agent connect garmin)"
         )
-    if not _authenticate(run):
+    if not _garmin_login(run):
         return _fail("Garmin login failed — nothing was registered. Fix the login and rerun.")
-    _register(run)
-    print(_RESTART_NOTE)
+    print("\nStep 2/2 — ", end="")
+    _register("garmin", (*GARMIN_UVX_ARGS, "garmin-mcp"), _GARMIN_SNIPPET, run)
+    print(_GARMIN_DONE)
     return 0
+
+
+def _connect_strava(run: Runner | None) -> int:
+    if shutil.which("npx") is None:
+        return _fail("npx not found — install Node.js first: https://nodejs.org/")
+    _register("strava", STRAVA_NPX_ARGS, _STRAVA_SNIPPET, run)
+    print(_STRAVA_DONE)
+    return 0
+
+
+def connect_main(args: list[str], run: Runner | None = None) -> int:
+    """Run `performance-agent connect <service>`; returns the exit code.
+
+    Supports `garmin` (interactive terminal login, then registration) and
+    `strava` (registration; the OAuth runs later in the browser from the
+    coaching conversation). A non-interactive shell fails with a readable
+    message instead of a traceback where a terminal is required.
+    """
+    if args == ["garmin"]:
+        return _connect_garmin(run)
+    if args == ["strava"]:
+        return _connect_strava(run)
+    print(_USAGE, file=sys.stderr)
+    return 2

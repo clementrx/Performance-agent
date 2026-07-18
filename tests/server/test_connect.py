@@ -1,11 +1,11 @@
-"""`performance-agent connect garmin` — the one-step wearable setup CLI."""
+"""`performance-agent connect {garmin|strava}` — the one-step wearable setup CLI."""
 
 import subprocess
 
 import pytest
 
 from performance_agent.server import connect
-from performance_agent.server.connect import GARMIN_UVX_ARGS, connect_main
+from performance_agent.server.connect import GARMIN_UVX_ARGS, STRAVA_NPX_ARGS, connect_main
 
 
 class RecordingRunner:
@@ -32,7 +32,33 @@ def _tools_present(monkeypatch, *names):
 
 def test_unknown_service_prints_usage_and_exits_2(capsys):
     assert connect_main(["fitbit"]) == 2
-    assert "usage: performance-agent connect garmin" in capsys.readouterr().err
+    assert "usage: performance-agent connect {garmin|strava}" in capsys.readouterr().err
+
+
+def test_strava_missing_npx_fails_with_node_pointer(monkeypatch, capsys):
+    _tools_present(monkeypatch)
+    assert connect_main(["strava"]) == 1
+    assert "npx not found" in capsys.readouterr().err
+
+
+def test_strava_registers_in_claude_and_explains_oauth(monkeypatch, capsys):
+    _tools_present(monkeypatch, "npx", "claude")
+    runner = RecordingRunner([0])
+    assert connect_main(["strava"], run=runner) == 0
+    (register,) = runner.commands
+    assert register[:6] == ["claude", "mcp", "add", "strava", "-s", "user"]
+    assert register[-3:] == list(STRAVA_NPX_ARGS)
+    out = capsys.readouterr().out
+    assert "strava.com/settings/api" in out
+    assert "connect my Strava account" in out
+
+
+def test_strava_without_claude_cli_prints_manual_snippet(monkeypatch, capsys):
+    _tools_present(monkeypatch, "npx")
+    runner = RecordingRunner([])
+    assert connect_main(["strava"], run=runner) == 0
+    assert runner.commands == []
+    assert "@r-huijts/strava-mcp-server" in capsys.readouterr().out
 
 
 def test_missing_uvx_fails_with_install_pointer(monkeypatch, capsys):

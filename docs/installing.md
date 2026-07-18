@@ -226,11 +226,25 @@ Two things to set up:
    }
    ```
 
-   **Strava** — no single blessed server yet; search the
-   [MCP server registry](https://github.com/modelcontextprotocol/servers) or
-   PyPI/npm for `strava mcp`, check the project is maintained and that it uses
-   Strava's official OAuth API (you create an API app on strava.com once to get
-   the tokens), then add it the same way.
+   **Strava** — one command too:
+
+   ```bash
+   uvx performance-agent connect strava
+   ```
+
+   It registers [r-huijts/strava-mcp](https://github.com/r-huijts/strava-mcp)
+   (MIT, on npm, 25 tools: detailed activities with HR and laps, stats,
+   records, training zones, segments, GPX/TCX routes; needs Node.js for
+   `npx`). One-time prerequisite: create a free API app at
+   [strava.com/settings/api](https://www.strava.com/settings/api) with
+   "Authorization Callback Domain" set to `localhost`. The authorization
+   itself happens in your browser, started from the coaching conversation:
+   restart your session and tell your coach "connect my Strava account".
+   Manual setup for other clients:
+
+   ```json
+   "strava": { "command": "npx", "args": ["-y", "@r-huijts/strava-mcp-server"] }
+   ```
 
 Everything downstream is unchanged: fetched activities go through the same
 propose → confirm → `log_session` flow as file imports, and nothing is ever

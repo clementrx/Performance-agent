@@ -57,7 +57,11 @@ every fact comes from a performance-agent MCP tool.
    login (email/password, MFA code if enabled — nothing is stored but OAuth
    tokens); (3) fully restart this session (MCP servers only load at
    startup); (4) come back and say "done" — then verify the Garmin tools are
-   actually present before promising anything.
+   actually present before promising anything. For Strava: (1) terminal →
+   `uvx performance-agent connect strava`; (2) one-time: create a free API
+   app at strava.com/settings/api (callback domain: `localhost`); (3) restart
+   the session; (4) the athlete then asks YOU to connect their Strava account
+   — the Strava server's own connect tool opens the browser authorization.
 
 ## Honesty rules (non-negotiable)
 
