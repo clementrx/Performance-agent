@@ -272,8 +272,8 @@ Mitwirkende.
 flowchart TB
     U[Du] <--> H[Dein Agenten-CLI<br/>Claude Code · Gemini CLI · Codex<br/>= der Coach: spricht, denkt, passt an]
     H <-->|MCP| S[performance-agent-Server]
-    H -.folgt.-> SK[Coaching-Skills<br/>Onboarding · Bedarfsanalyse · Recherche ·
-Planung · Optimierung · Ernährung · Kontrolle · Check-ins · Anpassung]
+    H -.folgt.-> SK[Coaching-Skills<br/>Onboarding · Bedarfsanalyse · Tiefenrecherche ·
+Planung · Optimierung · Ernährung · Review · Check-ins · Trainingstag · Anpassung]
     S --> E[Sportwissenschafts-Engine<br/>deterministisch · property-getestet · null LLM]
     S --> EV[(Evidenzkorpus<br/>bewertete Studien, SQLite FTS5)]
     S --> M[(Athletenverzeichnis<br/>Profil · Programme · Protokolle — einfache Dateien)]
@@ -290,25 +290,74 @@ Session-RPE-Last & ACWR, Monotonie/Strain, Form-Ermüdung CTL/ATL/TSB,
 Readiness-Einstufung, Budgetierung externer Last, Zielmachbarkeit,
 Periodisierungswellen, rückwärts geplante Saison aus einem datierten Kalender,
 Sitzungs-Autoregulation am Tag selbst (Readiness-basierte Anpassung, Zeitkompression,
-Übungssubstitution), Sequenzierung innerhalb der Woche & Interferenzschutz,
-individualisierte Rekalibrierung aus den Logs des Athleten (gemessene
-Progressionsrate ehrlich über n, Soll-Ist-Compliance, Volumentoleranz, versioniertes
-Antwortprofil), die die Machbarkeit neu berechnet, datengestützte
-Entlastungsempfehlungen und eine schrittweise Rückkehr zur Last nach einer Pause,
-proaktives Follow-up, das Fälliges hervorhebt, und eine deterministische
-End-to-End-Simulation (ohne LLM); 1270 Tests inkl. property-based) · 93 MCP-Werkzeuge ·
-dateibasiertes Athletengedächtnis mit Saisonkalender, Readiness-Logs, versionierten
-maschinenlesbaren Programmen, Tages-Anpassungsprotokoll, versioniertem Antwortprofil
-und Anpassungs-Audit-Protokoll · Import von Aktivitätsdateien (.fit/.tcx/.gpx/CSV) ·
+Übungssubstitution), Sequenzierung innerhalb der Woche & Interferenzschutz (Abstand
+schwerer Muster, HIIT-vor-Unterkörper-Interferenz, Regeln für aufeinanderfolgende harte
+Tage und Match-Fenster), individualisierte Rekalibrierung aus den Logs des Athleten
+(gemessene Progressionsrate ehrlich über n, Soll-Ist-Compliance,
+Volumen-Toleranz-Assoziation, versioniertes Antwortprofil), die die Zielmachbarkeit
+gegen die gemessene Rate neu berechnet, datengestützte Entlastungsempfehlungen
+(Monotonie/Strain, TSB- und Readiness-Trends gegen den geplanten Zähler) und eine
+gestufte Rückkehr zur Last nach einer Pause (freigabe-gesteuert), proaktives Follow-up,
+das Fälliges hervorhebt (überfälliger Check-in, bevorstehender Wettkampf, verpasste
+Sitzungen, Readiness-Lücken, veraltetes Antwortprofil) nach Schweregrad geordnet, damit
+der Coach zuerst spricht, und eine deterministische End-to-End-Simulation (ohne LLM),
+die die echte Engine + den Speicher über synthetische Athleten treibt — inklusive einer
+NICHT VORBEREITETEN Sportart (Kajak-Sprint), deren handgeschriebenes Modell die gesamte
+Pipeline genau wie ein vorbereitetes durchläuft und beweist, dass die Maschine
+sportunabhängig ist — um zu beweisen, dass sich die ganze Schleife zusammensetzt, ein
+sportagnostisches PerformanceModel (die recherchierte, versionierte Antwort auf „was
+bestimmt die Leistung in dieser Disziplin" — trainierbare Qualitäten mit normalisierten
+Gewichten, KPIs mit Niveau-Benchmarks, Verletzungsrisiken und Energiesystem-Aufteilung,
+jeder Wert nach Herkunft gekennzeichnet: zitiert/a priori/Einschätzung), das die
+Lückenanalyse antreibt (gemessene KPIs vs. Benchmarks, Trainingsprioritäten je
+Qualität, Ungemessenes bleibt ungemessen) und eine datierte Testbatterie, die als
+Experimente um den Kalender herum geplant wird, initialisiert mit vier Referenzmodellen
+(Sprint, 10 km, Powerlifting, Fußball), die Beispiele und keine Voraussetzung sind, und
+eine strukturierte Übungs-Ontologie (~120 Basisübungen attribuiert nach
+Bewegungsmuster, Kraftvektor, Kontraktionsregime, kinetischer Kette, Ausrüstung,
+Spezifitätsniveau und trainierten Qualitäten — filterbar und erweiterbar mit eigenen
+Ergänzungen des Athleten) mit deterministischer bewerteter Übungsauswahl
+(Qualitätsübereinstimmung × phasengerechte Spezifität × Ausrüstungs-Machbarkeit ×
+Kontraindikations-Sperre × Neuheit, gerankt mit einer Begründung je Attribut),
+Reiz-Äquivalenz-Substitution und einem Mesozyklus-Spezifitätsmix-Schutz, plus
+optionaler hochauflösender Datenaufnahme (Velocity-Based-Training-CSV-Importe als
+strukturierte Sätze, .fit/.tcx-Einheiten liefern Leistung/normalisierte
+Leistung/Kadenz/Runden-Splits, und Sprung-/Sprint-Messungen landen im KPI-Log — jede
+hochauflösende Eingabe optional, fehlende Daten senken die angegebene Auflösung, statt
+zu blockieren), Last-Geschwindigkeits-Profiling (eine je Übung angepasste
+Geschwindigkeits-Last-Linie mit geschätztem 1RM, ehrlich abgesichert und abgelehnt,
+wenn die Lasten zu wenige oder zu eng sind), das Tages-Geschwindigkeits-basierte
+Last-Vorschläge speist (begrenzt, gekennzeichnet, nie automatisch angewandt), und ein
+je Athlet angepasstes zweikomponentiges Banister-Impuls-Antwort-Modell
+(deterministischer Pure-Python-Gitter-Fit der Form-/Ermüdungs-Zeitkonstanten und
+Gewinne, ehrlich abgesichert — abgelehnt ohne ≥8 Wochen Last und ≥5 verteilte
+Leistungspunkte oder bei fixierten/unplausiblen Werten — das die eigenen Zeitkonstanten
+des Athleten in den Form-Ermüdungs-Trend einspeist), individuelle Taper-Antwort
+(erkennt vergangene Taper im Last-Log, paart jeden mit seinem ereignisgebundenen
+Ergebnis und empfiehlt Dauer/Reduktion aus dem besten Taper des Athleten selbst, wenn
+≥2 vorhanden — sonst die gekennzeichnete Populationsregel) und Progressionsraten je
+Qualität, die über die Modell-KPIs verschlüsselt sind, plus mehrjährige
+Makrozyklus-Planung (ein 1–4-Jahres-Plan rückwärts vom Hauptevent typisiert mit
+jährlichen Qualitäts-Schwerpunkt-Budgets, die aus den Lückenprioritäten abgeleitet sind
+und die Saison speisen) und ein Trainingsresiduen-Schutz (warnt, wo eine gehaltene
+Qualität ohne Auffrischung über ihr Issurin-Retentionsfenster hinaus abfallen würde);
+1397 Tests inkl. property-based) · 102 MCP-Werkzeuge · dateibasiertes Athletengedächtnis
+mit Saisonkalender, Readiness-Logs vor der Sitzung, versionierten maschinenlesbaren
+Programmen (strukturierter Plan + gerendertes Markdown), Tages-Anpassungsprotokoll mit
+Eskalationssignalen, versioniertem individuellem Antwortprofil, versionierten
+Performance-Modellen, datiertem KPI-Ergebnis-Log und Anpassungs-Audit-Protokoll ·
+Import von Aktivitätsdateien (.fit/.tcx/.gpx/CSV, inkl. Leistung/Kadenz/Splits und
+VBT-Exporte), der eine Sitzung vorschlägt, die der Athlet vor dem Loggen bestätigt ·
 DOI/PMID/ISBN-verifizierter Evidenzkorpus mit Anti-Fabrikations-Zitatprüfung ·
 Live-Evidenzsuche (PubMed, OpenAlex, Crossref, Semantic Scholar) hinter doppelter
-Verifikation · zwölf Coaching-Skills inkl. verpflichtendem Liefer-Gate mit
+Verifikation · fünfzehn Coaching-Skills inkl. verpflichtendem Liefer-Gate mit
 adversarialer Zweitmeinung · Typst-PDF-Berichte (en/fr/es) hinter einer harten
 Zitatsperre.
 
-**Roadmap:** Korpusausbau auf ~200 Studien · Ergebnissimulation (Banister +
-Monte Carlo) · weitere Sport-Vertikalen (Hyrox-spezifische Engine-Werkzeuge, Fußball,
-Tennis) · optionales Web-Frontend auf demselben MCP-Server.
+**Roadmap:** Umgebung & Fein-Peaking (Höhe/Hypoxie, Hitzeakklimatisation,
+Jetlag-Protokolle, Wettkampfstunden-Planung) — die bewusste nächste Iteration ·
+Korpusausbau auf ~200 Studien · Ergebnissimulation (Monte Carlo auf dem angepassten
+Banister-Modell) · optionales Web-Frontend auf demselben MCP-Server.
 
 ## Designprinzipien
 
