@@ -71,10 +71,23 @@ tell you what you want to hear. PerformanceAgent is architected so neither is po
   peak-week practices described only with evidence grade + explicit warning),
   delivered as a versioned document and an offline phone page for the event.
 
-## Install (5 minutes, 3 steps)
+## Install once — then it's one folder per athlete
 
-PerformanceAgent isn't an app you open — it plugs into an AI agent CLI. Once plugged
-in, you just talk to it in plain language; no config files, no commands to memorize.
+PerformanceAgent isn't an app you open — it plugs into an AI agent CLI. You set it up
+**once** (below), and from then on coaching someone is three moves:
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+**Make a folder, `cd` into it, launch `claude` — and you're coaching.** That folder
+*is* the athlete: profile, programs, session logs and check-ins all live inside it as
+plain files you can read, edit, diff and back up. Nothing is sent anywhere. Coaching
+several athletes is just several folders — `cd` into the right one and the coach picks
+up where you left off. Then you talk to it in plain language; no config files, no
+commands to memorize.
+
+### One-time setup (5 minutes, 3 steps)
 
 **Never used Claude Code before?** Install it first:
 
@@ -93,21 +106,9 @@ claude mcp add performance-agent -s user -- uvx performance-agent
 ```
 
 This registers the coach's "brain" (the engine, the science library, your future
-athlete profile) as a tool Claude Code can call. `-s user` makes it available in any
-folder you later open `claude` from.
-
-**The folder you launch `claude` from is the athlete's data folder.** Make one
-folder per athlete and start the session from inside it:
-
-```bash
-mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
-```
-
-All of that athlete's data lives there as plain files; nothing is sent anywhere.
-Coaching several athletes is just several folders — `cd` into the right one.
-(If your MCP host doesn't let you pick the launch folder — Claude Desktop, for
-example — set `PERFORMANCE_AGENT_HOME` to the athlete folder in the server config
-instead.)
+athlete profile) as a tool Claude Code can call. `-s user` makes it available from
+every folder you later launch `claude` in — which is what makes one-folder-per-athlete
+work.
 
 **Step 2 — teach it how to coach.** Step 1 gave Claude the *tools* (the math, the
 data). This step gives it the *coaching protocols* — when to ask what, when to be
@@ -122,17 +123,22 @@ cp -R Performance-agent/skills/* ~/.claude/skills/
 **Step 3 — fully quit and restart Claude Code.** New tools load only when a `claude`
 session *starts*: close any open session completely and run `claude` again.
 
-**Check it worked** — in the fresh session, ask:
+**Check it worked** — open an athlete folder and ask:
 
 ```
 > List the performance-agent tools.
 ```
 
-You should see 102 tools. If so, you're done — just talk to it.
+You should see 102 tools. If so, you're done — make a folder and start coaching.
+
+> **On a host that can't pick the launch folder?** Claude Desktop and a few other MCP
+> hosts always start from the same place. There, set `PERFORMANCE_AGENT_HOME` to the
+> athlete's folder in the server config instead of `cd`-ing into it.
 
 ## How to use it, step by step
 
-1. **Open a terminal and start your agent** (`claude`).
+1. **`cd` into the athlete's folder and start your agent** (`claude`) — an empty
+   folder for a new athlete, an existing one to pick up their history.
 2. **Say your goal in plain language** — any language works. *"I want to run a 10K
    under 50 minutes"*, *"Prépare-moi pour un Hyrox"*.
 3. **Answer the coach's questions.** First time, it runs a short onboarding (current

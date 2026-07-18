@@ -47,11 +47,24 @@ que ninguna de las dos sea posible:
   revisiones viven en un directorio simple de markdown/YAML que puedes leer, editar,
   comparar y sincronizar.
 
-## Instalación (5 minutos, 3 pasos)
+## Instala una vez — luego, una carpeta por atleta
 
 PerformanceAgent no es una app que se abre — se conecta a un agente de IA de línea de
-comandos. Una vez conectado, solo tienes que hablarle en lenguaje natural; sin
-archivos de configuración, sin comandos que memorizar.
+comandos. Lo instalas **una sola vez** (abajo) y, a partir de ahí, entrenar a alguien
+son tres gestos:
+
+```bash
+mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
+```
+
+**Crea una carpeta, haz `cd` dentro, lanza `claude` — y ya estás entrenando.** Esa
+carpeta *es* el atleta: perfil, programas, registros de sesiones y check-ins viven
+todos dentro como archivos simples que puedes leer, editar, versionar y respaldar.
+Nada se envía a ninguna parte. Entrenar a varios atletas es solo tener varias carpetas
+— haz `cd` a la correcta y el coach retoma donde lo dejaste. Luego le hablas en
+lenguaje natural; sin archivos de configuración, sin comandos que memorizar.
+
+### Instalación única (5 minutos, 3 pasos)
 
 **¿Nunca has usado Claude Code?** Instálalo primero:
 
@@ -71,20 +84,8 @@ claude mcp add performance-agent -s user -- uvx performance-agent
 
 Esto registra el «cerebro» del coach (el motor, la biblioteca científica, tu futuro
 perfil de atleta) como una herramienta que Claude Code puede invocar. `-s user` lo
-hace disponible en cualquier carpeta donde luego abras `claude`.
-
-**La carpeta desde la que lanzas `claude` es la carpeta de datos del atleta.**
-Crea una carpeta por atleta e inicia la sesión desde ella:
-
-```bash
-mkdir -p ~/coaching/marie && cd ~/coaching/marie && claude
-```
-
-Todos los datos de ese atleta viven ahí como archivos simples; nada se envía a
-ninguna parte. Entrenar a varios atletas es solo tener varias carpetas — haz `cd` a
-la correcta. (Si tu host MCP no te deja elegir la carpeta de lanzamiento — Claude
-Desktop, por ejemplo — define `PERFORMANCE_AGENT_HOME` hacia la carpeta del atleta en
-la configuración del servidor.)
+hace disponible desde cualquier carpeta donde luego lances `claude` — que es lo que
+hace funcionar lo de una carpeta por atleta.
 
 **Paso 2 — enseñarle a entrenar.** El paso 1 le dio a Claude las *herramientas* (las
 matemáticas, los datos). Este paso le da los *protocolos de coaching* — qué preguntar
@@ -100,17 +101,23 @@ cp -R Performance-agent/skills/* ~/.claude/skills/
 solo se carga cuando una sesión de `claude` *arranca*: cierra cualquier sesión abierta
 y ejecuta `claude` de nuevo.
 
-**Comprueba que funcionó** — en la sesión nueva, pregunta:
+**Comprueba que funcionó** — abre una carpeta de atleta y pregunta:
 
 ```
 > Lista las herramientas de performance-agent.
 ```
 
-Deberías ver 93 herramientas. Si es así, ya está — simplemente háblale.
+Deberías ver 102 herramientas. Si es así, ya está — crea una carpeta y empieza a
+entrenar.
+
+> **¿En un host que no puede elegir la carpeta de lanzamiento?** Claude Desktop y algún
+> otro host MCP siempre arrancan en el mismo sitio. Ahí, define `PERFORMANCE_AGENT_HOME`
+> hacia la carpeta del atleta en la configuración del servidor en vez de hacer `cd`.
 
 ## Cómo usarlo, paso a paso
 
-1. **Abre una terminal y arranca tu agente** (`claude`).
+1. **Haz `cd` a la carpeta del atleta y arranca tu agente** (`claude`) — una carpeta
+   vacía para un atleta nuevo, una existente para retomar su historial.
 2. **Di tu objetivo en lenguaje natural** — en el idioma que prefieras. *«Quiero
    correr los 10K en menos de 50 minutos»*.
 3. **Responde a las preguntas del coach.** La primera vez hace una breve entrevista
