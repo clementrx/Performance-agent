@@ -41,7 +41,7 @@
 - Create: `src/performance_agent/engine/competition.py`
 - Test: `tests/engine/test_competition.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/engine/test_competition.py`:
 
@@ -89,9 +89,9 @@ def test_carb_guards_reject_out_of_range_inputs():
         carb_loading_targets(70.0, 2000.0)
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py -q` — Expected: FAIL (`ModuleNotFoundError`)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py -q` — Expected: FAIL (`ModuleNotFoundError`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/engine/competition.py`:
 
@@ -171,9 +171,9 @@ def carb_loading_targets(body_mass_kg: float, event_duration_min: float) -> Carb
     )
 ```
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py tests/engine/test_engine_purity.py -q` — Expected: PASS (purity guard must stay green)
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py tests/engine/test_engine_purity.py -q` — Expected: PASS (purity guard must stay green)
 
-- [ ] **Step 5: Lint + commit**
+- [x] **Step 5: Lint + commit**
 
 ```bash
 uv run ruff check src/performance_agent/engine/competition.py tests/engine/test_competition.py && uv run ty check
@@ -190,7 +190,7 @@ git log --oneline -1
 - Modify: `src/performance_agent/engine/competition.py` (append)
 - Test: `tests/engine/test_competition.py` (append)
 
-- [ ] **Step 1: Write the failing tests** (append)
+- [x] **Step 1: Write the failing tests** (append)
 
 ```python
 from performance_agent.engine.competition import select_attempts
@@ -224,9 +224,9 @@ def test_attempts_guards():
         select_attempts(200.0, 205.0, rounding_kg=0.0)
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py -q` — Expected: FAIL (`ImportError: select_attempts`)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py -q` — Expected: FAIL (`ImportError: select_attempts`)
 
-- [ ] **Step 3: Implement** (append to `engine/competition.py`)
+- [x] **Step 3: Implement** (append to `engine/competition.py`)
 
 ```python
 from performance_agent.engine.progression import round_to_increment
@@ -288,9 +288,9 @@ def select_attempts(
 
 (Move the `from performance_agent.engine.progression import round_to_increment` line up into the module's import block.)
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py tests/engine/test_engine_purity.py -q` — Expected: PASS
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py tests/engine/test_engine_purity.py -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/engine/competition.py tests/engine/test_competition.py
@@ -306,7 +306,7 @@ git log --oneline -1
 - Modify: `src/performance_agent/engine/competition.py` (append)
 - Test: `tests/engine/test_competition.py` (append)
 
-- [ ] **Step 1: Write the failing tests** (append)
+- [x] **Step 1: Write the failing tests** (append)
 
 ```python
 from performance_agent.engine.competition import pacing_plan, protocol_window_days
@@ -364,9 +364,9 @@ def test_window_guards():
         protocol_window_days(10, "X")
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py -q` — Expected: FAIL (`ImportError`)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py -q` — Expected: FAIL (`ImportError`)
 
-- [ ] **Step 3: Implement** (append to `engine/competition.py`)
+- [x] **Step 3: Implement** (append to `engine/competition.py`)
 
 ```python
 # Negative-split prior: first half ~1% slower than mean pace, second half
@@ -473,9 +473,9 @@ def protocol_window_days(taper_days: int, priority: str) -> int:
     return 0
 ```
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py tests/engine/test_engine_purity.py -q` — Expected: PASS. Note the rounded paces mean cumulative sums drift by < 1 s — the tests use `abs=1.0`; never widen past one second.
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_competition.py tests/engine/test_engine_purity.py -q` — Expected: PASS. Note the rounded paces mean cumulative sums drift by < 1 s — the tests use `abs=1.0`; never widen past one second.
 
-- [ ] **Step 5: Lint + commit**
+- [x] **Step 5: Lint + commit**
 
 ```bash
 uv run ruff check src/performance_agent/engine/competition.py tests/engine/test_competition.py && uv run ty check
@@ -496,7 +496,7 @@ git log --oneline -1
 - Modify: `src/performance_agent/memory/schemas.py` (insert the whole block right BEFORE `class CalendarEvent`)
 - Test: `tests/memory/test_schemas_protocol.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/memory/test_schemas_protocol.py`:
 
@@ -607,9 +607,9 @@ def test_fueling_low_cannot_exceed_high():
         FuelingPlan(carb_g_per_kg_low=10, carb_g_per_kg_high=8, window_hours=48)
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/memory/test_schemas_protocol.py -q` — Expected: FAIL (`ImportError`)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/memory/test_schemas_protocol.py -q` — Expected: FAIL (`ImportError`)
 
-- [ ] **Step 3: Implement** — in `src/performance_agent/memory/schemas.py`, insert immediately before `class CalendarEvent`:
+- [x] **Step 3: Implement** — in `src/performance_agent/memory/schemas.py`, insert immediately before `class CalendarEvent`:
 
 ```python
 # --- Competition protocol (per-event final-days plan) ---------------------
@@ -748,9 +748,9 @@ class CompetitionProtocol(BaseModel):
         return self
 ```
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/memory/test_schemas_protocol.py tests/memory/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/memory/test_schemas_protocol.py tests/memory/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/performance_agent/memory/schemas.py tests/memory/test_schemas_protocol.py
@@ -766,7 +766,7 @@ git log --oneline -1
 - Create: `src/performance_agent/programs/render_protocol.py`
 - Test: `tests/programs/test_render_protocol.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/programs/test_render_protocol.py`:
 
@@ -887,9 +887,9 @@ def test_markdown_without_optional_sections_is_lean():
     assert "## Sources" not in text
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/programs/test_render_protocol.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/programs/test_render_protocol.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/programs/render_protocol.py`:
 
@@ -1029,9 +1029,9 @@ def render_protocol(
     return "\n".join(lines).strip() + "\n"
 ```
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/programs/test_render_protocol.py -q` — Expected: PASS
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/programs/test_render_protocol.py -q` — Expected: PASS
 
-- [ ] **Step 5: Lint + commit**
+- [x] **Step 5: Lint + commit**
 
 ```bash
 uv run ruff check src/performance_agent/programs/render_protocol.py tests/programs/test_render_protocol.py && uv run ty check
@@ -1048,7 +1048,7 @@ git log --oneline -1
 - Modify: `src/performance_agent/memory/store.py` (constants + append at end)
 - Test: `tests/memory/test_store_protocol.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/memory/test_store_protocol.py`:
 
@@ -1148,9 +1148,9 @@ def test_latest_version_none_when_empty(tmp_path):
     assert store.read_competition_protocol(tmp_path, "nationals") is None
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/memory/test_store_protocol.py -q` — Expected: FAIL (`AttributeError`)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/memory/test_store_protocol.py -q` — Expected: FAIL (`AttributeError`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/performance_agent/memory/store.py`:
 
@@ -1294,9 +1294,9 @@ def read_competition_protocol(
 
 (`Mapping` and `ResolvedCitation` are already imported since v0.8.0 — check the import block; if `ResolvedCitation` appears only in the quoted annotation, keep the existing import as is.)
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/memory/test_store_protocol.py tests/memory/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/memory/test_store_protocol.py tests/memory/ -q` — Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 uv run ruff check src/performance_agent/memory/store.py tests/memory/test_store_protocol.py && uv run ty check
@@ -1313,7 +1313,7 @@ git log --oneline -1
 - Create: `src/performance_agent/programs/render_protocol_html.py`
 - Test: `tests/programs/test_render_protocol_html.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/programs/test_render_protocol_html.py`:
 
@@ -1405,9 +1405,9 @@ def test_french_labels():
     assert "Allures" in page
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/programs/test_render_protocol_html.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/programs/test_render_protocol_html.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/programs/render_protocol_html.py`:
 
@@ -1691,9 +1691,9 @@ def render_protocol_html(
     )
 ```
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/programs/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/programs/ -q` — Expected: PASS
 
-- [ ] **Step 5: Lint + commit**
+- [x] **Step 5: Lint + commit**
 
 ```bash
 uv run ruff check src/performance_agent/programs/render_protocol_html.py tests/programs/test_render_protocol_html.py && uv run ty check
@@ -1715,7 +1715,7 @@ git log --oneline -1
 - Modify: `src/performance_agent/server/app.py`
 - Test: `tests/server/test_competition_tools.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/server/test_competition_tools.py`:
 
@@ -1805,9 +1805,9 @@ def test_read_without_protocol_raises(athlete_dir):
         competition_tools.read_competition_protocol("nationals")
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/server/test_competition_tools.py -q` — Expected: FAIL (module missing)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/server/test_competition_tools.py -q` — Expected: FAIL (module missing)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/performance_agent/server/competition_tools.py`:
 
@@ -1975,9 +1975,9 @@ def register(mcp: FastMCP) -> None:
 
 In `src/performance_agent/server/app.py`: add `competition_tools,` to the import tuple (alphabetical, after `autoregulation_tools`) and `competition_tools.register(mcp)` after `followup_tools.register(mcp)`.
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/server/ -q` — Expected: PASS
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/server/ -q` — Expected: PASS
 
-- [ ] **Step 5: Lint + commit**
+- [x] **Step 5: Lint + commit**
 
 ```bash
 uv run ruff check src/performance_agent/server/competition_tools.py src/performance_agent/server/app.py tests/server/test_competition_tools.py && uv run ty check
@@ -1996,7 +1996,7 @@ git log --oneline -1
 - Modify: `src/performance_agent/server/memory_tools.py` (docstring)
 - Test: `tests/engine/test_diligence.py` (append), `tests/memory/test_diligence.py` (append)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/engine/test_diligence.py`:
 
@@ -2070,9 +2070,9 @@ def test_a_event_without_protocol_surfaces_competition_protocol(tmp_path):
     assert action["due_in_days"] == 6
 ```
 
-- [ ] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_diligence.py tests/memory/test_diligence.py -q` — Expected: FAIL (`unexpected keyword argument 'protocol_window_days'`)
+- [x] **Step 2: Run** — `rtk proxy uv run pytest tests/engine/test_diligence.py tests/memory/test_diligence.py -q` — Expected: FAIL (`unexpected keyword argument 'protocol_window_days'`)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/performance_agent/engine/diligence.py`:
 
@@ -2157,9 +2157,9 @@ and update its call site in `_build_facts` to `upcoming_events=_upcoming_events(
 
 In `src/performance_agent/server/memory_tools.py`, extend the `list_due_actions` docstring list with: `an A/B event inside its protocol window with no pre-competition protocol saved`.
 
-- [ ] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_diligence.py tests/memory/ tests/server/ -q` — Expected: PASS. If `test_imminent_a_event_is_high`-style existing tests now ALSO see a `competition_protocol` action, that is correct behavior — fix only tests that assert exact action lists (add the new kind or a protocol), never the engine.
+- [x] **Step 4: Run** — `rtk proxy uv run pytest tests/engine/test_diligence.py tests/memory/ tests/server/ -q` — Expected: PASS. If `test_imminent_a_event_is_high`-style existing tests now ALSO see a `competition_protocol` action, that is correct behavior — fix only tests that assert exact action lists (add the new kind or a protocol), never the engine.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 uv run ruff check src tests && uv run ty check
@@ -2172,8 +2172,8 @@ git log --oneline -1
 
 ### Task 10: Phase gate
 
-- [ ] **Step 1:** Run: `rtk proxy uv run pytest -q >/dev/null 2>&1; echo "exit=$?"` — Expected: `exit=0`
-- [ ] **Step 2:** Run: `uv run ruff check src tests && uv run ty check` — Expected: clean. Fix anything before Phase 4.
+- [x] **Step 1:** Run: `rtk proxy uv run pytest -q >/dev/null 2>&1; echo "exit=$?"` — Expected: `exit=0`
+- [x] **Step 2:** Run: `uv run ruff check src tests && uv run ty check` — Expected: clean. Fix anything before Phase 4.
 
 ---
 
@@ -2184,7 +2184,7 @@ git log --oneline -1
 **Files:**
 - Create: `skills/pre-competition/SKILL.md`
 
-- [ ] **Step 1: Write the skill**
+- [x] **Step 1: Write the skill**
 
 ````markdown
 ---
@@ -2235,9 +2235,9 @@ edits the program — taper structure changes route to program-adaptation.
    with `log_kpi_result` — the outcome feeds fit_taper_response for next time.
 ````
 
-- [ ] **Step 2: Verify** — Run: `rtk proxy uv run pytest tests/skills/ -q` — Expected: only `test_all_expected_skills_exist` fails (fixed in Task 12). If `test_tool_references` fails, fix the frontmatter now.
+- [x] **Step 2: Verify** — Run: `rtk proxy uv run pytest tests/skills/ -q` — Expected: only `test_all_expected_skills_exist` fails (fixed in Task 12). If `test_tool_references` fails, fix the frontmatter now.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add skills/pre-competition/SKILL.md
@@ -2253,7 +2253,7 @@ git log --oneline -1
 - Modify: `skills/performance-coach/SKILL.md`, `skills/training-checkin/SKILL.md`, `skills/session-day/SKILL.md`, `skills/deep-research/SKILL.md`, `skills/program-review/SKILL.md`
 - Modify: `tests/skills/test_structure.py`
 
-- [ ] **Step 1: Update the invariants first (they drive the edits)**
+- [x] **Step 1: Update the invariants first (they drive the edits)**
 
 In `tests/skills/test_structure.py`:
 
@@ -2290,7 +2290,7 @@ Run: `rtk proxy uv run pytest tests/skills/ -q` — Expected: FAIL on exactly th
 
 **Beware line wrap:** every needle must appear UNBROKEN on one line in the skill body (casefolded). Reflow sentences if needed.
 
-- [ ] **Step 2: `skills/performance-coach/SKILL.md`**
+- [x] **Step 2: `skills/performance-coach/SKILL.md`**
 
 In the routing section, after the next-week-loads / program-watch lines added in v0.8.0, add:
 
@@ -2299,7 +2299,7 @@ In the routing section, after the next-week-loads / program-watch lines added in
   **pre-competition** (authors the final-days protocol and the event-day page).
 ```
 
-- [ ] **Step 3: `skills/training-checkin/SKILL.md`**
+- [x] **Step 3: `skills/training-checkin/SKILL.md`**
 
 In the "Mesocycle boundary duties" section (or right after it), add:
 
@@ -2314,7 +2314,7 @@ red flag follows the normal rules.
 
 Frontmatter: add `log_kpi_result` to `tools` if not already declared.
 
-- [ ] **Step 4: `skills/session-day/SKILL.md`**
+- [x] **Step 4: `skills/session-day/SKILL.md`**
 
 Add near the top of the protocol/ritual section:
 
@@ -2327,7 +2327,7 @@ Adjustments follow the protocol's fallbacks, never a rewrite an hour before.
 
 Frontmatter: add `read_competition_protocol` to `tools`.
 
-- [ ] **Step 5: `skills/deep-research/SKILL.md`**
+- [x] **Step 5: `skills/deep-research/SKILL.md`**
 
 In the "Mini-waves and the incremental watch" section, append one line to the mini-wave paragraph:
 
@@ -2336,7 +2336,7 @@ The pre-competition wave is a mini-wave whose single question is the final days
 before a named event (taper execution, fueling, pacing or attempts, weigh-in).
 ```
 
-- [ ] **Step 6: `skills/program-review/SKILL.md`**
+- [x] **Step 6: `skills/program-review/SKILL.md`**
 
 Append to the deterministic compliance checklist (after the v0.8.0 structured-progression/guidance items):
 
@@ -2349,9 +2349,9 @@ Append to the deterministic compliance checklist (after the v0.8.0 structured-pr
   than a warned, graded practice — is an objection.
 ```
 
-- [ ] **Step 7: Run the full skills suite** — `rtk proxy uv run pytest tests/skills/ -q` — Expected: PASS. If `test_bodies_do_not_reference_undeclared_tools` fails, add the mentioned tool to that skill's frontmatter `tools`.
+- [x] **Step 7: Run the full skills suite** — `rtk proxy uv run pytest tests/skills/ -q` — Expected: PASS. If `test_bodies_do_not_reference_undeclared_tools` fails, add the mentioned tool to that skill's frontmatter `tools`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add skills/ tests/skills/test_structure.py
@@ -2366,7 +2366,7 @@ git log --oneline -1
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Update README** — replace `You should see 97 tools.` with `You should see 102 tools.`; replace `97 MCP` with `102 MCP`; replace `fourteen coaching skills` with `fifteen coaching skills`; add one feature bullet after the "Science on the gym page" bullet:
+- [x] **Step 1: Update README** — replace `You should see 97 tools.` with `You should see 102 tools.`; replace `97 MCP` with `102 MCP`; replace `fourteen coaching skills` with `fifteen coaching skills`; add one feature bullet after the "Science on the gym page" bullet:
 
 ```markdown
 - **Pre-competition protocol** — the final days before any competition planned
@@ -2377,9 +2377,9 @@ git log --oneline -1
 
 Then recount the suite and update the test count: run `rtk proxy uv run python -m pytest --collect-only -q 2>/dev/null | awk -F': ' '{s+=$2} END {print s}'` and replace the `1339 tests` figure with the new number.
 
-- [ ] **Step 2: Full suite + linters** — Run: `rtk proxy uv run pytest -q >/dev/null 2>&1; echo "exit=$?"` then `uv run ruff check src tests && uv run ty check` — Expected: exit=0, everything clean.
+- [x] **Step 2: Full suite + linters** — Run: `rtk proxy uv run pytest -q >/dev/null 2>&1; echo "exit=$?"` then `uv run ruff check src tests && uv run ty check` — Expected: exit=0, everything clean.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md
@@ -2389,7 +2389,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 git log --oneline -1
 ```
 
-- [ ] **Step 4: NOT in this plan** — version bump, CHANGELOG, PyPI release.
+- [x] **Step 4: NOT in this plan** — version bump, CHANGELOG, PyPI release.
 
 ---
 
