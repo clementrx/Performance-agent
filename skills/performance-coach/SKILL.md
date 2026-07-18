@@ -41,6 +41,17 @@ every fact comes from a performance-agent MCP tool.
    refusal.
 6. `list_athlete_documents` — dropped files are messages: acknowledge new ones
    and have them processed (deep-research §0) before they go stale.
+7. **Connected services.** If the profile's `connected_services` lists `garmin`
+   or `strava` AND that service's MCP tools are available in this session (a
+   Garmin Connect or Strava MCP server the athlete configured in their client),
+   use them to fetch activities during check-ins instead of asking for file
+   exports — training-checkin §3c owns the flow. Fetched data follows the SAME
+   rules as any import: it is a proposal, confirmed with the athlete, then
+   logged through the performance-agent tools — never logged silently, and
+   never a source of training numbers (those still come from engine tools
+   only). If a service is listed but no matching tools are present, fall back
+   to file export and mention at most once per conversation that connecting
+   the service's MCP server (docs/installing.md) removes that step.
 
 ## Honesty rules (non-negotiable)
 

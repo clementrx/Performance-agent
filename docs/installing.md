@@ -178,6 +178,43 @@ Verify: ask your agent *"What does your performance-coach skill tell you to do a
 the start of a session?"* — it should describe the read_athlete + get_time_context
 ritual.
 
+## Connecting Garmin or Strava (optional)
+
+If the athlete tracks training with a Garmin watch or Strava, the coach can pull
+activities straight from the service at check-in — no manual `.fit`/`.tcx` export
+needed. This works by running a community MCP server for the service *alongside*
+performance-agent; the coach detects its tools in the session and uses them when
+the athlete's profile lists the account (`connected_services`, recorded during
+onboarding).
+
+Two things to set up:
+
+1. **Tell the coach about the account** — during onboarding it asks; for an
+   existing athlete, just say "I have a Garmin watch" and the coach records it
+   in the profile.
+2. **Add the service's MCP server to your client**, next to the
+   performance-agent entry. Any Garmin Connect or Strava MCP server works — the
+   coach looks for tools that list or download activities, whatever their exact
+   names. Search the [MCP server registry](https://github.com/modelcontextprotocol/servers)
+   or PyPI/npm for `garmin mcp` / `strava mcp`, check the project is maintained
+   and you're comfortable with how it handles your credentials (Garmin servers
+   typically need your Garmin Connect login; Strava ones an OAuth app token),
+   then add it e.g. in `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "performance-agent": { "command": "uvx", "args": ["performance-agent"] },
+    "garmin": { "command": "uvx", "args": ["<the-garmin-mcp-package>"] }
+  }
+}
+```
+
+Everything downstream is unchanged: fetched activities go through the same
+propose → confirm → `log_session` flow as file imports, and nothing is ever
+logged without the athlete's confirmation. No server connected? File export
+keeps working exactly as before.
+
 ## Where your data lives
 
 The coach stores your profile, goals, programs, and logs in a plain-file directory:

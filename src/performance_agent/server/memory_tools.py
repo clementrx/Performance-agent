@@ -174,7 +174,7 @@ def write_profile(profile: Profile) -> WrittenFile:
     Read the athlete first, then write the FULL updated profile — this is a
     whole-document replace, not a merge: omitted fields are DROPPED
     (injuries, equipment, availability, notes, lift_inventory, body_fat_pct,
-    calendar_type, split_preferences).
+    calendar_type, split_preferences, equipment_sensors, connected_services).
     """
     return WrittenFile(path=str(store.write_profile(resolve_athlete_dir(), profile)))
 

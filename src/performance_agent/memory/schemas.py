@@ -158,6 +158,10 @@ class Profile(BaseModel):
     # Measurement hardware the athlete has (e.g. vbt, force_plate, timing_gates,
     # power_meter) — raises the coaching data ceiling when present, ignored when not.
     equipment_sensors: list[str] = Field(default_factory=list)
+    # Wearable/app accounts the athlete holds (e.g. garmin, strava) — the coach
+    # pulls activities through that service's MCP server when one is connected
+    # to the session; absent (or no server connected), file import is the path.
+    connected_services: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 

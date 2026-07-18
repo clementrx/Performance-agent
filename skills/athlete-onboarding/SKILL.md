@@ -74,6 +74,14 @@ insist more than once. Collect, in this order:
    vbt bar sensor, force plate / jump mat, timing gates, power meter). It is
    optional and raises the data ceiling when present (velocity-based loads,
    jump/sprint KPIs, power/splits from rides); absent, nothing changes.
+8b. **Connected services** — ask whether they track training with a Garmin
+   watch (Garmin Connect) or Strava; record each account in
+   `connected_services` (values: `garmin`, `strava`). When one is recorded AND
+   that service's MCP server is connected to the session, check-ins pull
+   activities directly instead of asking for file exports. If the account
+   exists but no matching MCP tools are available in this session, still
+   record it and mention ONCE that connecting the service's MCP server (see
+   the project's installing guide) removes the export step — never block on it.
 9. **Injuries & flags** — current or recent injuries, pain, medical constraints.
    Anything active: call `write_profile` immediately with the flag (don't wait for
    the batch), then continue, applying the red-flag rules from performance-coach.
@@ -81,9 +89,10 @@ insist more than once. Collect, in this order:
 
 ## Persistence rules
 
-- After steps 3-5, 7-8, and 10: call `write_profile` with the FULL updated profile
+- After steps 3-5, 7-8b, and 10: call `write_profile` with the FULL updated profile
   (read first — it is a whole-document replace; omitted fields are dropped,
-  including lift_inventory, body_fat_pct, calendar_type, split_preferences).
+  including lift_inventory, body_fat_pct, calendar_type, split_preferences,
+  equipment_sensors, connected_services).
   Step 9 flags were already written immediately, per the protocol.
 - After step 6: `upsert_goal` (id: short kebab slug, e.g. sub-45-10k). If the goal
   is later renegotiated during the needs analysis, that skill REUSES this same goal

@@ -349,7 +349,8 @@ a day-of adjustment log with escalation signals, a versioned individual response
 profile, versioned performance models, a dated KPI-results log, and an adaptation
 audit trail ·
 activity-file import (.fit/.tcx/.gpx/CSV, incl. power/cadence/splits and VBT
-exports) that proposes a session for the athlete to confirm before logging ·
+exports) that proposes a session for the athlete to confirm before logging —
+or pulled straight from Garmin/Strava when their MCP server is connected ·
 DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
 citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
 behind a double verification gate · fifteen coaching skills incl. a mandatory delivery

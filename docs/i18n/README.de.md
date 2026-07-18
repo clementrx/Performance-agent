@@ -347,7 +347,8 @@ Programmen (strukturierter Plan + gerendertes Markdown), Tages-Anpassungsprotoko
 Eskalationssignalen, versioniertem individuellem Antwortprofil, versionierten
 Performance-Modellen, datiertem KPI-Ergebnis-Log und Anpassungs-Audit-Protokoll ·
 Import von Aktivitätsdateien (.fit/.tcx/.gpx/CSV, inkl. Leistung/Kadenz/Splits und
-VBT-Exporte), der eine Sitzung vorschlägt, die der Athlet vor dem Loggen bestätigt ·
+VBT-Exporte), der eine Sitzung vorschlägt, die der Athlet vor dem Loggen bestätigt —
+oder direkt aus Garmin/Strava gezogen, wenn deren MCP-Server verbunden ist ·
 DOI/PMID/ISBN-verifizierter Evidenzkorpus mit Anti-Fabrikations-Zitatprüfung ·
 Live-Evidenzsuche (PubMed, OpenAlex, Crossref, Semantic Scholar) hinter doppelter
 Verifikation · fünfzehn Coaching-Skills inkl. verpflichtendem Liefer-Gate mit

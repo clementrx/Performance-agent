@@ -345,7 +345,8 @@ escalada, perfil de respuesta individual versionado, modelos de rendimiento
 versionados, registro de resultados de KPI con fechas e historial de auditoría de
 adaptaciones · importación de archivos de actividad (.fit/.tcx/.gpx/CSV, incl.
 potencia/cadencia/parciales y exportaciones VBT) que propone una sesión para que el
-atleta la confirme antes de registrarla · corpus de evidencia verificada por
+atleta la confirme antes de registrarla — o extraídas directamente de
+Garmin/Strava cuando su servidor MCP está conectado · corpus de evidencia verificada por
 DOI/PMID/ISBN con control anti-fabricación de citas · búsqueda de evidencia en vivo
 (PubMed, OpenAlex, Crossref, Semantic Scholar) tras una doble verificación · quince
 habilidades de coaching, incl. una puerta de entrega obligatoria con segunda opinión

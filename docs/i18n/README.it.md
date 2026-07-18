@@ -344,7 +344,8 @@ registro degli aggiustamenti in giornata con segnali di escalation, profilo di r
 individuale versionato, modelli di prestazione versionati, log dei risultati KPI con
 date e registro di audit degli adattamenti · import di file di attività
 (.fit/.tcx/.gpx/CSV, incl. potenza/cadenza/parziali ed export VBT) che propone una
-seduta da confermare dall'atleta prima di registrarla · corpus di evidenze verificate
+seduta da confermare dall'atleta prima di registrarla — o recuperate
+direttamente da Garmin/Strava quando il loro server MCP è connesso · corpus di evidenze verificate
 via DOI/PMID/ISBN con controllo anti-fabbricazione delle citazioni · ricerca di
 evidenze in tempo reale (PubMed, OpenAlex, Crossref, Semantic Scholar) dietro doppia
 verifica · quindici skill di coaching incl. un gate di consegna obbligatorio con

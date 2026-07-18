@@ -345,7 +345,8 @@ de saison, journaux de readiness avant séance, programmes versionnés lisibles 
 d'escalade, profil de réponse individuel versionné, modèles de performance versionnés,
 journal de résultats de KPI daté et journal d'audit des adaptations · import de fichiers
 d'activité (.fit/.tcx/.gpx/CSV, incl. puissance/cadence/splits et exports VBT) qui
-propose une séance à confirmer par l'athlète avant journalisation · corpus de preuves
+propose une séance à confirmer par l'athlète avant journalisation — ou
+récupérées directement depuis Garmin/Strava quand leur serveur MCP est connecté · corpus de preuves
 vérifiées par DOI/PMID/ISBN avec contrôle anti-fabrication des citations · recherche
 bibliographique en direct (PubMed, OpenAlex, Crossref, Semantic Scholar) derrière une
 double vérification · quinze compétences de coaching dont un portail de livraison

@@ -50,8 +50,10 @@ not the athlete names the problem.
    estimated sRPE — when the athlete gives an average HR instead of an RPE, call
    `estimate_srpe_from_hr` and confirm the estimate before logging it. External
    load counts toward every weekly total below.
-3c. **Activity-file import — offer it to cut logging friction:** if the athlete
-   has a watch/app export (a `.fit`, `.tcx`, `.gpx`, or a Garmin/Strava/HRV
+3c. **Activity-file import — offer it to cut logging friction:** when the
+   connected-service sync below (§3c-bis) applies, prefer it and don't ask for
+   an export. Otherwise, if the athlete has a watch/app export (a `.fit`,
+   `.tcx`, `.gpx`, or a Garmin/Strava/HRV
    `.csv`), call `import_activity_file(path)`. It PROPOSES a session (duration,
    distance, average HR, a match to a planned session or `source="external"`, and
    an sRPE estimated from HR when possible) — it never logs. Read the proposal
@@ -60,6 +62,28 @@ not the athlete names the problem.
    For an HRV CSV the proposal returns dated readings; collect the four Hooper
    items for each before `log_readiness`. A malformed file returns a readable
    error — tell the athlete what to re-export, never guess the numbers.
+3c-bis. **Connected-service sync — the zero-export path.** When `read_athlete`'s
+   `connected_services` lists `garmin` or `strava` AND that service's MCP tools
+   are available in this session (a Garmin Connect / Strava MCP server the
+   athlete configured in their client — tool names vary by server; look for
+   tools that list or download activities):
+   - Fetch the activities since last contact and read them back ("Garmin shows
+     3 activities since Tuesday: …"). Skip any already in `read_sessions` for
+     the window (match on date + sport + duration) — never double-log.
+   - Per activity, prefer the ORIGINAL file when the server can download it
+     (`.fit`/`.tcx`): save it and run `import_activity_file(path)` so the full
+     parse/match/flag pipeline applies. When only summary fields are exposed,
+     build the same proposal yourself from what the service returns (start
+     time, duration, distance, average HR; `estimate_srpe_from_hr` when HR is
+     present and no RPE), match it to today's planned session or
+     `source="external"`, and read it back.
+   - Either way the confirm-then-log rule is UNCHANGED: the athlete confirms
+     every proposal (especially the RPE) before `log_session`. Service data is
+     facts about what happened, never training numbers — those still come only
+     from engine tools.
+   - Service listed but no matching MCP tools in the session → §3c file import
+     as usual, and mention at most once per conversation that connecting the
+     service's MCP server (docs/installing.md) removes the export step.
 3d. **High-resolution measurements — only when the athlete has the hardware.**
    Check `read_athlete`'s `equipment_sensors`. When it lists them, raise the data
    ceiling; when it is empty, skip this entirely (zero new friction). With the

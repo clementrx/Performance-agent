@@ -151,6 +151,14 @@ def test_profile_accepts_lift_inventory_and_bodycomp():
     assert profile.calendar_type == "single_deadline"
 
 
+def test_profile_connected_services_optional():
+    assert Profile().connected_services == []
+    assert Profile(connected_services=["garmin", "strava"]).connected_services == [
+        "garmin",
+        "strava",
+    ]
+
+
 def test_lift_record_defaults_to_tested_and_bounds():
     record = LiftRecord(lift="deadlift", one_rm_kg=180, recorded_on=date(2026, 7, 1))
     assert record.source == "tested"
