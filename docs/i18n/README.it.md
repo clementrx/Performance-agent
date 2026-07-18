@@ -266,8 +266,8 @@ contribuisce.
 flowchart TB
     U[Tu] <--> H[Il tuo agente CLI<br/>Claude Code · Gemini CLI · Codex<br/>= il coach: conversa, ragiona, adatta]
     H <-->|MCP| S[server performance-agent]
-    H -.segue.-> SK[Skill di coaching<br/>onboarding · analisi dei bisogni · ricerca ·
-pianificazione · ottimizzazione · nutrizione · controllo · check-in · adattamento]
+    H -.segue.-> SK[Skill di coaching<br/>onboarding · analisi dei bisogni · ricerca approfondita ·
+pianificazione · ottimizzazione · nutrizione · revisione · check-in · giorno di seduta · adattamento]
     S --> E[Motore di scienze dello sport<br/>deterministico · testato per proprietà · zero LLM]
     S --> EV[(Corpus di evidenze<br/>studi classificati, SQLite FTS5)]
     S --> M[(Cartella atleta<br/>profilo · programmi · registri — semplici file)]
@@ -285,24 +285,77 @@ classificazione della readiness, budget del carico esterno, fattibilità degli
 obiettivi, onde di periodizzazione, pianificazione della stagione a ritroso da un
 calendario con date, autoregolazione della seduta in giornata (aggiustamento in base
 alla readiness, compressione del tempo, sostituzione degli esercizi), sequenziamento
-intra-settimana e guardia sulle interferenze, ricalibrazione individualizzata dai log
-dell'atleta (tasso di progressione misurato onesto su n, conformità prescritto-vs-reale,
-tolleranza al volume, profilo di risposta versionato) che ricalcola la fattibilità,
-raccomandazioni di scarico basate sui dati e rampa progressiva di ritorno al carico
-dopo una pausa, follow-up proattivo che fa emergere ciò che è dovuto, e una simulazione
-deterministica end-to-end (senza LLM); 1270 test incl. property-based) · 93 strumenti
-MCP · memoria atleta su file con calendario di stagione, log di readiness, programmi
-versionati leggibili dalla macchina, registro degli aggiustamenti in giornata, profilo
-di risposta versionato e registro di audit degli adattamenti · import di file di
-attività (.fit/.tcx/.gpx/CSV) · corpus di evidenze verificate via DOI/PMID/ISBN con
-controllo anti-fabbricazione delle citazioni · ricerca di evidenze in tempo reale
-(PubMed, OpenAlex, Crossref, Semantic Scholar) dietro doppia verifica · dodici skill di
-coaching incl. un gate di consegna obbligatorio con seconda opinione avversariale ·
-report PDF Typst (en/fr/es) dietro un blocco rigido delle citazioni.
+intra-settimana e guardia sulle interferenze (spaziatura dei pattern pesanti,
+interferenza HIIT-prima-del-treno-inferiore, regole di giorni forti consecutivi e di
+finestra di match), ricalibrazione individualizzata dai log dell'atleta (tasso di
+progressione misurato onesto su n, conformità prescritto-vs-reale, associazione
+tolleranza-volume, profilo di risposta versionato) che ricalcola la fattibilità
+dell'obiettivo rispetto al tasso misurato, raccomandazioni di scarico basate sui dati
+(monotonia/strain, tendenze di TSB e readiness rispetto al contatore pianificato) e
+rampa progressiva di ritorno al carico dopo una pausa (subordinata a un via libera),
+follow-up proattivo che fa emergere ciò che è dovuto (check-in in ritardo, gara
+imminente, sedute saltate, lacune di readiness, profilo di risposta scaduto) ordinato
+per gravità perché il coach parli per primo, e una simulazione deterministica
+end-to-end (senza LLM) che pilota il motore reale + l'archivio su atleti sintetici —
+incluso uno sport NON PRECARICATO (kayak sprint) il cui modello scritto a mano
+attraversa l'intera catena esattamente come uno precaricato, dimostrando che la
+macchina è indipendente dallo sport — per dimostrare che l'intero ciclo si compone, un
+PerformanceModel agnostico allo sport (la risposta ricercata e versionata a «cosa
+determina la prestazione in questa prova» — qualità allenabili con pesi normalizzati,
+KPI con benchmark per livello, rischi di infortunio e ripartizione dei sistemi
+energetici, ogni valore etichettato per provenienza: citato/a priori/giudizio) che
+pilota l'analisi delle lacune (KPI misurati vs benchmark, priorità di allenamento per
+qualità, il non misurato resta non misurato) e una batteria di test con date
+pianificata come esperimenti attorno al calendario, inizializzata con quattro modelli
+di riferimento (sprint, 10 km, powerlifting, calcio) che sono esempi e non un
+prerequisito, e un'ontologia degli esercizi strutturata (~120 esercizi di base
+attribuiti per pattern di movimento, vettore di forza, regime di contrazione, catena
+cinetica, attrezzatura, livello di specificità e qualità allenate — filtrabili ed
+estensibili con le aggiunte dell'atleta) con selezione degli esercizi punteggiata
+deterministica (corrispondenza di qualità × specificità appropriata alla fase ×
+fattibilità attrezzatura × blocco per controindicazione × novità, classificata con una
+giustificazione per attributo), sostituzione a equivalenza di stimolo e guardia sul mix
+di specificità del mesociclo, oltre a un'ingestione opzionale di dati ad alta
+risoluzione (importazioni CSV di allenamento basato sulla velocità come serie
+strutturate, uscite .fit/.tcx che danno potenza/potenza normalizzata/cadenza/parziali,
+e misurazioni di salto/sprint che finiscono nel log dei KPI — ogni input ad alta
+risoluzione opzionale, un dato mancante abbassa la risoluzione dichiarata invece di
+bloccare), profilazione carico-velocità (una retta velocità-carico adattata per
+esercizio con un 1RM stimato, controllata onestamente e rifiutata quando i carichi sono
+troppo pochi o troppo ristretti) che alimenta suggerimenti di carico basati sulla
+velocità in giornata (limitati, etichettati, mai applicati automaticamente), e un
+modello di risposta all'impulso di Banister a due componenti adattato per atleta (fit a
+griglia in puro Python delle costanti di tempo forma/fatica e dei guadagni, controllato
+onestamente — rifiutato senza ≥8 settimane di carico e ≥5 punti di prestazione
+distribuiti, o con valori fissati/inverosimili — che immette le costanti di tempo
+dell'atleta stesso nella tendenza forma-fatica), risposta individuale al tapering
+(rileva i tapering passati nel log del carico, abbina ciascuno al suo risultato legato
+a un evento, e raccomanda durata/riduzione dal miglior tapering dell'atleta stesso
+quando ce ne sono ≥2 — altrimenti la regola di popolazione etichettata) e tassi di
+progressione per qualità indicizzati sui KPI del modello, oltre alla pianificazione di
+macrociclo pluriennale (un piano da 1 a 4 anni tipizzato a ritroso dall'evento
+principale con budget di enfasi per qualità e per anno derivati dalle priorità delle
+lacune, che alimentano la stagione) e una guardia sui residui di allenamento (avverte
+dove una qualità mantenuta decadrebbe oltre la sua finestra di ritenzione di Issurin
+senza un richiamo); 1397 test incl. property-based) · 102 strumenti MCP · memoria
+atleta su file con calendario di stagione, log di readiness pre-seduta, programmi
+versionati leggibili dalla macchina (piano strutturato + markdown renderizzato),
+registro degli aggiustamenti in giornata con segnali di escalation, profilo di risposta
+individuale versionato, modelli di prestazione versionati, log dei risultati KPI con
+date e registro di audit degli adattamenti · import di file di attività
+(.fit/.tcx/.gpx/CSV, incl. potenza/cadenza/parziali ed export VBT) che propone una
+seduta da confermare dall'atleta prima di registrarla · corpus di evidenze verificate
+via DOI/PMID/ISBN con controllo anti-fabbricazione delle citazioni · ricerca di
+evidenze in tempo reale (PubMed, OpenAlex, Crossref, Semantic Scholar) dietro doppia
+verifica · quindici skill di coaching incl. un gate di consegna obbligatorio con
+seconda opinione avversariale · report PDF Typst (en/fr/es) dietro un blocco rigido
+delle citazioni.
 
-**Roadmap:** crescita del corpus verso ~200 studi · simulazione dei risultati
-(Banister + Monte Carlo) · nuove verticali sportive (strumenti del motore specifici
-per Hyrox, calcio, tennis) · front-end web opzionale che riusa lo stesso server MCP.
+**Roadmap:** ambiente e affinamento del picco di forma (altitudine/ipossia,
+acclimatazione al caldo, protocolli di jet-lag, pianificazione secondo l'ora di gara) —
+la prossima iterazione deliberata · crescita del corpus verso ~200 studi · simulazione
+dei risultati (Monte Carlo sul modello di Banister adattato) · front-end web opzionale
+che riusa lo stesso server MCP.
 
 ## Principi di progettazione
 
