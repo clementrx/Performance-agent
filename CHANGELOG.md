@@ -2,6 +2,20 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## Unreleased
+
+### Added
+
+- **Claude Code plugin** — one-command setup that installs the MCP server **and**
+  all 16 coaching skills together, replacing the manual `claude mcp add` + skills
+  copy. From inside Claude Code:
+  `/plugin marketplace add clementrx/Performance-agent` then
+  `/plugin install performance-agent@performance-agent`. The repo is its own
+  marketplace (`.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`,
+  and a root `.mcp.json` running `uvx performance-agent`); Claude Code keeps it
+  updated via `/plugin marketplace update performance-agent`. Non-Claude-Code
+  clients keep the manual per-host setup in [docs/installing.md](docs/installing.md).
+
 ## 0.10.0 — Garmin/Strava Connection & Recovery Analyst
 
 ### Added

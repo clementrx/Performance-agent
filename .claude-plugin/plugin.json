@@ -1,0 +1,15 @@
+{
+  "name": "performance-agent",
+  "displayName": "PerformanceAgent",
+  "version": "0.10.0",
+  "description": "Evidence-based performance coach: the MCP server plus the coaching skills that drive it.",
+  "author": {
+    "name": "Clément Rieux",
+    "url": "https://github.com/clementrx"
+  },
+  "homepage": "https://github.com/clementrx/Performance-agent",
+  "repository": "https://github.com/clementrx/Performance-agent",
+  "license": "Apache-2.0",
+  "keywords": ["coaching", "training", "performance", "sports-science", "garmin", "strava"],
+  "mcpServers": "./.mcp.json"
+}

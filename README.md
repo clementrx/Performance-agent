@@ -87,7 +87,7 @@ several athletes is just several folders — `cd` into the right one and the coa
 up where you left off. Then you talk to it in plain language; no config files, no
 commands to memorize.
 
-### One-time setup (5 minutes, 3 steps)
+### One-time setup (Claude Code — 2 commands)
 
 **Never used Claude Code before?** Install it first:
 
@@ -99,28 +99,21 @@ curl -fsSL https://claude.ai/install.sh | bash
 You'll also need [`uv`](https://docs.astral.sh/uv/getting-started/installation/) — it
 fetches the right Python version by itself, nothing else to install.
 
-**Step 1 — plug in the coach.** Run this once, from any terminal:
+**Install the plugin.** From inside Claude Code, run these two commands once:
 
-```bash
-claude mcp add performance-agent -s user -- uvx performance-agent
+```
+/plugin marketplace add clementrx/Performance-agent
+/plugin install performance-agent@performance-agent
 ```
 
-This registers the coach's "brain" (the engine, the science library, your future
-athlete profile) as a tool Claude Code can call. `-s user` makes it available from
+One install gives you both halves of the coach: the *tools* (the engine, the science
+library, your future athlete profile) as an MCP server, **and** the *coaching protocols*
+— the 16 skills that tell Claude when to ask what, when to be honest about a goal, how
+to build a program. The MCP server registers at user scope, so it's available from
 every folder you later launch `claude` in — which is what makes one-folder-per-athlete
-work.
+work. Claude Code keeps the plugin up to date (`/plugin marketplace update performance-agent`).
 
-**Step 2 — teach it how to coach.** Step 1 gave Claude the *tools* (the math, the
-data). This step gives it the *coaching protocols* — when to ask what, when to be
-honest about a goal, how to build a program:
-
-```bash
-git clone --depth 1 https://github.com/clementrx/Performance-agent
-mkdir -p ~/.claude/skills
-cp -R Performance-agent/skills/* ~/.claude/skills/
-```
-
-**Step 3 — fully quit and restart Claude Code.** New tools load only when a `claude`
+**Fully quit and restart Claude Code.** New tools and skills load only when a `claude`
 session *starts*: close any open session completely and run `claude` again.
 
 **Check it worked** — open an athlete folder and ask:
@@ -130,6 +123,12 @@ session *starts*: close any open session completely and run `claude` again.
 ```
 
 You should see 103 tools. If so, you're done — make a folder and start coaching.
+
+> **Not on Claude Code?** Cursor, Claude Desktop and other MCP hosts have no plugin
+> format. Register the server manually with `claude mcp add performance-agent -s user --
+> uvx performance-agent` (or the equivalent JSON in your host's MCP config), then copy
+> the coaching skills into your host's instructions. Full per-client steps:
+> [docs/installing.md](docs/installing.md).
 
 > **On a host that can't pick the launch folder?** Claude Desktop and a few other MCP
 > hosts always start from the same place. There, set `PERFORMANCE_AGENT_HOME` to the
