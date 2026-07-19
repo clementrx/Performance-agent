@@ -65,7 +65,7 @@ mehrere Ordner — wechsle mit `cd` in den richtigen, und der Coach macht dort w
 du aufgehört hast. Danach sprichst du in natürlicher Sprache mit ihm; keine
 Konfigurationsdateien, keine Befehle zum Auswendiglernen.
 
-### Einmalige Einrichtung (5 Minuten, 3 Schritte)
+### Einmalige Einrichtung (Claude Code — 2 Befehle)
 
 **Noch nie Claude Code benutzt?** Installiere es zuerst:
 
@@ -77,30 +77,24 @@ curl -fsSL https://claude.ai/install.sh | bash
 Du brauchst außerdem [`uv`](https://docs.astral.sh/uv/getting-started/installation/) —
 es holt sich die richtige Python-Version selbst, sonst ist nichts zu installieren.
 
-**Schritt 1 — den Coach einstecken.** Einmalig in einem beliebigen Terminal ausführen:
+**Installiere das Plugin.** Führe in Claude Code diese zwei Befehle einmalig aus:
 
-```bash
-claude mcp add performance-agent -s user -- uvx performance-agent
+```
+/plugin marketplace add clementrx/Performance-agent
+/plugin install performance-agent@performance-agent
 ```
 
-Das registriert das „Gehirn“ des Coaches (die Engine, die Wissenschaftsbibliothek,
-dein zukünftiges Athletenprofil) als Werkzeug, das Claude Code aufrufen kann.
-`-s user` macht es in jedem Ordner verfügbar, in dem du später `claude` startest — das
-ist es, was ein Ordner pro Athlet funktionieren lässt.
+Eine einzige Installation gibt dir beide Hälften des Coaches: die *Werkzeuge* (die
+Engine, die Wissenschaftsbibliothek, dein zukünftiges Athletenprofil) als MCP-Server
+**und** die *Coaching-Protokolle* — die 16 Skills, die Claude sagen, was wann zu fragen
+ist, wann man bei einem Ziel ehrlich sein muss, wie man ein Programm baut. Der MCP-Server
+registriert sich auf Benutzerebene, ist also in jedem Ordner verfügbar, in dem du später
+`claude` startest — das ist es, was ein Ordner pro Athlet funktionieren lässt. Claude Code
+hält das Plugin aktuell (`/plugin marketplace update performance-agent`).
 
-**Schritt 2 — ihm das Coaching beibringen.** Schritt 1 gab Claude die *Werkzeuge* (die
-Mathematik, die Daten). Dieser Schritt gibt ihm die *Coaching-Protokolle* — was wann
-zu fragen ist, wann man bei einem Ziel ehrlich sein muss, wie man ein Programm baut:
-
-```bash
-git clone --depth 1 https://github.com/clementrx/Performance-agent
-mkdir -p ~/.claude/skills
-cp -R Performance-agent/skills/* ~/.claude/skills/
-```
-
-**Schritt 3 — Claude Code vollständig beenden und neu starten.** Ein neues Werkzeug
-wird nur beim *Start* einer `claude`-Sitzung geladen: Schließe jede offene Sitzung
-komplett und führe `claude` erneut aus.
+**Beende Claude Code vollständig und starte es neu.** Neue Werkzeuge und Skills werden
+nur beim *Start* einer `claude`-Sitzung geladen: Schließe jede offene Sitzung komplett
+und führe `claude` erneut aus.
 
 **Prüfen, ob es funktioniert hat** — öffne einen Athletenordner und frage:
 
@@ -110,6 +104,12 @@ komplett und führe `claude` erneut aus.
 
 Du solltest 103 Werkzeuge sehen. Wenn ja, bist du fertig — leg einen Ordner an und
 fang an zu coachen.
+
+> **Nicht auf Claude Code?** Cursor, Claude Desktop und andere MCP-Hosts haben kein
+> Plugin-Format. Registriere den Server manuell mit `claude mcp add performance-agent
+> -s user -- uvx performance-agent` (oder dem entsprechenden JSON in der MCP-Konfiguration
+> deines Hosts) und kopiere dann die Coaching-Protokolle in die Anweisungen deines Hosts.
+> Vollständige Schritte pro Client: [docs/installing.md](../installing.md).
 
 > **Auf einem Host, der den Startordner nicht wählen kann?** Claude Desktop und einige
 > andere MCP-Hosts starten immer am selben Ort. Setze dort `PERFORMANCE_AGENT_HOME` in
