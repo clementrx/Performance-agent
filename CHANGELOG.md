@@ -2,7 +2,7 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
-## Unreleased
+## 0.11.0 — Claude Code Plugin
 
 ### Added
 
