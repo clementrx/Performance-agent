@@ -31,7 +31,9 @@ local agent session. The repo is release-ready when this checklist completes.
 
 ## Every release
 
-1. Update the version in `pyproject.toml`; commit via PR.
+1. Update the version in `pyproject.toml` **and** `.claude-plugin/plugin.json`
+   (keep them equal — the plugin `version` is what Claude Code shows in `/plugin list`);
+   commit via PR.
 2. Tag and push:
    ```bash
    git tag v0.1.0 && git push origin v0.1.0

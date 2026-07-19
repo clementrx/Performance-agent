@@ -1,0 +1,15 @@
+{
+  "name": "performance-agent",
+  "description": "PerformanceAgent — the evidence-based performance coach as a one-command Claude Code plugin (MCP server + coaching skills).",
+  "owner": {
+    "name": "Clément Rieux",
+    "url": "https://github.com/clementrx"
+  },
+  "plugins": [
+    {
+      "name": "performance-agent",
+      "source": "./",
+      "description": "Evidence-based performance coach: the MCP server (100+ tools) plus the coaching skills that drive it — needs analysis, periodization, nutrition, recovery, Garmin/Strava connection, pre-competition."
+    }
+  ]
+}

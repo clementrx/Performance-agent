@@ -17,6 +17,21 @@ published on PyPI as [`performance-agent`](https://pypi.org/project/performance-
 
 ## Claude Code
 
+**Recommended — the plugin.** One install ships both the MCP server *and* the 16
+coaching skills, and Claude Code keeps them updated. From inside Claude Code:
+
+```
+/plugin marketplace add clementrx/Performance-agent
+/plugin install performance-agent@performance-agent
+```
+
+The MCP server registers at user scope (available in every folder) and every coaching
+skill loads with it — so with the plugin you can skip the "Installing the coaching
+skills" section below. Update later with `/plugin marketplace update performance-agent`.
+
+**Manual — MCP server only.** To register just the server (and handle skills
+separately, below):
+
 ```bash
 claude mcp add performance-agent -s user -- uvx performance-agent
 ```
@@ -145,6 +160,11 @@ The skills are the coaching protocols the agent follows — what to ask, when to
 honest about a goal, how to periodize. Claude Code has native support for them; every
 other client needs the same content pasted into its own instructions mechanism, since
 none of them read `SKILL.md` files directly.
+
+> **On Claude Code, the plugin already did this.** `/plugin install
+> performance-agent@performance-agent` (above) bundles all 16 skills — skip straight to
+> "Connecting Garmin or Strava". The manual copy below is only for a skills-dir install
+> without the plugin.
 
 **Claude Code** — copy (or symlink) them into your personal skills directory:
 

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "performance-agent": {
+      "command": "uvx",
+      "args": ["performance-agent"]
+    }
+  }
+}
