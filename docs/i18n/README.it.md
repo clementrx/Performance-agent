@@ -101,7 +101,7 @@ di nuovo `claude`.
 > Elenca gli strumenti di performance-agent.
 ```
 
-Dovresti vedere 103 strumenti. Se sì, hai finito — crea una cartella e comincia ad
+Dovresti vedere 104 strumenti. Se sì, hai finito — crea una cartella e comincia ad
 allenare.
 
 > **Non su Claude Code?** Cursor, Claude Desktop e altri host MCP non hanno un formato di
@@ -337,7 +337,7 @@ macrociclo pluriennale (un piano da 1 a 4 anni tipizzato a ritroso dall'evento
 principale con budget di enfasi per qualità e per anno derivati dalle priorità delle
 lacune, che alimentano la stagione) e una guardia sui residui di allenamento (avverte
 dove una qualità mantenuta decadrebbe oltre la sua finestra di ritenzione di Issurin
-senza un richiamo); 1425 test incl. property-based) · 103 strumenti MCP · memoria
+senza un richiamo); 1425 test incl. property-based) · 104 strumenti MCP · memoria
 atleta su file con calendario di stagione, log di readiness pre-seduta, programmi
 versionati leggibili dalla macchina (piano strutturato + markdown renderizzato),
 registro degli aggiustamenti in giornata con segnali di escalation, profilo di risposta

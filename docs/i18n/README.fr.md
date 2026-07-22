@@ -102,7 +102,7 @@ relancez `claude`.
 > Liste les outils performance-agent.
 ```
 
-Vous devez voir 103 outils. Si oui, c'est terminé — créez un dossier et commencez à
+Vous devez voir 104 outils. Si oui, c'est terminé — créez un dossier et commencez à
 coacher.
 
 > **Pas sur Claude Code ?** Cursor, Claude Desktop et les autres hôtes MCP n'ont pas de
@@ -339,7 +339,7 @@ macrocycle pluriannuelle (un plan de 1 à 4 ans typé à rebours depuis l'évén
 avec des budgets d'emphase par qualité et par an dérivés des priorités d'écart, alimentant
 la saison) et un garde-fou de résidus d'entraînement (avertit là où une qualité maintenue
 déclinerait au-delà de sa fenêtre de rétention d'Issurin sans rappel) ; 1425 tests dont
-des tests par propriétés) · 103 outils MCP · mémoire athlète en fichiers avec calendrier
+des tests par propriétés) · 104 outils MCP · mémoire athlète en fichiers avec calendrier
 de saison, journaux de readiness avant séance, programmes versionnés lisibles par machine
 (plan structuré + markdown rendu), journal d'ajustements du jour avec signaux
 d'escalade, profil de réponse individuel versionné, modèles de performance versionnés,

@@ -2,6 +2,15 @@
 
 All notable changes to PerformanceAgent. Versions follow the git tags.
 
+## Unreleased
+
+### Added
+
+- **Exercise media binding** — new `media_id` field on program blocks and a
+  `search_exercise_media` MCP tool: the coach binds each strength exercise to its
+  dataset GIF at program creation, so programs written in the athlete's language
+  (Spanish, French, …) render with media despite the dataset's English-only names.
+
 ## 0.11.0 — Claude Code Plugin
 
 ### Added

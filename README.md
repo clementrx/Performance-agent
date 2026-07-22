@@ -122,7 +122,7 @@ session *starts*: close any open session completely and run `claude` again.
 > List the performance-agent tools.
 ```
 
-You should see 103 tools. If so, you're done — make a folder and start coaching.
+You should see 104 tools. If so, you're done — make a folder and start coaching.
 
 > **Not on Claude Code?** Cursor, Claude Desktop and other MCP hosts have no plugin
 > format. Register the server manually with `claude mcp add performance-agent -s user --
@@ -341,7 +341,7 @@ from the gap priorities, feeding the season) and a training-residuals guard (war
 where a maintained quality would decay past its Issurin retention window without a
 refresh);
 1425 tests
-incl. property-based) · 103 MCP
+incl. property-based) · 104 MCP
 tools · file-based athlete memory with a season calendar, pre-session readiness
 logs, versioned machine-readable programs (structured plan + rendered markdown),
 a day-of adjustment log with escalation signals, a versioned individual response

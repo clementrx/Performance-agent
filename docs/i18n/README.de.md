@@ -102,7 +102,7 @@ und führe `claude` erneut aus.
 > Liste die performance-agent-Werkzeuge auf.
 ```
 
-Du solltest 103 Werkzeuge sehen. Wenn ja, bist du fertig — leg einen Ordner an und
+Du solltest 104 Werkzeuge sehen. Wenn ja, bist du fertig — leg einen Ordner an und
 fang an zu coachen.
 
 > **Nicht auf Claude Code?** Cursor, Claude Desktop und andere MCP-Hosts haben kein
@@ -341,7 +341,7 @@ Makrozyklus-Planung (ein 1–4-Jahres-Plan rückwärts vom Hauptevent typisiert 
 jährlichen Qualitäts-Schwerpunkt-Budgets, die aus den Lückenprioritäten abgeleitet sind
 und die Saison speisen) und ein Trainingsresiduen-Schutz (warnt, wo eine gehaltene
 Qualität ohne Auffrischung über ihr Issurin-Retentionsfenster hinaus abfallen würde);
-1425 Tests inkl. property-based) · 103 MCP-Werkzeuge · dateibasiertes Athletengedächtnis
+1425 Tests inkl. property-based) · 104 MCP-Werkzeuge · dateibasiertes Athletengedächtnis
 mit Saisonkalender, Readiness-Logs vor der Sitzung, versionierten maschinenlesbaren
 Programmen (strukturierter Plan + gerendertes Markdown), Tages-Anpassungsprotokoll mit
 Eskalationssignalen, versioniertem individuellem Antwortprofil, versionierten

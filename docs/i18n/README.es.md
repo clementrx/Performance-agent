@@ -101,7 +101,7 @@ y ejecuta `claude` de nuevo.
 > Lista las herramientas de performance-agent.
 ```
 
-Deberías ver 103 herramientas. Si es así, ya está — crea una carpeta y empieza a
+Deberías ver 104 herramientas. Si es así, ya está — crea una carpeta y empieza a
 entrenar.
 
 > **¿No usas Claude Code?** Cursor, Claude Desktop y otros hosts MCP no tienen formato de
@@ -337,7 +337,7 @@ planificación de macrociclo plurianual (un plan de 1 a 4 años tipado hacia atr
 el evento principal con presupuestos de énfasis por cualidad y año derivados de las
 prioridades de brecha, alimentando la temporada) y una salvaguarda de residuos de
 entrenamiento (avisa donde una cualidad mantenida decaería más allá de su ventana de
-retención de Issurin sin un refresco); 1425 tests, incl. basados en propiedades) · 102
+retención de Issurin sin un refresco); 1425 tests, incl. basados en propiedades) · 104
 herramientas MCP · memoria del atleta en archivos con calendario de temporada,
 registros de readiness previos a la sesión, programas versionados legibles por máquina
 (plan estructurado + markdown renderizado), registro de ajustes del día con señales de
