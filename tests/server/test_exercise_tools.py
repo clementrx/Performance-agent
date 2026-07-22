@@ -2,6 +2,8 @@
 
 import pytest
 
+from tests.exercises.test_dataset import write_fixture_dataset
+
 
 @pytest.fixture(autouse=True)
 def athlete_home(monkeypatch, tmp_path):
@@ -86,3 +88,28 @@ async def test_propose_rejects_bad_equipment(client):
     }
     result = await client.call_tool("propose_exercise", {"definition": definition})
     assert result.isError
+
+
+@pytest.mark.anyio
+async def test_search_exercise_media_returns_candidates(client, monkeypatch, tmp_path):
+    dataset_dir = write_fixture_dataset(tmp_path / "ds")
+    monkeypatch.setenv("PERFORMANCE_AGENT_EXERCISES_DATASET", str(dataset_dir))
+    result = await client.call_tool(
+        "search_exercise_media", {"query": "squat", "equipment": "barbell"}
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["dataset_available"] is True
+    assert payload["candidates"][0]["media_id"] == "0043"
+    assert payload["candidates"][0]["target"] == "glutes"
+
+
+@pytest.mark.anyio
+async def test_search_exercise_media_without_dataset(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("PERFORMANCE_AGENT_EXERCISES_DATASET", str(tmp_path / "missing"))
+    result = await client.call_tool("search_exercise_media", {"query": "squat"})
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["dataset_available"] is False
+    assert payload["candidates"] == []
+    assert payload["hint"]

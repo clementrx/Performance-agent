@@ -6,8 +6,11 @@ the engine validates (schema + equipment vocabulary) and persists with `judgment
 provenance. Selection scoring lands in Phase 3; here the LLM just browses.
 """
 
+from typing import TypedDict
+
 from mcp.server.fastmcp import FastMCP
 
+from performance_agent.exercises.dataset import ExerciseMediaIndex
 from performance_agent.memory import exercise_library
 from performance_agent.memory.exercise_library import (
     ExerciseView,
@@ -107,7 +110,77 @@ def check_program_specificity() -> list[SpecificityWarningView]:
     return exercise_library.check_program_specificity(resolve_athlete_dir())
 
 
+class ExerciseMediaCandidateView(TypedDict):
+    """One dataset record a program block can be bound to via media_id."""
+
+    media_id: str
+    name: str
+    equipment: str
+    target: str
+    secondary_muscles: list[str]
+
+
+class ExerciseMediaSearchView(TypedDict):
+    """Search outcome: candidates, or a hint when the dataset is not synced yet."""
+
+    dataset_available: bool
+    hint: str
+    candidates: list[ExerciseMediaCandidateView]
+
+
+def search_exercise_media(
+    query: str,
+    equipment: str | None = None,
+    target: str | None = None,
+    limit: int = 10,
+) -> ExerciseMediaSearchView:
+    """Find exercise GIF records to bind program blocks to (set the block's media_id).
+
+    Dataset names are ENGLISH only — you are the translation layer: turn the
+    athlete-language exercise ("sentadilla trasera") into English gym vocabulary
+    ("barbell squat") before searching. Optional equipment/target narrow by the
+    dataset's own vocabulary (e.g. equipment "barbell", target "glutes"). Pick the
+    candidate matching the prescribed movement and set its media_id on the block;
+    when none clearly matches, leave media_id unset — a wrong GIF is worse than no
+    GIF. dataset_available false means the local clone is not synced yet (it
+    downloads in the background at server start): programs render without media
+    until then.
+    """
+    try:
+        index = ExerciseMediaIndex.load()
+    except (FileNotFoundError, NotADirectoryError):
+        return {
+            "dataset_available": False,
+            "hint": (
+                "exercises-dataset clone not synced yet — it downloads in the background "
+                "at server start; retry shortly or check network access to github.com"
+            ),
+            "candidates": [],
+        }
+    records = index.search(query, equipment=equipment, target=target, limit=limit)
+    return {
+        "dataset_available": True,
+        "hint": "",
+        "candidates": [
+            {
+                "media_id": record.dataset_id,
+                "name": record.name,
+                "equipment": record.equipment,
+                "target": record.target,
+                "secondary_muscles": list(record.secondary_muscles),
+            }
+            for record in records
+        ],
+    }
+
+
 def register(mcp: FastMCP) -> None:
     """Register every exercise-ontology tool on the server."""
-    for tool in (list_exercises, propose_exercise, score_exercises, check_program_specificity):
+    for tool in (
+        list_exercises,
+        propose_exercise,
+        score_exercises,
+        check_program_specificity,
+        search_exercise_media,
+    ):
         mcp.tool()(tool)

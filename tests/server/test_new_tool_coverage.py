@@ -35,6 +35,7 @@ _NEW_TOOLS = {
     "propose_exercise",
     "score_exercises",
     "check_program_specificity",
+    "search_exercise_media",
     "fit_load_velocity",
     "fit_banister",
     "recommend_taper",
@@ -49,6 +50,7 @@ _NEW_TOOLS = {
 @pytest.fixture(autouse=True)
 def athlete_home(monkeypatch, tmp_path):
     monkeypatch.setenv("PERFORMANCE_AGENT_HOME", str(tmp_path))
+    monkeypatch.setenv("PERFORMANCE_AGENT_EXERCISES_DATASET", str(tmp_path / "no-dataset"))
     return tmp_path
 
 
@@ -164,6 +166,7 @@ async def test_every_new_tool_registered_and_exercised(client, athlete_home):
         "propose_exercise": {"definition": _exercise_definition()},
         "score_exercises": {"quality_targets": {"reactive_strength": 1.0}, "phase": "realization"},
         "check_program_specificity": {},
+        "search_exercise_media": {"query": "squat"},
         "fit_load_velocity": {"exercise": "Back Squat"},
         "fit_banister": {"kpi_id": "back-squat-rel"},
         "recommend_taper": {"buildup_weeks": 8, "modality": "strength", "event_priority": "A"},
