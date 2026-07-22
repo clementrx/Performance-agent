@@ -209,7 +209,9 @@ class _MediaCatalog:
         """Return the dataset record and the CSS class key of its embedded GIF."""
         if self._index is None:
             return None, None
-        record = self._index.resolve(block.exercise, block.exercise_id)
+        record = self._index.get(block.media_id) if block.media_id is not None else None
+        if record is None:
+            record = self._index.resolve(block.exercise, block.exercise_id)
         if record is None:
             return None, None
         key = _css_key(record.dataset_id)

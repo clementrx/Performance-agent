@@ -163,3 +163,8 @@ def test_curated_map_is_valid_yaml_dict():
     assert isinstance(mapping, dict) and len(mapping) > 50
     text = yaml.safe_dump(mapping)
     assert "back-squat" in text
+
+
+def test_get_by_dataset_id(index):
+    assert index.get("0043").name == "barbell full squat"
+    assert index.get("9999") is None

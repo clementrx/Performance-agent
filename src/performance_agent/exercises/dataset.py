@@ -164,6 +164,10 @@ class ExerciseMediaIndex:
         ]
         return cls(exercises, load_seed_dataset_map())
 
+    def get(self, dataset_id: str) -> DatasetExercise | None:
+        """Return the record with this dataset id, or None when unknown."""
+        return self._by_id.get(dataset_id)
+
     def resolve(self, name: str, exercise_id: str | None = None) -> DatasetExercise | None:
         """Resolve a program block to a dataset record, or None when unsure.
 

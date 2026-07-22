@@ -28,7 +28,7 @@ def squat_block(**overrides) -> ExerciseBlock:
     return ExerciseBlock.model_validate(fields)
 
 
-def linked_plan(**overrides):
+def linked_plan(block: ExerciseBlock | None = None, **overrides):
     session = SessionPlan(
         id="w01-s1-lower-heavy",
         weekday=0,
@@ -36,7 +36,7 @@ def linked_plan(**overrides):
         patterns=["squat"],
         est_minutes=75,
         purpose="Build the squat base",
-        blocks=[squat_block()],
+        blocks=[block if block is not None else squat_block()],
         fallbacks=a_fallbacks(),
     )
     week = WeekPlan(week_index=1, volume_factor=1.0, intensity_factor=0.9, sessions=[session])
@@ -160,3 +160,22 @@ def test_html_without_guidance_or_citations_is_unchanged_shape():
 def test_html_localizes_banner_titles_in_french():
     page = render_program_html(_guidance_plan(), locale="fr", citations=_CITATIONS)
     assert "Conseils" in page and "Pourquoi ce programme" in page
+
+
+def test_media_id_binds_localized_name_to_gif(index):
+    block = squat_block(exercise="Sentadilla trasera", exercise_id=None, media_id="0043")
+    page = render_program_html(linked_plan(block), index=index)
+    assert '<div class="media m-0043"></div>' in page
+    assert "data:image/gif;base64," in page
+
+
+def test_media_id_wins_over_name_resolution(index):
+    # exercise name resolves to the squat record; the explicit binding must win
+    page = render_program_html(linked_plan(squat_block(media_id="0025")), index=index)
+    assert "Press the bar." in page
+    assert "Stand with the bar on your back." not in page
+
+
+def test_unknown_media_id_falls_back_to_name_chain(index):
+    page = render_program_html(linked_plan(squat_block(media_id="9999")), index=index)
+    assert '<div class="media m-0043"></div>' in page
