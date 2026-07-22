@@ -1,7 +1,7 @@
 {
   "name": "performance-agent",
   "displayName": "PerformanceAgent",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Evidence-based performance coach: the MCP server plus the coaching skills that drive it.",
   "author": {
     "name": "Clément Rieux",
