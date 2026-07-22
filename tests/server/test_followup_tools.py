@@ -1,6 +1,6 @@
 """MCP wrappers for the weekly follow-up."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -63,10 +63,15 @@ def _seed_program_and_log(base):
         mesocycles=[Mesocycle(index=1, phase="accumulation", weeks=[week])],
     )
     store.save_program(base, plan, today=date(2026, 7, 13))
+    # The MCP wrapper reads the real clock: the logged session must stay inside
+    # its rolling days_back window, so it is seeded relative to now, not fixed.
+    performed = datetime.now().replace(hour=18, minute=0, second=0, microsecond=0) - timedelta(
+        days=1
+    )
     store.append_session(
         base,
         SessionEntry(
-            performed_at=datetime(2026, 7, 15, 18, 0),
+            performed_at=performed,
             session_plan_id="w1-a",
             exercises=[
                 ExercisePerformed(
