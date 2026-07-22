@@ -269,6 +269,94 @@ Setup commands for each, PDF reports (requires `typst`), data-directory resoluti
 and troubleshooting: [docs/installing.md](docs/installing.md). Any other tool that
 supports MCP servers works with the same `uvx performance-agent` command.
 
+## What it does
+
+Everything below runs in the deterministic engine — no LLM in the numbers.
+
+**Load & readiness.** 1RM estimation, Riegel race prediction, session-RPE load and
+ACWR, monotony/strain, fitness-fatigue CTL/ATL/TSB, readiness banding,
+external-load budgeting. Data-driven deload
+recommendations (monotony/strain, TSB and readiness trends against the planned
+counter) and a clearance-gated return-to-load ramp after time off.
+
+**Planning.** Goal feasibility, periodization waves, backward season planning from a
+dated calendar, and multi-year macrocycle planning (1–4 years typed backward from the
+major event, per-year quality-emphasis budgets derived from the gap priorities). An
+intra-week sequencing and interference guard (heavy-pattern spacing,
+HIIT-before-lower interference, consecutive-high-day and match-window rules) and a
+training-residuals guard that warns where a maintained quality would decay past its
+Issurin retention window.
+
+**What determines performance.** A sport-agnostic `PerformanceModel` — the
+researched, versioned answer to "what makes performance in this event": trainable
+qualities with normalized weights, KPIs with level benchmarks, injury risks and
+energy-system split, every value provenance-labeled *cited / prior / judgment*. It
+drives gap analysis (measured KPIs vs benchmarks, per-quality training priorities;
+unmeasured stays unmeasured) and a dated test battery scheduled as experiments around
+the calendar. Four reference models ship seeded (sprint, 10k, powerlifting, football)
+— examples, not a support gate.
+
+**Exercise selection.** A structured ontology (~120 seed exercises attributed by
+movement pattern, force vector, contraction regime, kinetic chain, equipment,
+specificity level and qualities trained — filterable and extensible with the
+athlete's own). Deterministic scored selection (quality match × phase-appropriate
+specificity × equipment feasibility × contraindication hard-gate × novelty, ranked
+with a per-attribute justification), stimulus-equivalence substitution, and a
+mesocycle specificity-mix guard.
+
+**Individualization.** Recalibration from the athlete's own logs — measured
+progression rate honest about *n*, prescribed-vs-actual compliance, volume-tolerance
+association, a versioned response profile — which recomputes goal feasibility against
+the measured rate. Plus a fitted two-component Banister impulse-response model (pure
+Python grid fit of fitness/fatigue time constants and gains; refused without ≥8 weeks
+of load and ≥5 spanning performance points, or when pinned/implausible) and individual
+taper response (detects past tapers, pairs each with its event-linked outcome,
+recommends from the athlete's own best-outcome taper when ≥2 exist — else the labeled
+population rule).
+
+**Day of.** Session autoregulation (readiness-based adjustment, time compression,
+exercise substitution) and velocity-based load suggestions — bounded, labeled, never
+auto-applied — fed by load-velocity profiling (a fitted per-exercise velocity-load
+line with an estimated 1RM, refused when the loads are too few or too narrow).
+
+**Data in.** Activity-file import (.fit/.tcx/.gpx/CSV, incl. power/cadence/splits and
+VBT exports) proposes a session for the athlete to confirm before logging — or pulls
+straight from Garmin/Strava when their MCP server is connected. High-resolution
+inputs are all optional: VBT CSVs land as structured sets, rides yield
+power/normalized-power/cadence/lap-splits, jump/sprint measurements land in the KPI
+log. Missing data lowers the stated resolution rather than blocking.
+
+**Recovery.** Device trends read deterministically by a dedicated recovery-analyst
+skill: rolling ln-rMSSD vs a 28-day baseline ± the smallest worthwhile change,
+resting-HR and sleep-debt trends, honesty-gated.
+
+**Evidence.** DOI/PMID/ISBN-verified corpus with anti-fabrication citation checks,
+live search (PubMed, OpenAlex, Crossref, Semantic Scholar) behind a double
+verification gate, and Typst PDF reports (en/fr/es) behind a hard citation gate.
+
+**Memory & follow-up.** File-based athlete memory: season calendar, pre-session
+readiness logs, versioned machine-readable programs (structured plan + rendered
+markdown), a day-of adjustment log with escalation signals, a versioned response
+profile, versioned performance models, a dated KPI-results log, and an adaptation
+audit trail. Proactive follow-up surfaces what is due (overdue check-in, imminent
+race, missed sessions, readiness gaps, a stale response profile) severity-ordered, so
+the coach speaks first.
+
+**Proof it composes.** A deterministic end-to-end simulation (no LLM) drives the real
+engine and store across synthetic athletes — including an *unseeded* sport (kayak
+sprint) whose hand-authored model flows through the whole pipeline exactly like a
+seeded one, showing the machine is sport-independent.
+
+104 MCP tools · 16 coaching skills incl. a mandatory delivery gate with an adversarial
+second opinion · 1444 tests, incl. property-based.
+
+### Roadmap
+
+Environment & fine peaking (altitude/hypoxia, heat acclimatization,
+jet-lag protocols, competition-hour scheduling) — the deliberate next iteration ·
+corpus growth toward ~200 studies · outcome simulation (Monte Carlo on the fitted
+Banister model) · optional web front-end reusing the same MCP server.
+
 ## How it works
 
 Just here to use the coach? Skip this — it's for the curious and for contributors.
@@ -288,81 +376,6 @@ planning · optimization · nutrition · review · check-ins · session-day · a
 The skills encode professional coaching protocols (what to ask, when to be honest, how
 to periodize, when to deload). The MCP tools own every fact. The agent you already use
 glues it together with your existing subscription — **zero additional LLM cost**.
-
-**Working today:** deterministic engine (1RM estimation, Riegel race prediction,
-session-RPE load & ACWR, monotony/strain, fitness-fatigue CTL/ATL/TSB, readiness
-banding, external-load budgeting, goal feasibility, periodization waves, backward
-season planning from a dated calendar, day-of session autoregulation
-(readiness-based adjustment, time compression, exercise substitution),
-intra-week sequencing & interference guard (heavy-pattern spacing, HIIT-before-lower
-interference, consecutive-high-day and match-window rules), individualized
-recalibration from the athlete's own logs (measured progression rate honest about n,
-prescribed-vs-actual compliance, volume-tolerance association, a versioned response
-profile) that recomputes goal feasibility against the measured rate, data-driven
-deload recommendations (monotony/strain, TSB and readiness trends against the planned
-counter) and a graded return-to-load ramp after time off (clearance-gated),
-proactive follow-up that surfaces what is due (overdue check-in, imminent race,
-missed sessions, readiness gaps, a stale response profile) severity-ordered so the
-coach speaks first, and a deterministic end-to-end simulation (no LLM) that drives
-the real engine + store across synthetic athletes — including an UNSEEDED sport
-(kayak sprint) whose hand-authored model flows through the whole pipeline exactly
-like a seeded one, proving the machine is sport-independent — to prove the whole
-loop composes, a sport-agnostic PerformanceModel (the researched, versioned answer to
-"what determines performance in this event" — trainable qualities with normalized
-weights, KPIs with level benchmarks, injury risks and energy-system split, every
-value provenance-labeled cited/prior/judgment) that drives gap analysis (measured
-KPIs vs benchmarks, per-quality training priorities, unmeasured stays unmeasured)
-and a dated test battery scheduled as experiments around the calendar, seeded with
-four reference models (sprint, 10k, powerlifting, football) that are examples not a
-support gate, and a structured exercise ontology (~120 seed exercises attributed by
-movement pattern, force vector, contraction regime, kinetic chain, equipment,
-specificity level and qualities trained — filterable, and extensible with the
-athlete's own additions) with deterministic scored exercise selection (quality
-match × phase-appropriate specificity × equipment feasibility × contraindication
-hard-gate × novelty, ranked with a per-attribute justification), stimulus-equivalence
-substitution and a mesocycle specificity-mix guard, plus optional high-resolution
-data ingestion (velocity-based-training CSV imports as structured sets, .fit/.tcx
-rides yield power/normalized-power/cadence/lap-splits, and jump/sprint measurements
-land in the KPI log — every high-res input optional, missing data lowers stated
-resolution rather than blocking), load-velocity profiling (a fitted per-exercise
-velocity-load line with an estimated 1RM, gated honestly and refused when the loads
-are too few or too narrow) that feeds day-of velocity-based load suggestions
-(bounded, labeled, never auto-applied), and a fitted per-athlete two-component
-Banister impulse-response model (deterministic pure-Python grid fit of the
-fitness/fatigue time constants and gains, gated honestly — refused without ≥8 weeks
-of load and ≥5 spanning performance points, or when pinned/implausible — feeding the
-athlete's own time constants into the fitness-fatigue trend), individual taper
-response (detects past tapers from the load log, pairs each with its event-linked
-outcome, and recommends duration/reduction from the athlete's own best-outcome taper
-when ≥2 exist — else the labeled population rule) and per-quality progression rates
-keyed through the model KPIs, plus multi-year macrocycle planning (a 1-4 year plan
-typed backward from the major event with per-year quality-emphasis budgets derived
-from the gap priorities, feeding the season) and a training-residuals guard (warns
-where a maintained quality would decay past its Issurin retention window without a
-refresh);
-1425 tests
-incl. property-based) · 104 MCP
-tools · file-based athlete memory with a season calendar, pre-session readiness
-logs, versioned machine-readable programs (structured plan + rendered markdown),
-a day-of adjustment log with escalation signals, a versioned individual response
-profile, versioned performance models, a dated KPI-results log, and an adaptation
-audit trail ·
-activity-file import (.fit/.tcx/.gpx/CSV, incl. power/cadence/splits and VBT
-exports) that proposes a session for the athlete to confirm before logging —
-or pulled straight from Garmin/Strava when their MCP server is connected ·
-device recovery trends read deterministically (rolling ln-rMSSD vs a 28-day
-baseline ± the smallest worthwhile change, resting-HR and sleep-debt trends,
-honesty-gated) by a dedicated recovery-analyst skill ·
-DOI/PMID/ISBN-verified evidence corpus with anti-fabrication
-citation checks · live evidence search (PubMed, OpenAlex, Crossref, Semantic Scholar)
-behind a double verification gate · sixteen coaching skills incl. a mandatory delivery
-gate with an adversarial second opinion · Typst PDF reports (en/fr/es) behind a hard
-citation gate.
-
-**Roadmap:** environment & fine peaking (altitude/hypoxia, heat acclimatization,
-jet-lag protocols, competition-hour scheduling) — the deliberate next iteration ·
-corpus growth toward ~200 studies · outcome simulation (Monte Carlo on the fitted
-Banister model) · optional web front-end reusing the same MCP server.
 
 ## Design principles
 
