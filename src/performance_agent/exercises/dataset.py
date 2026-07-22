@@ -178,11 +178,14 @@ class ExerciseMediaIndex:
         """Rank records for an English query: substring matches first, then close names.
 
         equipment and target filter case-insensitively on the dataset's own
-        vocabulary. Raises ValueError on a blank query — nothing to match on.
+        vocabulary. Raises ValueError on a blank query or a non-positive limit.
         """
         normalised = _normalise(query)
         if not normalised:
             msg = f"query must contain letters or digits, got {query!r}"
+            raise ValueError(msg)
+        if limit <= 0:
+            msg = f"limit must be positive, got {limit}"
             raise ValueError(msg)
         candidates = {
             name: exercise

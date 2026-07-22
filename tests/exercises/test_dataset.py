@@ -38,6 +38,15 @@ def write_fixture_dataset(base: Path) -> Path:
             "gif_url": "videos/0025.gif",
             "instruction_steps": {"en": ["Press the bar."]},
         },
+        {
+            "id": "0100",
+            "name": "dumbbell bench press",
+            "equipment": "dumbbell",
+            "target": "pectorals",
+            "secondary_muscles": [],
+            "gif_url": "videos/0100.gif",
+            "instruction_steps": {"en": ["Press the dumbbells."]},
+        },
     ]
     (base / "data" / "exercises.json").write_text(json.dumps(records))
     (base / "videos" / "0043.gif").write_bytes(GIF_BYTES)
@@ -184,9 +193,21 @@ def test_search_fuzzy_completes_close_names(index):
 
 
 def test_search_respects_limit(index):
-    assert len(index.search("barbell", limit=1)) == 1
+    # both bench presses substring-match; alphabetical order makes 0025 the winner
+    assert [e.dataset_id for e in index.search("bench press", limit=1)] == ["0025"]
 
 
 def test_search_rejects_blank_query(index):
     with pytest.raises(ValueError, match="query"):
         index.search("  !! ")
+
+
+def test_search_ranks_substring_hits_before_fuzzy(index):
+    # "dumbbell bench press" is the only substring hit; "barbell bench press"
+    # arrives second through fuzzy completion — never ahead of the exact hit
+    assert [e.dataset_id for e in index.search("dumbbell bench press")] == ["0100", "0025"]
+
+
+def test_search_rejects_nonpositive_limit(index):
+    with pytest.raises(ValueError, match="limit"):
+        index.search("squat", limit=0)
