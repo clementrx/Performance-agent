@@ -11,7 +11,7 @@ tools: [read_athlete, get_time_context, read_research_dossier, get_citation,
         progress_double_progression, prescribe_top_set_backoff,
         prescribe_wave_loading, convert_rpe_to_rir, predict_race_time,
         compute_pace, read_nutrition_frame, read_calendar, budget_weekly_load,
-        list_exercises, score_exercises, propose_exercise,
+        list_exercises, score_exercises, propose_exercise, search_exercise_media,
         check_program_specificity, substitute_exercise, fit_load_velocity,
         check_week_sequencing, save_program]
 ---
@@ -102,6 +102,14 @@ you fill:
    judgment — same anti-fabrication rule as loads. A needed exercise missing from
    the library is added with `propose_exercise` (via the athlete, provenance
    judgment) before you reference it.
+4. **Bind the demo media**: for each strength block, call `search_exercise_media`
+   with the ENGLISH movement name — you are the translation layer ("sentadilla
+   trasera" → "barbell squat") — optionally narrowed by `equipment` / `target`,
+   and set the chosen candidate's `media_id` on the block. Best-effort: no clear
+   match, or `dataset_available: false` → leave `media_id` unset; a wrong GIF is
+   worse than no GIF. Skip conditioning blocks (runs, intervals) — the dataset is
+   gym-exercise media. The saved program's HTML page then embeds each bound
+   exercise's GIF and technique steps in the athlete's locale.
 
 After the mesocycles are assembled, run `check_program_specificity`: it flags any
 mesocycle whose exercise specificity mix drifts out of its phase band (general prep
