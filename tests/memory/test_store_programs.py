@@ -38,6 +38,15 @@ def test_first_program_writes_yaml_and_md_pair(tmp_path):
     assert "# Program v1 — 20260712 — squat-160" in program.markdown
 
 
+def test_media_id_round_trips_through_yaml(tmp_path):
+    # "0043" must survive as a string — unquoted YAML would reread it as an int.
+    plan = minimal_plan()
+    plan.mesocycles[0].weeks[0].sessions[0].blocks[0].media_id = "0043"
+    save_program(tmp_path, plan, today=TODAY)
+    block = _read(tmp_path).plan.mesocycles[0].weeks[0].sessions[0].blocks[0]
+    assert block.media_id == "0043"
+
+
 def test_store_stamps_authoritative_version_over_the_plan(tmp_path):
     # The plan claims version 9; the store computes and stamps the real one.
     save_program(tmp_path, minimal_plan(), today=TODAY)
