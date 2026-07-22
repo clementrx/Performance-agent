@@ -392,6 +392,7 @@ class ExerciseBlock(BaseModel):
 
     exercise: str = Field(min_length=1)
     exercise_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]*$", max_length=64)
+    media_id: str | None = Field(default=None, min_length=1, max_length=16)
     priority: BlockPriority
     warmup: Literal["auto", "none"] = "auto"
     sets: int = Field(ge=1, le=20)
