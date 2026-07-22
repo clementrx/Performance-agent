@@ -144,7 +144,7 @@ def search_exercise_media(
     when none clearly matches, leave media_id unset — a wrong GIF is worse than no
     GIF. dataset_available false means the local clone is not synced yet (it
     downloads in the background at server start): programs render without media
-    until then.
+    until then. Errors on a blank query or a non-positive limit.
     """
     try:
         index = ExerciseMediaIndex.load()

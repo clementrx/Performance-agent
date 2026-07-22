@@ -113,3 +113,12 @@ async def test_search_exercise_media_without_dataset(client, monkeypatch, tmp_pa
     assert payload["dataset_available"] is False
     assert payload["candidates"] == []
     assert payload["hint"]
+
+
+@pytest.mark.anyio
+async def test_search_exercise_media_rejects_blank_query(client, monkeypatch, tmp_path):
+    dataset_dir = write_fixture_dataset(tmp_path / "ds")
+    monkeypatch.setenv("PERFORMANCE_AGENT_EXERCISES_DATASET", str(dataset_dir))
+    result = await client.call_tool("search_exercise_media", {"query": "   "})
+    assert result.isError
+    assert "query" in result.content[0].text
