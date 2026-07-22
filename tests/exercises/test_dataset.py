@@ -168,3 +168,25 @@ def test_curated_map_is_valid_yaml_dict():
 def test_get_by_dataset_id(index):
     assert index.get("0043").name == "barbell full squat"
     assert index.get("9999") is None
+
+
+def test_search_substring_match(index):
+    assert [e.dataset_id for e in index.search("squat")] == ["0043"]
+
+
+def test_search_filters_by_equipment_and_target(index):
+    assert [e.dataset_id for e in index.search("barbell", target="pectorals")] == ["0025"]
+    assert index.search("barbell", equipment="cable") == []
+
+
+def test_search_fuzzy_completes_close_names(index):
+    assert "0025" in [e.dataset_id for e in index.search("barbel bench pres")]
+
+
+def test_search_respects_limit(index):
+    assert len(index.search("barbell", limit=1)) == 1
+
+
+def test_search_rejects_blank_query(index):
+    with pytest.raises(ValueError, match="query"):
+        index.search("  !! ")

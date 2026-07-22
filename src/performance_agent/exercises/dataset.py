@@ -168,6 +168,36 @@ class ExerciseMediaIndex:
         """Return the record with this dataset id, or None when unknown."""
         return self._by_id.get(dataset_id)
 
+    def search(
+        self,
+        query: str,
+        equipment: str | None = None,
+        target: str | None = None,
+        limit: int = 10,
+    ) -> list[DatasetExercise]:
+        """Rank records for an English query: substring matches first, then close names.
+
+        equipment and target filter case-insensitively on the dataset's own
+        vocabulary. Raises ValueError on a blank query — nothing to match on.
+        """
+        normalised = _normalise(query)
+        if not normalised:
+            msg = f"query must contain letters or digits, got {query!r}"
+            raise ValueError(msg)
+        candidates = {
+            name: exercise
+            for name, exercise in self._by_norm_name.items()
+            if (equipment is None or exercise.equipment.lower() == equipment.lower())
+            and (target is None or exercise.target.lower() == target.lower())
+        }
+        hits = [name for name in sorted(candidates) if normalised in name]
+        if len(hits) < limit:
+            remaining = [name for name in candidates if name not in set(hits)]
+            hits.extend(
+                difflib.get_close_matches(normalised, remaining, n=limit - len(hits), cutoff=0.6)
+            )
+        return [candidates[name] for name in hits[:limit]]
+
     def resolve(self, name: str, exercise_id: str | None = None) -> DatasetExercise | None:
         """Resolve a program block to a dataset record, or None when unsure.
 
